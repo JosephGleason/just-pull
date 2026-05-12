@@ -20,17 +20,13 @@ function RootNavigator() {
     <>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
-        {!settings ? (
-          <Stack.Screen name="onboarding" />
-        ) : (
-          <>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="workout"
-              options={{ presentation: "fullScreenModal", gestureEnabled: false }}
-            />
-          </>
-        )}
+        <Stack.Screen name="onboarding" redirect={settings !== null} />
+        <Stack.Screen name="(tabs)" redirect={settings === null} />
+        <Stack.Screen
+          name="workout"
+          options={{ presentation: "fullScreenModal", gestureEnabled: false }}
+          redirect={settings === null}
+        />
       </Stack>
     </>
   );
