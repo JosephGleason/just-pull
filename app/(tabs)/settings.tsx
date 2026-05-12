@@ -28,6 +28,7 @@ import {
   Units,
   WeekNumber,
   TrainingDay,
+  BodyLog,
 } from "../../src/types";
 import { colors, typography, spacing, radius } from "../../src/theme";
 
@@ -48,6 +49,15 @@ function formatSeconds(s: number): string {
   const m = Math.floor(s / 60);
   const sec = s % 60;
   return `${m}:${sec.toString().padStart(2, "0")}`;
+}
+
+function formatBodyDate(iso: string): string {
+  const [year, month, day] = iso.split("-").map(Number);
+  const months = [
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+  ];
+  return `${months[month - 1]} ${day}, ${year}`;
 }
 
 // --- tiny shared components --------------------------------------------------
@@ -220,6 +230,164 @@ function PickerModal<T extends string>({
   );
 }
 
+// --- body log modal ----------------------------------------------------------
+
+interface BodyLogModalProps {
+  visible: boolean;
+  units: Units;
+  lastEntry: BodyLog | null;
+  onSave: (weight: number, bodyFatPercent: number) => void;
+  onCancel: () => void;
+}
+
+function BodyLogModal({
+  visible,
+  units,
+  lastEntry,
+  onSave,
+  onCancel,
+}: BodyLogModalProps) {
+  const [weightVal, setWeightVal] = useState("");
+  const [bfVal, setBfVal] = useState("");
+
+  React.useEffect(() => {
+    if (visible) {
+      setWeightVal(lastEntry ? String(lastEntry.weight) : "");
+      setBfVal(lastEntry ? String(lastEntry.bodyFatPercent) : "");
+    }
+  }, [visible, lastEntry]);
+
+  function handleSave() {
+    const parsedWeight = parseFloat(weightVal);
+    const parsedBf = parseFloat(bfVal);
+    if (isNaN(parsedWeight) || parsedWeight <= 0) {
+      Alert.alert("Invalid", "Please enter a valid body weight.");
+      return;
+    }
+    const bf = isNaN(parsedBf) ? 0 : parsedBf;
+    onSave(parsedWeight, bf);
+  }
+
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onCancel}
+    >
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={bodyLogStyles.overlay}
+      >
+        <View style={bodyLogStyles.box}>
+          <Text style={bodyLogStyles.title}>Log Body Measurement</Text>
+
+          <Text style={bodyLogStyles.inputLabel}>Body Weight ({units})</Text>
+          <TextInput
+            style={bodyLogStyles.input}
+            value={weightVal}
+            onChangeText={setWeightVal}
+            keyboardType="numeric"
+            placeholder="e.g. 185"
+            placeholderTextColor={colors.textTertiary}
+            autoFocus
+            selectTextOnFocus
+          />
+
+          <Text style={bodyLogStyles.inputLabel}>Body Fat %</Text>
+          <TextInput
+            style={bodyLogStyles.input}
+            value={bfVal}
+            onChangeText={setBfVal}
+            keyboardType="numeric"
+            placeholder="e.g. 18"
+            placeholderTextColor={colors.textTertiary}
+            selectTextOnFocus
+          />
+
+          <View style={bodyLogStyles.buttons}>
+            <TouchableOpacity
+              style={[bodyLogStyles.btn, bodyLogStyles.cancelBtn]}
+              onPress={onCancel}
+            >
+              <Text style={bodyLogStyles.cancelText}>Cancel</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[bodyLogStyles.btn, bodyLogStyles.saveBtn]}
+              onPress={handleSave}
+            >
+              <Text style={bodyLogStyles.saveText}>Save</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </KeyboardAvoidingView>
+    </Modal>
+  );
+}
+
+const bodyLogStyles = StyleSheet.create({
+  overlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.75)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+  },
+  box: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
+    width: "100%",
+    maxWidth: 400,
+  },
+  title: {
+    color: colors.text,
+    ...typography.subtitle,
+    marginBottom: spacing.lg,
+  },
+  inputLabel: {
+    color: colors.textSecondary,
+    ...typography.caption,
+    marginBottom: spacing.xs,
+  },
+  input: {
+    backgroundColor: colors.surfaceTertiary,
+    borderRadius: radius.md,
+    color: colors.text,
+    fontSize: 20,
+    fontFamily: "PlusJakartaSans_400Regular",
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    marginBottom: spacing.md,
+  },
+  buttons: {
+    flexDirection: "row",
+    gap: spacing.md,
+    marginTop: spacing.sm,
+  },
+  btn: {
+    flex: 1,
+    paddingVertical: 14,
+    borderRadius: radius.md,
+    alignItems: "center",
+  },
+  cancelBtn: {
+    backgroundColor: colors.surfaceTertiary,
+  },
+  cancelText: {
+    color: colors.textSecondary,
+    ...typography.bodyBold,
+  },
+  saveBtn: {
+    backgroundColor: colors.accent,
+  },
+  saveText: {
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 15,
+  },
+});
+
 // --- main screen -------------------------------------------------------------
 
 export default function SettingsScreen() {
@@ -248,6 +416,10 @@ export default function SettingsScreen() {
     selected: "",
     onSelect: () => {},
   });
+
+  // -- body log modal state --
+  const [bodyLogModalVisible, setBodyLogModalVisible] = useState(false);
+  const bodyLog: BodyLog[] = context.bodyLog ?? [];
 
   // -- nutrition local state (for the form) --
   const defaultNutrition: NutritionSettings = {
@@ -814,7 +986,60 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* -- 7. Data -- */}
+        {/* -- 7. Body Measurements -- */}
+        <SectionHeader title="Body Measurements" />
+        <View style={styles.card}>
+          {/* Log button */}
+          <TouchableOpacity
+            style={styles.row}
+            onPress={() => setBodyLogModalVisible(true)}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.rowLabel}>Log Measurement</Text>
+            <View style={styles.rowValueWrap}>
+              <Text style={styles.rowChevron}>{"+"}</Text>
+            </View>
+          </TouchableOpacity>
+
+          {/* History entries */}
+          {bodyLog.length > 0 && <View style={styles.divider} />}
+          {[...bodyLog].reverse().map((entry, i) => (
+            <View key={entry.date + i}>
+              {i > 0 && <View style={styles.divider} />}
+              <TouchableOpacity
+                style={styles.bodyLogRow}
+                activeOpacity={0.7}
+                onLongPress={() => {
+                  Alert.alert(
+                    "Delete Entry",
+                    `Remove log for ${formatBodyDate(entry.date)}?`,
+                    [
+                      { text: "Cancel", style: "cancel" },
+                      {
+                        text: "Delete",
+                        style: "destructive",
+                        onPress: () => {
+                          const filtered = bodyLog.filter(
+                            (e) => !(e.date === entry.date && e.weight === entry.weight)
+                          );
+                          context.setBodyLog(filtered);
+                        },
+                      },
+                    ]
+                  );
+                }}
+              >
+                <Text style={styles.bodyLogDate}>{formatBodyDate(entry.date)}</Text>
+                <Text style={styles.bodyLogValues}>
+                  {entry.weight} {safeSettings.units}
+                  {entry.bodyFatPercent > 0 ? `  ·  ${entry.bodyFatPercent}% BF` : ""}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          ))}
+        </View>
+
+        {/* -- 8. Data -- */}
         <SectionHeader title="Data" />
         <View style={styles.card}>
           <TouchableOpacity
@@ -882,6 +1107,22 @@ export default function SettingsScreen() {
         selected={pickerModal.selected}
         onSelect={pickerModal.onSelect}
         onCancel={closePicker}
+      />
+
+      {/* Body Log Modal */}
+      <BodyLogModal
+        visible={bodyLogModalVisible}
+        units={safeSettings.units}
+        lastEntry={bodyLog.length > 0 ? bodyLog[bodyLog.length - 1] : null}
+        onSave={(weight, bf) => {
+          context.addBodyLog({
+            date: new Date().toISOString().split("T")[0],
+            weight,
+            bodyFatPercent: bf,
+          });
+          setBodyLogModalVisible(false);
+        }}
+        onCancel={() => setBodyLogModalVisible(false)}
       />
     </View>
   );
@@ -1210,6 +1451,24 @@ const styles = StyleSheet.create({
     color: colors.bg,
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 15,
+  },
+
+  // body log history rows
+  bodyLogRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: 12,
+    minHeight: 48,
+  },
+  bodyLogDate: {
+    color: colors.text,
+    ...typography.body,
+  },
+  bodyLogValues: {
+    color: colors.textSecondary,
+    ...typography.body,
   },
 
   // picker modal
