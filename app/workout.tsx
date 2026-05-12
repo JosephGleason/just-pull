@@ -281,7 +281,7 @@ export default function WorkoutScreen() {
         onWeightChange={() => {}}
       />
 
-      {/* Rest timer overlay at bottom -- does not block SetLogger */}
+      {/* Rest timer overlay at top -- does not block SetLogger */}
       <RestTimer
         secondsLeft={timer.secondsLeft}
         isRunning={timer.isRunning}

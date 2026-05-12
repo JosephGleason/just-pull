@@ -14,11 +14,17 @@ interface ExerciseCardProps {
   isChinups: boolean;
 }
 
-const TYPE_DOT_COLORS: Record<ExerciseType, string> = {
-  red: colors.orange,
-  blue: colors.accent,
-  black: "#8E8E93",
-};
+// Weight color indicates exercise type — no dots, no borders
+function getWeightColor(type: ExerciseType): string {
+  switch (type) {
+    case "blue":
+      return colors.accent; // amber for heavy compound
+    case "red":
+      return colors.text; // warm white for compound
+    case "black":
+      return colors.textSecondary; // muted for AMRAP
+  }
+}
 
 export function ExerciseCard({
   name,
@@ -30,15 +36,10 @@ export function ExerciseCard({
   units,
   isChinups,
 }: ExerciseCardProps) {
-  const dotColor = TYPE_DOT_COLORS[type];
-
   if (isResting) {
     return (
       <View style={[styles.card, styles.restingCard]}>
-        <View style={styles.nameRow}>
-          <View style={[styles.typeDot, { backgroundColor: dotColor }]} />
-          <Text style={styles.restingName}>{name}</Text>
-        </View>
+        <Text style={styles.restingName}>{name}</Text>
         <Text style={styles.restingLabel}>Rest this week</Text>
       </View>
     );
@@ -49,27 +50,25 @@ export function ExerciseCard({
     : `${weight}${units}`;
 
   const isAmrap = type === "black";
+  const weightColor = getWeightColor(type);
 
   return (
     <View style={styles.card}>
       <View style={styles.header}>
-        <View style={styles.nameRow}>
-          <View style={[styles.typeDot, { backgroundColor: dotColor }]} />
+        <View style={styles.nameCol}>
           <Text style={styles.name}>{name}</Text>
-          {isAmrap && (
-            <View style={styles.amrapBadge}>
-              <Text style={styles.amrapBadgeText}>AMRAP</Text>
-            </View>
-          )}
+          <Text style={styles.details}>
+            {sets} sets x {isAmrap ? `~${reps}` : reps}
+            {isChinups ? "  added weight" : ""}
+          </Text>
         </View>
-        <Text style={styles.weight}>{weightLabel}</Text>
+        <View style={styles.weightCol}>
+          {isAmrap && (
+            <Text style={styles.amrapLabel}>AMRAP</Text>
+          )}
+          <Text style={[styles.weight, { color: weightColor }]}>{weightLabel}</Text>
+        </View>
       </View>
-      <Text style={styles.details}>
-        {sets} sets x {isAmrap ? `~${reps}` : reps}
-      </Text>
-      {isChinups && (
-        <Text style={styles.addedWeightLabel}>Added Weight</Text>
-      )}
     </View>
   );
 }
@@ -77,71 +76,50 @@ export function ExerciseCard({
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
   restingCard: {
-    opacity: 0.4,
+    opacity: 0.35,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: spacing.xs,
   },
-  nameRow: {
-    flexDirection: "row",
-    alignItems: "center",
+  nameCol: {
     flex: 1,
-  },
-  typeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.sm,
+    marginRight: spacing.md,
   },
   name: {
     color: colors.text,
-    ...typography.title3,
-  },
-  weight: {
-    color: colors.text,
-    ...typography.title1,
+    ...typography.subtitle,
   },
   details: {
     color: colors.textSecondary,
-    fontSize: 15,
-    marginLeft: 16,
-  },
-  addedWeightLabel: {
-    color: colors.textTertiary,
-    ...typography.caption2,
-    marginLeft: 16,
+    ...typography.body,
     marginTop: spacing.xs,
   },
-  amrapBadge: {
-    backgroundColor: "rgba(255, 159, 10, 0.15)",
-    borderRadius: radius.sm,
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    marginLeft: spacing.sm,
+  weightCol: {
+    alignItems: "flex-end",
   },
-  amrapBadgeText: {
-    color: colors.orange,
-    fontSize: 10,
-    fontWeight: "600",
-    letterSpacing: 0.5,
+  weight: {
+    ...typography.displayLarge,
+  },
+  amrapLabel: {
+    color: colors.accent,
+    ...typography.caption,
+    marginBottom: 2,
   },
   restingName: {
     color: colors.textTertiary,
-    ...typography.title3,
+    ...typography.subtitle,
   },
   restingLabel: {
     color: colors.textTertiary,
-    ...typography.caption1,
-    marginLeft: 16,
-    marginTop: spacing.xs,
+    ...typography.micro,
     fontStyle: "italic",
+    marginTop: spacing.xs,
   },
 });

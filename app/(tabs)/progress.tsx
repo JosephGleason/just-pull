@@ -108,17 +108,17 @@ const styles = StyleSheet.create({
   },
   screenTitle: {
     color: colors.text,
-    ...typography.displayMedium,
+    ...typography.title,
     paddingHorizontal: spacing.md,
     paddingTop: 56,
     paddingBottom: spacing.md,
   },
   sectionLabel: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
-    marginTop: spacing.lg,
+    marginTop: spacing.xl,
   },
   pickerScroll: {
     flexGrow: 0,
@@ -138,18 +138,18 @@ const styles = StyleSheet.create({
   },
   pillText: {
     color: colors.textSecondary,
+    ...typography.bodyBold,
     fontSize: 13,
-    fontWeight: "600",
   },
   pillTextSelected: {
-    color: colors.text,
+    color: colors.bg,
   },
   chartSection: {
     marginTop: spacing.md,
   },
   chartTitle: {
     color: colors.text,
-    ...typography.title3,
+    ...typography.subtitle,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
   },
@@ -162,25 +162,25 @@ const styles = StyleSheet.create({
   weightCard: {
     width: "47%",
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: 14,
   },
   weightCardName: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
     marginBottom: spacing.sm,
   },
   weightCardValue: {
     color: colors.text,
-    ...typography.displayMedium,
+    ...typography.displaySmall,
   },
   weightCardUnit: {
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 14,
-    fontWeight: "400",
     color: colors.textSecondary,
   },
   weightCardEmpty: {
     color: colors.textTertiary,
-    ...typography.displayMedium,
+    ...typography.displaySmall,
   },
 });

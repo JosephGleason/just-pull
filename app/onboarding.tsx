@@ -701,10 +701,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   brand: {
-    fontSize: 14,
-    fontWeight: "700",
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 18,
     color: colors.accent,
-    letterSpacing: 4,
+    letterSpacing: 6,
     marginBottom: spacing.md,
   },
   stepRow: {
@@ -721,7 +721,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.accent,
   },
   stepDotDone: {
-    backgroundColor: "rgba(10, 132, 255, 0.4)",
+    backgroundColor: colors.accentDim,
   },
 
   // Content
@@ -735,7 +735,7 @@ const styles = StyleSheet.create({
   },
   stepTitle: {
     color: colors.text,
-    ...typography.title1,
+    ...typography.title,
     marginBottom: spacing.sm,
   },
   stepSubtitle: {
@@ -752,8 +752,6 @@ const styles = StyleSheet.create({
   },
   unitButton: {
     backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.separator,
     borderRadius: radius.lg,
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.xl,
@@ -762,18 +760,17 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   unitButtonActive: {
-    borderColor: colors.accent,
+    backgroundColor: colors.accentGlow,
   },
   unitEmoji: {
-    fontSize: 28,
-    fontWeight: "800",
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 32,
     color: colors.accent,
     width: 60,
     textAlign: "center",
   },
   unitLabel: {
-    fontSize: 22,
-    fontWeight: "700",
+    ...typography.title,
     color: colors.textSecondary,
   },
   unitLabelActive: {
@@ -794,7 +791,7 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     paddingVertical: 14,
     paddingHorizontal: spacing.md,
     marginBottom: spacing.sm,
@@ -805,12 +802,11 @@ const styles = StyleSheet.create({
   },
   weightLabel: {
     color: colors.text,
-    ...typography.body,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
   weightHint: {
     color: colors.textTertiary,
-    ...typography.caption1,
+    ...typography.micro,
     marginTop: 2,
   },
   weightInputWrapper: {
@@ -819,20 +815,19 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   weightInput: {
-    backgroundColor: colors.surfaceTertiary,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: radius.md,
     color: colors.text,
-    fontSize: 18,
-    fontWeight: "700",
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 22,
     textAlign: "center",
     width: 80,
-    height: 50,
+    height: 48,
     paddingHorizontal: spacing.sm,
   },
   weightUnit: {
-    fontSize: 14,
+    ...typography.caption,
     color: colors.textSecondary,
-    fontWeight: "600",
     width: 24,
   },
 
@@ -845,12 +840,12 @@ const styles = StyleSheet.create({
   },
   timerLabel: {
     color: colors.text,
-    ...typography.title3,
+    ...typography.subtitle,
     marginBottom: 2,
   },
   timerHint: {
     color: colors.textTertiary,
-    ...typography.caption1,
+    ...typography.micro,
     marginBottom: spacing.md,
   },
   timerInputRow: {
@@ -859,24 +854,23 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   timerInput: {
-    backgroundColor: colors.surfaceTertiary,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: radius.md,
     color: colors.text,
-    fontSize: 22,
-    fontWeight: "700",
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 24,
     textAlign: "center",
     width: 80,
-    height: 50,
+    height: 48,
   },
   timerSec: {
-    fontSize: 15,
     color: colors.textSecondary,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
   timerFormatted: {
-    fontSize: 18,
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 22,
     color: colors.accent,
-    fontWeight: "700",
     marginLeft: "auto",
   },
 
@@ -890,12 +884,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   nutritionInput: {
-    backgroundColor: colors.surfaceTertiary,
+    backgroundColor: colors.surfaceElevated,
     borderRadius: radius.md,
     color: colors.text,
-    fontSize: 18,
-    fontWeight: "600",
-    height: 50,
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 22,
+    height: 48,
     paddingHorizontal: spacing.md,
   },
   pillRow: {
@@ -905,8 +899,6 @@ const styles = StyleSheet.create({
   },
   pill: {
     backgroundColor: colors.surface,
-    borderWidth: 1.5,
-    borderColor: colors.separator,
     borderRadius: 24,
     paddingVertical: 10,
     paddingHorizontal: 18,
@@ -914,15 +906,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pillActive: {
-    borderColor: colors.accent,
+    backgroundColor: colors.accentGlow,
   },
   pillText: {
+    ...typography.bodyBold,
     fontSize: 14,
-    fontWeight: "600",
     color: colors.textSecondary,
   },
   pillTextActive: {
-    color: colors.text,
+    color: colors.accent,
   },
 
   // Footer
@@ -944,8 +936,7 @@ const styles = StyleSheet.create({
   },
   backButtonText: {
     color: colors.textSecondary,
-    ...typography.body,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
   skipButton: {
     height: 48,
@@ -957,14 +948,13 @@ const styles = StyleSheet.create({
   },
   skipButtonText: {
     color: colors.textSecondary,
-    ...typography.body,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
   nextButton: {
     backgroundColor: colors.accent,
     height: 56,
     paddingHorizontal: spacing.xl,
-    borderRadius: radius.lg,
+    borderRadius: 14,
     justifyContent: "center",
     alignItems: "center",
     minWidth: 100,
@@ -973,8 +963,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceTertiary,
   },
   nextButtonText: {
-    color: colors.text,
-    ...typography.bodyBold,
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 15,
   },
   nextButtonTextDisabled: {
     color: colors.textTertiary,

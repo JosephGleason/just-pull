@@ -64,20 +64,18 @@ export function SetLogger({
 
   const weightLabel = isChinups ? "ADDED WEIGHT" : "WEIGHT";
 
-  const weightButtonSize = isAmrap ? 52 : 44;
-
   return (
     <View style={styles.container}>
       {/* Set counter */}
       <View style={styles.setCounterRow}>
-        <Text style={styles.setCounter}>
-          SET {setNumber} OF {totalSets}
-        </Text>
         {isPrAttempt && (
           <View style={styles.prBadge}>
             <Text style={styles.prBadgeText}>PR</Text>
           </View>
         )}
+        <Text style={styles.setCounter}>
+          SET {setNumber} OF {totalSets}
+        </Text>
       </View>
 
       {/* Exercise name */}
@@ -93,26 +91,22 @@ export function SetLogger({
       <View style={styles.weightRow}>
         <TouchableOpacity
           onPress={() => handleWeightChange(-increment)}
-          style={[
-            styles.weightButton,
-            { width: weightButtonSize, height: weightButtonSize },
-          ]}
+          style={styles.weightButton}
           activeOpacity={0.7}
         >
           <Text style={styles.weightButtonText}>-</Text>
         </TouchableOpacity>
 
         <View style={styles.weightDisplay}>
-          <Text style={styles.weightValue}>{currentWeight}</Text>
+          <Text style={[styles.weightValue, isPrAttempt && styles.weightValuePr]}>
+            {currentWeight}
+          </Text>
           <Text style={styles.weightUnit}>{units}</Text>
         </View>
 
         <TouchableOpacity
           onPress={() => handleWeightChange(increment)}
-          style={[
-            styles.weightButton,
-            { width: weightButtonSize, height: weightButtonSize },
-          ]}
+          style={styles.weightButton}
           activeOpacity={0.7}
         >
           <Text style={styles.weightButtonText}>+</Text>
@@ -161,7 +155,7 @@ export function SetLogger({
         onPress={handleComplete}
         activeOpacity={0.8}
       >
-        <Text style={styles.completeButtonText}>Complete Set</Text>
+        <Text style={styles.completeButtonText}>COMPLETE</Text>
       </TouchableOpacity>
     </View>
   );
@@ -181,37 +175,36 @@ const styles = StyleSheet.create({
   },
   setCounter: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
   },
   exerciseName: {
     color: colors.text,
-    ...typography.title1,
+    ...typography.title,
     textAlign: "center",
     marginBottom: spacing.xs,
   },
   prBadge: {
-    backgroundColor: colors.teal,
+    backgroundColor: colors.accent,
     paddingHorizontal: 10,
     paddingVertical: 3,
     borderRadius: 10,
-    marginLeft: spacing.sm,
+    marginRight: spacing.sm,
   },
   prBadgeText: {
     color: colors.bg,
-    fontSize: 11,
-    fontWeight: "700",
+    ...typography.caption,
     letterSpacing: 0.5,
   },
   previousPerformance: {
     color: colors.textTertiary,
-    ...typography.caption1,
+    ...typography.micro,
     marginBottom: spacing.lg,
   },
   sectionLabel: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
     marginBottom: spacing.sm,
-    marginTop: spacing.md,
+    marginTop: spacing.xl,
   },
   weightRow: {
     flexDirection: "row",
@@ -219,33 +212,38 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   weightButton: {
-    backgroundColor: colors.surfaceTertiary,
-    borderRadius: radius.md,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 24,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
   weightButtonText: {
-    color: colors.text,
+    color: colors.accent,
     fontSize: 22,
-    fontWeight: "600",
+    fontFamily: "PlusJakartaSans_600SemiBold",
   },
   weightDisplay: {
     alignItems: "center",
     marginHorizontal: spacing.xl,
-    minWidth: 120,
+    minWidth: 140,
   },
   weightValue: {
     color: colors.text,
-    ...typography.displayLarge,
+    ...typography.displayXL,
+  },
+  weightValuePr: {
+    color: colors.accent,
   },
   weightUnit: {
     color: colors.textTertiary,
-    ...typography.caption1,
-    marginTop: -2,
+    ...typography.micro,
+    marginTop: -4,
   },
   amrapHint: {
-    color: colors.orange,
-    ...typography.caption1,
+    color: colors.accent,
+    ...typography.micro,
     marginBottom: spacing.xs,
     marginTop: -spacing.xs,
   },
@@ -255,17 +253,17 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   repsButton: {
-    backgroundColor: colors.surfaceTertiary,
-    borderRadius: radius.md,
-    width: 44,
-    height: 44,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 24,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
   },
   repsButtonText: {
-    color: colors.text,
+    color: colors.accent,
     fontSize: 22,
-    fontWeight: "600",
+    fontFamily: "PlusJakartaSans_600SemiBold",
   },
   repsInput: {
     color: colors.text,
@@ -276,16 +274,16 @@ const styles = StyleSheet.create({
   },
   completeButton: {
     backgroundColor: colors.green,
-    borderRadius: radius.lg,
-    paddingVertical: 18,
+    borderRadius: 14,
+    height: 64,
     alignSelf: "stretch",
     alignItems: "center",
-    minHeight: 60,
     justifyContent: "center",
   },
   completeButtonText: {
-    color: colors.text,
-    fontSize: 18,
-    fontWeight: "700",
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 16,
+    letterSpacing: 1,
   },
 });

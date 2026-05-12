@@ -73,7 +73,7 @@ export default function TodayScreen() {
           </Text>
           {cycleState.isDeload && (
             <View style={styles.deloadBadge}>
-              <Text style={styles.deloadText}>Deload</Text>
+              <Text style={styles.deloadText}>DELOAD</Text>
             </View>
           )}
         </View>
@@ -147,7 +147,7 @@ const styles = StyleSheet.create({
   },
   resumeBanner: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.md,
     flexDirection: "row",
@@ -164,7 +164,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
     marginBottom: spacing.xs,
   },
   headerRow: {
@@ -176,18 +176,17 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     color: colors.text,
-    ...typography.title1,
+    ...typography.title,
   },
   deloadBadge: {
-    backgroundColor: "rgba(255, 159, 10, 0.15)",
+    backgroundColor: colors.accentGlow,
     borderRadius: radius.sm,
     paddingVertical: spacing.xs,
     paddingHorizontal: spacing.sm,
   },
   deloadText: {
-    color: colors.orange,
-    fontSize: 12,
-    fontWeight: "600",
+    color: colors.accent,
+    ...typography.caption,
   },
   startButton: {
     position: "absolute",
@@ -195,15 +194,14 @@ const styles = StyleSheet.create({
     left: spacing.md,
     right: spacing.md,
     backgroundColor: colors.accent,
-    borderRadius: radius.lg,
-    paddingVertical: 16,
+    borderRadius: 14,
+    height: 56,
     alignItems: "center",
-    minHeight: 56,
     justifyContent: "center",
   },
   startButtonText: {
-    color: colors.text,
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 17,
-    fontWeight: "700",
   },
 });

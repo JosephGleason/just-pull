@@ -13,7 +13,7 @@ export function NutritionCard({ targets }: NutritionCardProps) {
       <Text style={styles.label}>DAILY NUTRITION</Text>
       <View style={styles.calorieRow}>
         <Text style={styles.calories}>{targets.calories}</Text>
-        <Text style={styles.caloriesUnit}> kcal</Text>
+        <Text style={styles.caloriesUnit}>kcal</Text>
       </View>
       <View style={styles.separator} />
       <View style={styles.macros}>
@@ -21,19 +21,19 @@ export function NutritionCard({ targets }: NutritionCardProps) {
           <Text style={[styles.macroValue, { color: colors.green }]}>
             {targets.protein}g
           </Text>
-          <Text style={styles.macroLabel}>Protein</Text>
-        </View>
-        <View style={styles.macroCol}>
-          <Text style={[styles.macroValue, { color: colors.orange }]}>
-            {targets.carbs}g
-          </Text>
-          <Text style={styles.macroLabel}>Carbs</Text>
+          <Text style={styles.macroLabel}>PROTEIN</Text>
         </View>
         <View style={styles.macroCol}>
           <Text style={[styles.macroValue, { color: colors.accent }]}>
+            {targets.carbs}g
+          </Text>
+          <Text style={styles.macroLabel}>CARBS</Text>
+        </View>
+        <View style={styles.macroCol}>
+          <Text style={[styles.macroValue, { color: colors.accentDim }]}>
             {targets.fat}g
           </Text>
-          <Text style={styles.macroLabel}>Fat</Text>
+          <Text style={styles.macroLabel}>FAT</Text>
         </View>
       </View>
     </View>
@@ -43,13 +43,13 @@ export function NutritionCard({ targets }: NutritionCardProps) {
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
   label: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
     marginBottom: spacing.sm,
   },
   calorieRow: {
@@ -63,9 +63,10 @@ const styles = StyleSheet.create({
   caloriesUnit: {
     color: colors.textSecondary,
     ...typography.body,
+    marginLeft: spacing.sm,
   },
   separator: {
-    height: StyleSheet.hairlineWidth,
+    height: 1,
     backgroundColor: colors.separator,
     marginVertical: spacing.md,
   },
@@ -77,12 +78,11 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   macroValue: {
-    fontSize: 20,
-    fontWeight: "600",
+    ...typography.displaySmall,
     marginBottom: spacing.xs,
   },
   macroLabel: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
   },
 });

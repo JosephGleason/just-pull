@@ -10,9 +10,12 @@ export default function TabLayout() {
           backgroundColor: colors.bg,
           borderTopColor: colors.separator,
           borderTopWidth: 0.5,
+          height: 56,
+          paddingTop: 8,
         },
+        tabBarShowLabel: false,
         tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: "#8E8E93",
+        tabBarInactiveTintColor: colors.textTertiary,
         headerStyle: { backgroundColor: colors.bg },
         headerTintColor: colors.text,
       }}

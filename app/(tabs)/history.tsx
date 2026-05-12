@@ -5,11 +5,17 @@ import { CalendarGrid } from "../../src/components/CalendarGrid";
 import { WorkoutLog, ExerciseType } from "../../src/types";
 import { colors, typography, spacing, radius } from "../../src/theme";
 
-const TYPE_DOT_COLORS: Record<ExerciseType, string> = {
-  red: colors.orange,
-  blue: colors.accent,
-  black: "#8E8E93",
-};
+// Weight color indicates exercise type — matching ExerciseCard
+function getWeightColor(type: ExerciseType): string {
+  switch (type) {
+    case "blue":
+      return colors.accent;
+    case "red":
+      return colors.text;
+    case "black":
+      return colors.textSecondary;
+  }
+}
 
 export default function HistoryScreen() {
   const { history } = useAppContext();
@@ -101,13 +107,10 @@ export default function HistoryScreen() {
           {/* Exercise list */}
           {selectedWorkout.exercises.map((ex, ei) => (
             <View key={ei} style={styles.exerciseCard}>
-              <View style={styles.exerciseNameRow}>
-                <View style={[styles.typeDot, { backgroundColor: TYPE_DOT_COLORS[ex.type] }]} />
-                <Text style={styles.exerciseName}>{ex.name}</Text>
-              </View>
+              <Text style={styles.exerciseName}>{ex.name}</Text>
               <View style={styles.setsRow}>
                 {ex.sets.map((s, si) => (
-                  <Text key={si} style={styles.setText}>
+                  <Text key={si} style={[styles.setText, { color: getWeightColor(ex.type) }]}>
                     {s.weight} x {s.reps}
                     {s.isAmrap ? "*" : ""}
                     {s.isPr ? " PR" : ""}
@@ -148,11 +151,11 @@ const styles = StyleSheet.create({
   sessionPanel: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    padding: spacing.md,
+    padding: spacing.lg,
   },
   sessionHeader: {
     color: colors.text,
-    ...typography.title3,
+    ...typography.subtitle,
     marginBottom: spacing.md,
   },
   exerciseCard: {
@@ -161,25 +164,15 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
-  exerciseNameRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.sm,
-  },
-  typeDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: spacing.sm,
-  },
   exerciseName: {
     color: colors.text,
     ...typography.bodyBold,
+    marginBottom: spacing.sm,
   },
   setsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    marginLeft: spacing.md,
+    marginLeft: spacing.xs,
   },
   setText: {
     color: colors.textSecondary,
@@ -187,7 +180,7 @@ const styles = StyleSheet.create({
   },
   totalText: {
     color: colors.textTertiary,
-    ...typography.caption1,
+    ...typography.micro,
     marginTop: spacing.sm,
     textAlign: "right",
   },

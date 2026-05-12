@@ -136,11 +136,11 @@ const styles = StyleSheet.create({
   navArrow: {
     color: colors.accent,
     fontSize: 24,
-    fontWeight: "500",
+    fontFamily: "PlusJakartaSans_500Medium",
   },
   monthLabel: {
     color: colors.text,
-    ...typography.title2,
+    ...typography.subtitle,
   },
   row: {
     flexDirection: "row",
@@ -154,9 +154,7 @@ const styles = StyleSheet.create({
   },
   dayLabel: {
     color: colors.textTertiary,
-    ...typography.caption1,
-    fontWeight: "600",
-    textTransform: "uppercase",
+    ...typography.caption,
   },
   dayCircle: {
     width: 34,
@@ -173,13 +171,13 @@ const styles = StyleSheet.create({
     ...typography.body,
   },
   selectedDayNumber: {
-    color: colors.text,
-    fontWeight: "700",
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
   },
   dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: colors.green,
     marginTop: 2,
   },

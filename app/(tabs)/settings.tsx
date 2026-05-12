@@ -622,9 +622,9 @@ export default function SettingsScreen() {
           {/* Current saved targets */}
           {safeSettings.nutrition && nutritionTargets && (
             <View style={styles.nutritionTargetsRow}>
-              <NutritionBadge label="kcal" value={nutritionTargets.calories} color={colors.orange} />
+              <NutritionBadge label="kcal" value={nutritionTargets.calories} color={colors.accent} />
               <NutritionBadge label="protein" value={nutritionTargets.protein} color={colors.green} />
-              <NutritionBadge label="carbs" value={nutritionTargets.carbs} color={colors.accent} />
+              <NutritionBadge label="carbs" value={nutritionTargets.carbs} color={colors.accentDim} />
               <NutritionBadge label="fat" value={nutritionTargets.fat} color={colors.red} />
             </View>
           )}
@@ -788,9 +788,9 @@ export default function SettingsScreen() {
           <View style={styles.nutritionPreview}>
             <Text style={styles.nutritionPreviewTitle}>PREVIEW</Text>
             <View style={styles.nutritionTargetsRow}>
-              <NutritionBadge label="kcal" value={formTargets.calories} color={colors.orange} />
+              <NutritionBadge label="kcal" value={formTargets.calories} color={colors.accent} />
               <NutritionBadge label="protein" value={formTargets.protein} color={colors.green} />
-              <NutritionBadge label="carbs" value={formTargets.carbs} color={colors.accent} />
+              <NutritionBadge label="carbs" value={formTargets.carbs} color={colors.accentDim} />
               <NutritionBadge label="fat" value={formTargets.fat} color={colors.red} />
             </View>
           </View>
@@ -934,7 +934,7 @@ const styles = StyleSheet.create({
   },
   sectionHeaderText: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
   },
 
   // card
@@ -997,17 +997,14 @@ const styles = StyleSheet.create({
   },
   segmentText: {
     color: colors.textSecondary,
-    fontSize: 15,
-    fontWeight: "600",
-    letterSpacing: 0.5,
-    textTransform: "uppercase",
+    ...typography.caption,
   },
   segmentTextActive: {
-    color: colors.text,
+    color: colors.bg,
   },
   unitsNote: {
     color: colors.textTertiary,
-    ...typography.caption1,
+    ...typography.micro,
     paddingHorizontal: spacing.md,
     paddingBottom: 14,
     textAlign: "center",
@@ -1025,11 +1022,11 @@ const styles = StyleSheet.create({
   },
   deloadToggleText: {
     color: colors.textSecondary,
+    ...typography.bodyBold,
     fontSize: 14,
-    fontWeight: "600",
   },
   deloadToggleTextActive: {
-    color: colors.text,
+    color: colors.bg,
   },
 
   // nutrition fields
@@ -1049,14 +1046,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 12,
     paddingVertical: 6,
     borderRadius: radius.sm,
-    backgroundColor: colors.surfaceTertiary,
+    backgroundColor: colors.surfaceElevated,
     minWidth: 72,
     alignItems: "center",
   },
   nutritionValueText: {
     color: colors.accent,
-    fontSize: 15,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
 
   // nutrition preview
@@ -1065,7 +1061,7 @@ const styles = StyleSheet.create({
   },
   nutritionPreviewTitle: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
     marginBottom: spacing.md,
   },
   nutritionTargetsRow: {
@@ -1081,12 +1077,11 @@ const styles = StyleSheet.create({
     minWidth: 64,
   },
   badgeValue: {
-    fontSize: 18,
-    fontWeight: "700",
+    ...typography.displaySmall,
   },
   badgeLabel: {
     color: colors.textSecondary,
-    ...typography.caption2,
+    ...typography.caption,
     marginTop: 2,
   },
 
@@ -1107,16 +1102,15 @@ const styles = StyleSheet.create({
   },
   clearBtnText: {
     color: colors.red,
-    fontSize: 15,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
   saveBtn: {
     backgroundColor: colors.accent,
   },
   saveBtnText: {
-    color: colors.text,
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 15,
-    fontWeight: "700",
   },
 
   // data
@@ -1129,7 +1123,6 @@ const styles = StyleSheet.create({
   dataBtnText: {
     color: colors.accent,
     ...typography.body,
-    fontWeight: "500",
   },
   dataBtnTextMuted: {
     color: colors.textTertiary,
@@ -1152,7 +1145,7 @@ const styles = StyleSheet.create({
   },
   modalTitle: {
     color: colors.text,
-    ...typography.title3,
+    ...typography.subtitle,
     marginBottom: spacing.md,
   },
   modalInput: {
@@ -1160,6 +1153,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     color: colors.text,
     fontSize: 20,
+    fontFamily: "PlusJakartaSans_400Regular",
     paddingHorizontal: 14,
     paddingVertical: 12,
     marginBottom: spacing.lg,
@@ -1179,16 +1173,15 @@ const styles = StyleSheet.create({
   },
   modalCancelText: {
     color: colors.textSecondary,
-    fontSize: 15,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
   modalSaveBtn: {
     backgroundColor: colors.accent,
   },
   modalSaveText: {
-    color: colors.text,
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 15,
-    fontWeight: "700",
   },
 
   // picker modal
@@ -1210,11 +1203,11 @@ const styles = StyleSheet.create({
   },
   pickerOptionTextSelected: {
     color: colors.accent,
-    fontWeight: "700",
+    fontFamily: "PlusJakartaSans_700Bold",
   },
   pickerCheck: {
     color: colors.accent,
     fontSize: 18,
-    fontWeight: "700",
+    fontFamily: "PlusJakartaSans_700Bold",
   },
 });

@@ -1,44 +1,87 @@
+// Iron & Ember Design System
+// A lifting app that feels like forged metal — dark, powerful, precise.
+
 export const colors = {
-  // Backgrounds (Apple dark mode system)
-  bg: "#000000",                    // Pure black (OLED)
-  surface: "#1C1C1E",              // systemGray6 dark — cards
-  surfaceElevated: "#2C2C2E",     // systemGray5 dark — elevated cards/modals
-  surfaceTertiary: "#3A3A3C",     // systemGray4 dark — inputs
+  // Backgrounds
+  bg: "#0B0B0E",                    // Near-black, barely warm
+  surface: "#151518",              // Cards — barely visible elevation
+  surfaceElevated: "#1E1E22",     // Elevated content, modals, inputs
+  surfaceTertiary: "#28282D",     // Pressed states, active inputs
 
-  // Text (Apple dark mode)
-  text: "#FFFFFF",
-  textSecondary: "#EBEBF5CC",     // secondaryLabel (60% white)
-  textTertiary: "#EBEBF54D",      // tertiaryLabel (30% white)
+  // Accent — "the ember"
+  accent: "#E8A838",               // Warm amber
+  accentDim: "#C7792F",           // Deeper amber for pressed states
+  accentGlow: "rgba(232, 168, 56, 0.12)", // Subtle amber glow
 
-  // Accent (Apple system colors dark)
-  accent: "#0A84FF",              // systemBlue
-  green: "#30D158",               // systemGreen — set completion
-  red: "#FF453A",                 // systemRed — failures/PR fail
-  orange: "#FF9F0A",              // systemOrange — warnings/AMRAP
-  teal: "#64D2FF",                // systemTeal — PR attempts
+  // Semantic
+  green: "#5BD488",                // Soft mint — set completion
+  red: "#E85454",                  // Warm red — danger
+  pr: "#E8A838",                   // PRs are golden (same as accent)
+
+  // Text
+  text: "#F2F0EB",                 // Warm white — NOT pure white
+  textSecondary: "#8A897F",       // Warm gray
+  textTertiary: "#504F48",        // Dark warm gray
 
   // Separators
-  separator: "#38383A",           // separator dark
-  separatorLight: "#54545855",    // opaqueSeparator
+  separator: "#1E1E22",
+};
+
+// Font families — must match exact names from expo-google-fonts
+export const fonts = {
+  display: "BebasNeue_400Regular",
+  regular: "PlusJakartaSans_400Regular",
+  medium: "PlusJakartaSans_500Medium",
+  semiBold: "PlusJakartaSans_600SemiBold",
+  bold: "PlusJakartaSans_700Bold",
 };
 
 export const typography = {
-  // Large display numbers (weights, calories)
-  displayLarge: { fontSize: 34, fontWeight: "700" as const, letterSpacing: 0.4 },
-  displayMedium: { fontSize: 28, fontWeight: "600" as const, letterSpacing: 0.3 },
+  // Display numbers — Bebas Neue
+  displayXL: {
+    fontFamily: fonts.display,
+    fontSize: 56,
+  },
+  displayLarge: {
+    fontFamily: fonts.display,
+    fontSize: 40,
+  },
+  displayMedium: {
+    fontFamily: fonts.display,
+    fontSize: 32,
+  },
+  displaySmall: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+  },
 
-  // Titles
-  title1: { fontSize: 22, fontWeight: "700" as const, letterSpacing: 0.3 },
-  title2: { fontSize: 20, fontWeight: "600" as const, letterSpacing: 0.3 },
-  title3: { fontSize: 17, fontWeight: "600" as const },
-
-  // Body
-  body: { fontSize: 17, fontWeight: "400" as const },
-  bodyBold: { fontSize: 17, fontWeight: "600" as const },
-
-  // Captions
-  caption1: { fontSize: 12, fontWeight: "400" as const },
-  caption2: { fontSize: 11, fontWeight: "400" as const, letterSpacing: 0.5, textTransform: "uppercase" as const },
+  // Body text — Plus Jakarta Sans
+  title: {
+    fontFamily: fonts.bold,
+    fontSize: 20,
+  },
+  subtitle: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
+  },
+  body: {
+    fontFamily: fonts.regular,
+    fontSize: 15,
+  },
+  bodyBold: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
+  },
+  caption: {
+    fontFamily: fonts.medium,
+    fontSize: 11,
+    textTransform: "uppercase" as const,
+    letterSpacing: 1.5,
+  },
+  micro: {
+    fontFamily: fonts.regular,
+    fontSize: 10,
+  },
 };
 
 export const spacing = {

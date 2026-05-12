@@ -112,20 +112,20 @@ const styles = StyleSheet.create({
   },
   header: {
     color: colors.text,
-    ...typography.title1,
+    ...typography.title,
     marginBottom: spacing.xl,
     textAlign: "center",
   },
   prSection: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    backgroundColor: colors.accentGlow,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.xl,
     alignSelf: "stretch",
   },
   prTitle: {
-    color: colors.teal,
-    ...typography.title3,
+    color: colors.accent,
+    ...typography.subtitle,
     marginBottom: spacing.sm,
     textAlign: "center",
   },
@@ -144,18 +144,17 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
     padding: spacing.md,
     marginBottom: spacing.sm,
   },
   exerciseName: {
     color: colors.text,
-    ...typography.body,
-    fontWeight: "600",
+    ...typography.bodyBold,
   },
   exerciseSets: {
     color: colors.textSecondary,
-    ...typography.caption1,
+    ...typography.micro,
   },
   totalSets: {
     color: colors.textSecondary,
@@ -164,7 +163,7 @@ const styles = StyleSheet.create({
   },
   finishButton: {
     backgroundColor: colors.accent,
-    borderRadius: radius.lg,
+    borderRadius: 14,
     paddingVertical: 16,
     alignSelf: "stretch",
     alignItems: "center",
@@ -173,9 +172,9 @@ const styles = StyleSheet.create({
     marginBottom: spacing.md,
   },
   finishButtonText: {
-    color: colors.text,
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 17,
-    fontWeight: "700",
   },
   discardButton: {
     alignSelf: "stretch",
@@ -184,7 +183,6 @@ const styles = StyleSheet.create({
   },
   discardButtonText: {
     color: colors.red,
-    fontSize: 16,
-    fontWeight: "500",
+    ...typography.body,
   },
 });

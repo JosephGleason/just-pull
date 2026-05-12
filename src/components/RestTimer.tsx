@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { colors, typography, spacing, radius } from "../theme";
+import { colors, typography, spacing } from "../theme";
 
 interface RestTimerProps {
   secondsLeft: number;
@@ -25,21 +25,24 @@ export function RestTimer({
 }: RestTimerProps) {
   if (!isRunning && secondsLeft <= 0) return null;
 
+  // Progress goes from 100% (full) to 0% (done) — shrinks right to left
+  const widthPercent = Math.min(progress * 100, 100);
+
   return (
     <View style={styles.container}>
-      {/* Progress bar */}
-      <View style={styles.progressTrack}>
-        <View
-          style={[styles.progressFill, { width: `${Math.min(progress * 100, 100)}%` }]}
-        />
+      {/* Thin amber line at the very top */}
+      <View style={styles.lineTrack}>
+        <View style={[styles.lineFill, { width: `${widthPercent}%` }]} />
       </View>
 
+      {/* Time display centered */}
+      <Text style={styles.timeDisplay}>{formatTime(secondsLeft)}</Text>
+
+      {/* Dismiss / extend row */}
       <View style={styles.row}>
         <TouchableOpacity onPress={onDismiss} activeOpacity={0.7}>
           <Text style={styles.actionText}>Dismiss</Text>
         </TouchableOpacity>
-
-        <Text style={styles.timeDisplay}>{formatTime(secondsLeft)}</Text>
 
         <TouchableOpacity onPress={onExtend} activeOpacity={0.7}>
           <Text style={styles.actionText}>+30s</Text>
@@ -52,37 +55,35 @@ export function RestTimer({
 const styles = StyleSheet.create({
   container: {
     position: "absolute",
-    bottom: 0,
+    top: 0,
     left: 0,
     right: 0,
-    backgroundColor: colors.surfaceElevated,
-    paddingBottom: 34, // safe area
-    maxHeight: 70,
+    paddingTop: 0,
   },
-  progressTrack: {
-    height: 4,
+  lineTrack: {
+    height: 3,
     backgroundColor: colors.separator,
   },
-  progressFill: {
-    height: 4,
+  lineFill: {
+    height: 3,
     backgroundColor: colors.accent,
-    borderRadius: 2,
+  },
+  timeDisplay: {
+    color: colors.text,
+    ...typography.displayMedium,
+    textAlign: "center",
+    marginTop: spacing.sm,
+    fontVariant: ["tabular-nums"],
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 10,
-    paddingHorizontal: spacing.md,
-  },
-  timeDisplay: {
-    color: colors.text,
-    ...typography.title1,
-    fontVariant: ["tabular-nums"],
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
   },
   actionText: {
     color: colors.textSecondary,
-    fontSize: 15,
-    fontWeight: "500",
+    ...typography.body,
   },
 });
