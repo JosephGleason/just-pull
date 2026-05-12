@@ -88,3 +88,17 @@ export interface NutritionTargets {
   fat: number;
   carbs: number;
 }
+
+export interface BodyLog {
+  date: string;
+  weight: number;
+  bodyFatPercent: number;
+}
+
+export interface BodyModelState {
+  muscles: Record<string, number>;
+  bodyFatPercent: number;
+  bodyWeight: number;
+  monthsTrained: number;
+  peakMuscles: Record<string, number>;
+}

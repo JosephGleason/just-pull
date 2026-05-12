@@ -5,6 +5,7 @@ import {
   ExerciseWeight,
   WorkoutLog,
   CurrentSession,
+  BodyLog,
 } from "./types";
 
 const KEYS = {
@@ -14,6 +15,7 @@ const KEYS = {
   history: "history",
   currentSession: "currentSession",
   onboardingComplete: "onboardingComplete",
+  bodyLog: "bodyLog",
 } as const;
 
 async function getJSON<T>(key: string): Promise<T | null> {
@@ -81,6 +83,20 @@ export async function isOnboardingComplete(): Promise<boolean> {
 
 export async function setOnboardingComplete(): Promise<void> {
   return AsyncStorage.setItem(KEYS.onboardingComplete, "true");
+}
+
+export async function getBodyLog(): Promise<BodyLog[]> {
+  return (await getJSON<BodyLog[]>(KEYS.bodyLog)) ?? [];
+}
+
+export async function appendBodyLog(entry: BodyLog): Promise<void> {
+  const log = await getBodyLog();
+  log.push(entry);
+  return setJSON(KEYS.bodyLog, log);
+}
+
+export async function saveBodyLog(log: BodyLog[]): Promise<void> {
+  return setJSON(KEYS.bodyLog, log);
 }
 
 export async function exportAllData(): Promise<string> {
