@@ -1,14 +1,7 @@
 import React, { useState } from "react";
-import { View, StyleSheet, TouchableWithoutFeedback, Text } from "react-native";
-import Svg, { Path, G } from "react-native-svg";
-import { colors, typography, spacing, radius } from "../theme";
-import {
-  FRONT_REGIONS,
-  BACK_REGIONS,
-  SEPARATION_LINES,
-  lerpPath,
-  BodyRegion,
-} from "./body/paths";
+import { View, Text, StyleSheet, TouchableWithoutFeedback } from "react-native";
+import Body, { ExtendedBodyPart } from "react-native-body-highlighter";
+import { colors as themeColors, typography, spacing, radius } from "../theme";
 
 interface BodyFigureProps {
   muscles: Record<string, number>; // effectiveSize 0-1 per muscle group
@@ -20,52 +13,123 @@ interface BodyFigureProps {
   height: number;
 }
 
-interface Tooltip {
-  muscle: string;
-  value: number;
-}
+// ── Slug ↔ Muscle mappings ───────────────────────────────────────────
 
-function clamp(value: number, min: number, max: number): number {
-  return Math.min(max, Math.max(min, value));
-}
+/** Map our internal muscle keys to library slugs */
+const MUSCLE_TO_SLUGS: Record<string, string[]> = {
+  chest: ["chest"],
+  shoulders: ["deltoids"],
+  biceps: ["biceps"],
+  triceps: ["triceps"],
+  forearms: ["forearm"],
+  back: ["upper-back", "trapezius"],
+  quads: ["quadriceps"],
+  hamstrings: ["hamstring"],
+  glutes: ["gluteal"],
+  calves: ["calves"],
+};
 
-/**
- * Compute fill color for a muscle region.
- * Highlighted muscles get an amber glow; others interpolate from
- * surface dark to a warm dark tone based on effectiveSize.
- */
-function getMuscleColor(
-  muscle: string,
-  effectiveSize: number,
-  isHighlighted: boolean
-): string {
-  if (isHighlighted) {
-    const alpha = (0.3 + effectiveSize * 0.4).toFixed(2);
-    return `rgba(232, 168, 56, ${alpha})`;
+/** Reverse map: library slug → our internal muscle name */
+const SLUG_TO_MUSCLE: Record<string, string> = {};
+for (const [muscle, slugs] of Object.entries(MUSCLE_TO_SLUGS)) {
+  for (const slug of slugs) {
+    SLUG_TO_MUSCLE[slug] = muscle;
   }
-  // Interpolate from rgb(22,22,26) to rgb(60,55,45)
-  const r = Math.round(22 + (60 - 22) * effectiveSize);
-  const g = Math.round(22 + (55 - 22) * effectiveSize);
-  const b = Math.round(26 + (45 - 26) * effectiveSize);
-  return `rgb(${r}, ${g}, ${b})`;
+}
+// Derived slugs also point to their source muscle for tooltip purposes
+SLUG_TO_MUSCLE["abs"] = "core";
+SLUG_TO_MUSCLE["obliques"] = "core";
+SLUG_TO_MUSCLE["lower-back"] = "back";
+SLUG_TO_MUSCLE["adductors"] = "quads";
+SLUG_TO_MUSCLE["neck"] = "neck";
+SLUG_TO_MUSCLE["tibialis"] = "calves";
+
+// ── Intensity colors ─────────────────────────────────────────────────
+
+const INTENSITY_COLORS = [
+  themeColors.surface, // 0 — untrained
+  "#252320",           // 1 — some training
+  "#3D3428",           // 2 — moderate training
+  "#5A4530",           // 3 — heavy training
+];
+
+// ── Helpers ──────────────────────────────────────────────────────────
+
+function clamp(v: number, lo: number, hi: number): number {
+  return Math.min(hi, Math.max(lo, v));
 }
 
-/**
- * Compute stroke color: warm white with opacity scaling with muscle size.
- */
-function getStrokeColor(effectiveSize: number): string {
-  const alpha = (0.05 + effectiveSize * 0.15).toFixed(2);
-  return `rgba(242, 240, 235, ${alpha})`;
+/** Convert effectiveSize (0-1) to intensity (0-3) */
+function sizeToIntensity(size: number): 0 | 1 | 2 | 3 {
+  if (size <= 0.05) return 0;
+  if (size <= 0.35) return 1;
+  if (size <= 0.65) return 2;
+  return 3;
 }
 
-/**
- * Compute the morph t-value for the core region, driven by body fat %
- * rather than pure muscle volume.
- */
-function getCoreT(bodyFatPercent: number, effectiveSize: number): number {
-  const waistScale = 1.0 + (bodyFatPercent - 12) * 0.008;
-  return Math.max(0, 1 - waistScale + effectiveSize * 0.3);
+/** Amber color at opacity proportional to intensity for highlighted muscles */
+function highlightColor(intensity: 0 | 1 | 2 | 3): string {
+  const alphaMap = [0.15, 0.3, 0.5, 0.7];
+  return `rgba(232, 168, 56, ${alphaMap[intensity]})`;
 }
+
+function slugToDisplayName(slug: string): string {
+  const muscle = SLUG_TO_MUSCLE[slug];
+  if (muscle) return muscle;
+  return slug.replace(/-/g, " ");
+}
+
+// ── Data builder ─────────────────────────────────────────────────────
+
+function buildBodyData(
+  muscles: Record<string, number>,
+  bodyFatPercent: number,
+  highlightedMuscles: string[]
+): ExtendedBodyPart[] {
+  const highlighted = new Set(highlightedMuscles);
+  const parts: ExtendedBodyPart[] = [];
+
+  // Helper to push a part
+  function addPart(slug: string, size: number, sourceMuscle: string | null) {
+    const intensity = sizeToIntensity(size);
+    const isHighlighted = sourceMuscle !== null && highlighted.has(sourceMuscle);
+    const part: ExtendedBodyPart = {
+      slug: slug as any,
+      intensity,
+      ...(isHighlighted ? { color: highlightColor(intensity) } : {}),
+    };
+    parts.push(part);
+  }
+
+  // Direct muscle-to-slug mappings
+  for (const [muscle, slugs] of Object.entries(MUSCLE_TO_SLUGS)) {
+    const size = muscles[muscle] ?? 0;
+    for (const slug of slugs) {
+      addPart(slug, size, muscle);
+    }
+  }
+
+  // Derived slugs
+  const coreSize = clamp(1 - bodyFatPercent / 30, 0, 1);
+  addPart("abs", coreSize, null);
+  addPart("obliques", coreSize, null);
+
+  const backSize = muscles["back"] ?? 0;
+  addPart("lower-back", backSize * 0.7, "back");
+
+  const quadSize = muscles["quads"] ?? 0;
+  addPart("adductors", quadSize * 0.5, "quads");
+
+  const shoulderSize = muscles["shoulders"] ?? 0;
+  addPart("neck", ((shoulderSize + backSize) / 2) * 0.3, null);
+
+  const calfSize = muscles["calves"] ?? 0;
+  addPart("tibialis", calfSize * 0.3, "calves");
+
+  return parts;
+}
+
+// ── Component ────────────────────────────────────────────────────────
 
 export function BodyFigure({
   muscles,
@@ -76,32 +140,13 @@ export function BodyFigure({
   width,
   height,
 }: BodyFigureProps) {
-  const [tooltip, setTooltip] = useState<Tooltip | null>(null);
+  const [tooltip, setTooltip] = useState<{
+    name: string;
+    value: number;
+  } | null>(null);
 
-  const regions: BodyRegion[] =
-    side === "front" ? FRONT_REGIONS : BACK_REGIONS;
-
-  // Separation line opacity: more visible at lower body fat
-  const separationOpacity = clamp((20 - bodyFatPercent) / 8, 0, 1);
-
-  // Gather the separation line paths for the current side
-  const sepLines: string[] = [];
-  if (side === "front") {
-    const f = SEPARATION_LINES.front;
-    sepLines.push(f.pecLine, f.centerLine, ...f.abLines, ...f.quadSep);
-  } else {
-    const b = SEPARATION_LINES.back;
-    sepLines.push(b.spineLine, ...b.latLine);
-  }
-
-  function showTooltip(region: BodyRegion, effectiveSize: number) {
-    if (!region.muscle) return;
-    setTooltip({ muscle: region.muscle, value: effectiveSize });
-  }
-
-  function hideTooltip() {
-    setTooltip(null);
-  }
+  const data = buildBodyData(muscles, bodyFatPercent, highlightedMuscles);
+  const scale = Math.min(width / 220, height / 400) * 1.1;
 
   return (
     <TouchableWithoutFeedback onPress={onToggleSide}>
@@ -110,75 +155,42 @@ export function BodyFigure({
         {tooltip && (
           <View style={styles.tooltip}>
             <Text style={styles.tooltipName}>
-              {tooltip.muscle.toUpperCase()}
+              {tooltip.name.toUpperCase()}
             </Text>
-            <Text style={styles.tooltipValue}>
-              {Math.round(tooltip.value * 100)}%
-            </Text>
+            <Text style={styles.tooltipValue}>{tooltip.value}%</Text>
           </View>
         )}
 
-        <Svg
-          width={width}
-          height={height - 24}
-          viewBox="0 0 200 400"
-          preserveAspectRatio="xMidYMid meet"
-        >
-          <G>
-            {regions.map((region) => {
-              const effectiveSize = region.muscle
-                ? muscles[region.muscle] ?? 0
-                : 0;
-
-              // Compute morph interpolation parameter
-              const t =
-                region.id === "core"
-                  ? getCoreT(bodyFatPercent, effectiveSize)
-                  : effectiveSize;
-
-              const morphedPath = lerpPath(region.base, region.trained, t);
-              const isHighlighted =
-                !!region.muscle &&
-                highlightedMuscles.includes(region.muscle);
-              const fillColor = getMuscleColor(
-                region.muscle,
-                effectiveSize,
-                isHighlighted
-              );
-              const strokeColor = getStrokeColor(effectiveSize);
-
-              return (
-                <Path
-                  key={region.id}
-                  d={morphedPath}
-                  fill={fillColor}
-                  stroke={strokeColor}
-                  strokeWidth={0.5}
-                  onPressIn={() => showTooltip(region, effectiveSize)}
-                  onPressOut={hideTooltip}
-                />
-              );
-            })}
-
-            {/* Separation lines */}
-            {sepLines.map((d, i) => (
-              <Path
-                key={`sep-${i}`}
-                d={d}
-                fill="none"
-                stroke={`rgba(242, 240, 235, ${(separationOpacity * 0.3).toFixed(2)})`}
-                strokeWidth={0.4}
-              />
-            ))}
-          </G>
-        </Svg>
+        <Body
+          data={data}
+          colors={INTENSITY_COLORS}
+          scale={scale}
+          side={side}
+          gender="male"
+          onBodyPartPress={(part: ExtendedBodyPart) => {
+            const slug = part.slug ?? "";
+            const name = slugToDisplayName(slug);
+            const sourceMuscle = SLUG_TO_MUSCLE[slug];
+            const rawValue = sourceMuscle ? (muscles[sourceMuscle] ?? 0) : 0;
+            setTooltip({ name, value: Math.round(rawValue * 100) });
+            setTimeout(() => setTooltip(null), 2000);
+          }}
+          border="none"
+          defaultFill={themeColors.surface}
+          defaultStroke="rgba(242, 240, 235, 0.06)"
+          defaultStrokeWidth={0.5}
+        />
 
         {/* Side label */}
-        <Text style={styles.sideLabel}>{side === "front" ? "FRONT" : "BACK"}</Text>
+        <Text style={styles.sideLabel}>
+          {side === "front" ? "FRONT" : "BACK"}
+        </Text>
       </View>
     </TouchableWithoutFeedback>
   );
 }
+
+// ── Styles ───────────────────────────────────────────────────────────
 
 const styles = StyleSheet.create({
   container: {
@@ -190,7 +202,7 @@ const styles = StyleSheet.create({
     position: "absolute",
     top: 0,
     alignSelf: "center",
-    backgroundColor: colors.surfaceElevated,
+    backgroundColor: themeColors.surfaceElevated,
     borderRadius: radius.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -201,16 +213,16 @@ const styles = StyleSheet.create({
   },
   tooltipName: {
     ...typography.caption,
-    color: colors.text,
+    color: themeColors.text,
   },
   tooltipValue: {
     fontFamily: typography.displaySmall.fontFamily,
     fontSize: typography.displaySmall.fontSize,
-    color: colors.accent,
+    color: themeColors.accent,
   },
   sideLabel: {
     ...typography.caption,
-    color: colors.textTertiary,
+    color: themeColors.textTertiary,
     position: "absolute",
     bottom: 0,
     alignSelf: "center",
