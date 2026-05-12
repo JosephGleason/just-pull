@@ -6,8 +6,10 @@ import {
   TouchableOpacity,
   TextInput,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { ExerciseType, SetLog } from "../types";
 import { colors, typography, spacing, radius } from "../theme";
+import { PlateCalculator } from "./PlateCalculator";
 
 interface SetLoggerProps {
   exerciseName: string;
@@ -42,6 +44,7 @@ export function SetLogger({
 }: SetLoggerProps) {
   const [currentWeight, setCurrentWeight] = useState(weight);
   const [reps, setReps] = useState(String(targetReps));
+  const [showPlateCalc, setShowPlateCalc] = useState(false);
 
   const isAmrap = exerciseType === "black";
   const increment = exerciseType === "black" ? 5 : 2.5;
@@ -87,7 +90,20 @@ export function SetLogger({
       )}
 
       {/* Weight display */}
-      <Text style={styles.sectionLabel}>{weightLabel}</Text>
+      <View style={styles.weightLabelRow}>
+        <Text style={styles.weightLabelText}>{weightLabel}</Text>
+        {!isChinups && (
+          <TouchableOpacity
+            onPress={() => setShowPlateCalc(true)}
+            style={styles.platesButton}
+            activeOpacity={0.7}
+            hitSlop={8}
+          >
+            <Ionicons name="layers-outline" size={16} color={colors.textSecondary} />
+            <Text style={styles.platesButtonText}>PLATES</Text>
+          </TouchableOpacity>
+        )}
+      </View>
       <View style={styles.weightRow}>
         <TouchableOpacity
           onPress={() => handleWeightChange(-increment)}
@@ -112,6 +128,14 @@ export function SetLogger({
           <Text style={styles.weightButtonText}>+</Text>
         </TouchableOpacity>
       </View>
+
+      {/* Plate Calculator Modal */}
+      <PlateCalculator
+        visible={showPlateCalc}
+        weight={currentWeight}
+        units={units}
+        onClose={() => setShowPlateCalc(false)}
+      />
 
       {/* Reps input */}
       <Text style={styles.sectionLabel}>REPS</Text>
@@ -205,6 +229,33 @@ const styles = StyleSheet.create({
     ...typography.caption,
     marginBottom: spacing.sm,
     marginTop: spacing.xl,
+  },
+  weightLabelRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.md,
+    marginTop: spacing.xl,
+    marginBottom: spacing.sm,
+  },
+  weightLabelText: {
+    color: colors.textSecondary,
+    ...typography.caption,
+  },
+  platesButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.sm,
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+  },
+  platesButtonText: {
+    color: colors.textSecondary,
+    ...typography.caption,
+    fontSize: 10,
+    letterSpacing: 1,
   },
   weightRow: {
     flexDirection: "row",
