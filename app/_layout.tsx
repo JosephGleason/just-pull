@@ -8,17 +8,18 @@ function RootNavigator() {
   const [onboarded, setOnboarded] = useState<boolean | null>(null);
   const router = useRouter();
   const segments = useSegments();
+  const { settings } = useAppContext();
 
   useEffect(() => {
     isOnboardingComplete().then(setOnboarded);
-  }, []);
+  }, [settings]);
 
   useEffect(() => {
     if (onboarded === null) return;
     if (!onboarded && segments[0] !== "onboarding") {
       router.replace("/onboarding");
     }
-  }, [onboarded, segments]);
+  }, [onboarded]);
 
   return (
     <Stack screenOptions={{ headerShown: false }}>
