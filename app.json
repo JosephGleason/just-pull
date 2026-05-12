@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "just-pull-app",
-    "slug": "just-pull-app",
+    "name": "just-pull",
+    "slug": "just-pull",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
