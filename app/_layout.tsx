@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { Stack, useRouter, useSegments } from "expo-router";
+import { StatusBar } from "expo-status-bar";
 import { AppProvider, useAppContext } from "../src/context";
 import { isOnboardingComplete } from "../src/storage";
 
@@ -37,6 +38,7 @@ function RootNavigator() {
 export default function RootLayout() {
   return (
     <AppProvider>
+      <StatusBar style="light" />
       <RootNavigator />
     </AppProvider>
   );

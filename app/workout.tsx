@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useWorkout, getTargetWeight, getTargetSets } from "../src/hooks/useWorkout";
 import { useTimer } from "../src/hooks/useTimer";
@@ -12,6 +13,7 @@ import { SetLog, ExerciseLog } from "../src/types";
 
 export default function WorkoutScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     currentSession,
     cycleState,
@@ -240,7 +242,7 @@ export default function WorkoutScreen() {
   // Summary screen
   if (isComplete) {
     return (
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: insets.top }]}>
         <WorkoutSummary
           exercises={exercises}
           prsHit={prsHit}
@@ -261,7 +263,7 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       <SetLogger
         exerciseName={currentExercise.name}
         exerciseKey={currentExercise.key}

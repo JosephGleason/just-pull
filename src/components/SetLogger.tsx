@@ -71,7 +71,7 @@ export function SetLogger({
   const weightLabel = isChinups ? "Added Weight" : "Weight";
 
   // Weight +/- buttons are more prominent for AMRAP (drop sets) than compounds
-  const weightButtonSize = isAmrap ? 52 : 44;
+  const weightButtonSize = isAmrap ? 52 : 48;
 
   return (
     <View style={styles.container}>
@@ -267,8 +267,8 @@ const styles = StyleSheet.create({
   repsButton: {
     backgroundColor: "#1A1A1A",
     borderRadius: 12,
-    width: 44,
-    height: 44,
+    width: 48,
+    height: 48,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 1,

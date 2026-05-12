@@ -149,7 +149,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     paddingVertical: 4,
-    minHeight: 44,
+    minHeight: 48,
     justifyContent: "center",
   },
   dayLabel: {

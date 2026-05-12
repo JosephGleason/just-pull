@@ -78,12 +78,12 @@ const styles = StyleSheet.create({
   },
   name: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
   },
   weight: {
     color: "#FFFFFF",
-    fontSize: 17,
+    fontSize: 16,
     fontWeight: "700",
   },
   details: {
@@ -92,7 +92,7 @@ const styles = StyleSheet.create({
   },
   restingName: {
     color: "#666666",
-    fontSize: 17,
+    fontSize: 18,
     fontWeight: "700",
     marginBottom: 2,
   },

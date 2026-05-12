@@ -11,6 +11,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAppContext } from "../src/context";
 import { setOnboardingComplete } from "../src/storage";
@@ -442,6 +443,7 @@ function StepNutrition({
 // ═════════════════════════════════════════════════════════════════════
 export default function OnboardingScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { setSettings, setCycleState, setWeights } = useAppContext();
 
   const TOTAL_STEPS = 4;
@@ -632,7 +634,7 @@ export default function OnboardingScreen() {
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={styles.container}>
+      <View style={[styles.container, { paddingTop: Math.max(insets.top + 16, 60) }]}>
         {/* Header */}
         <View style={styles.header}>
           <Text style={styles.brand}>JUST PULL</Text>

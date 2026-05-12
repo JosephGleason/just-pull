@@ -85,12 +85,15 @@ const styles = StyleSheet.create({
   actionButton: {
     backgroundColor: "#2A2A2A",
     borderRadius: 8,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
+    paddingHorizontal: 20,
+    minWidth: 80,
+    minHeight: 48,
+    justifyContent: "center",
+    alignItems: "center",
   },
   actionButtonText: {
     color: "#A3A3A3",
-    fontSize: 14,
+    fontSize: 15,
     fontWeight: "600",
   },
 });
