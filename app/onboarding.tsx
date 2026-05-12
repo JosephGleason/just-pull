@@ -12,7 +12,6 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
 import { useAppContext } from "../src/context";
 import { setOnboardingComplete } from "../src/storage";
 import { createInitialCycleState } from "../src/hooks/useCycleState";
@@ -574,13 +573,12 @@ export default function OnboardingScreen() {
       };
     }
 
-    // Save everything
-    await setSettings(settings);
+    // Save everything — setSettings last because the root layout
+    // gates on settings being non-null to switch away from onboarding
     await setWeights(weightsMap);
     await setCycleState(createInitialCycleState());
     await setOnboardingComplete();
-
-    router.replace("/(tabs)");
+    await setSettings(settings);
   };
 
   // ─── Weight change handler ─────────────────────────────────────────
