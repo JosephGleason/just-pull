@@ -8,16 +8,11 @@ import { colors } from "../src/theme";
 function RootNavigator() {
   const { settings, isLoading } = useAppContext();
 
-  if (isLoading) return null;
-
-  if (!settings) {
+  if (isLoading) {
     return (
-      <>
-        <StatusBar style="light" />
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="onboarding" />
-        </Stack>
-      </>
+      <View style={splashStyles.container}>
+        <ActivityIndicator size="large" color={colors.accent} />
+      </View>
     );
   }
 
@@ -25,11 +20,17 @@ function RootNavigator() {
     <>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen
-          name="workout"
-          options={{ presentation: "fullScreenModal", gestureEnabled: false }}
-        />
+        {!settings ? (
+          <Stack.Screen name="onboarding" />
+        ) : (
+          <>
+            <Stack.Screen name="(tabs)" />
+            <Stack.Screen
+              name="workout"
+              options={{ presentation: "fullScreenModal", gestureEnabled: false }}
+            />
+          </>
+        )}
       </Stack>
     </>
   );
