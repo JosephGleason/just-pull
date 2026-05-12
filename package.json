@@ -17,8 +17,12 @@
         "babel-jest",
         {
           "configFile": false,
-          "presets": ["@babel/preset-typescript"],
-          "plugins": ["@babel/plugin-transform-modules-commonjs"]
+          "presets": [
+            "@babel/preset-typescript"
+          ],
+          "plugins": [
+            "@babel/plugin-transform-modules-commonjs"
+          ]
         }
       ]
     },
@@ -67,6 +71,7 @@
     "victory-native": "^41.20.3"
   },
   "devDependencies": {
+    "@testing-library/react-native": "^13.3.3",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.2.2",
     "@types/uuid": "^10.0.0",
