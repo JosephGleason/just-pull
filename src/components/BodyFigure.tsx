@@ -44,14 +44,54 @@ SLUG_TO_MUSCLE["adductors"] = "quads";
 SLUG_TO_MUSCLE["neck"] = "neck";
 SLUG_TO_MUSCLE["tibialis"] = "calves";
 
-// ── Intensity colors ─────────────────────────────────────────────────
+// ── Intensity colors by body fat level ───────────────────────────────
+// At high BF%, muscles are hidden under fat — colors are muted and uniform.
+// At low BF%, muscles are visible — high contrast between intensity levels.
 
-const INTENSITY_COLORS = [
-  themeColors.surface, // 0 — untrained
-  "#252320",           // 1 — some training
-  "#3D3428",           // 2 — moderate training
-  "#5A4530",           // 3 — heavy training
-];
+function getIntensityColors(bodyFatPercent: number): string[] {
+  // Definition factor: 0 at 25%+ BF, 1 at 10% BF
+  const def = clamp((25 - bodyFatPercent) / 15, 0, 1);
+
+  // Base (untrained) gets lighter at high BF (fat layer)
+  const baseR = Math.round(22 + (1 - def) * 12);  // 22 → 34
+  const baseG = Math.round(22 + (1 - def) * 10);   // 22 → 32
+  const baseB = Math.round(26 + (1 - def) * 6);    // 26 → 32
+  const base = `rgb(${baseR}, ${baseG}, ${baseB})`;
+
+  // Higher intensities compressed toward base at high BF
+  const i1R = Math.round(baseR + def * 15);
+  const i1G = Math.round(baseG + def * 13);
+  const i1B = Math.round(baseB + def * 6);
+
+  const i2R = Math.round(baseR + def * 30);
+  const i2G = Math.round(baseG + def * 22);
+  const i2B = Math.round(baseB + def * 10);
+
+  const i3R = Math.round(baseR + def * 50);
+  const i3G = Math.round(baseG + def * 35);
+  const i3B = Math.round(baseB + def * 12);
+
+  return [
+    base,
+    `rgb(${i1R}, ${i1G}, ${i1B})`,
+    `rgb(${i2R}, ${i2G}, ${i2B})`,
+    `rgb(${i3R}, ${i3G}, ${i3B})`,
+  ];
+}
+
+// Default fill also shifts with BF — fatter = lighter/softer surface
+function getDefaultFill(bodyFatPercent: number): string {
+  const def = clamp((25 - bodyFatPercent) / 15, 0, 1);
+  const r = Math.round(22 + (1 - def) * 14);
+  const g = Math.round(22 + (1 - def) * 12);
+  const b = Math.round(26 + (1 - def) * 8);
+  return `rgb(${r}, ${g}, ${b})`;
+}
+
+// Stroke visibility: invisible at high BF, visible at low BF
+function getStrokeOpacity(bodyFatPercent: number): number {
+  return clamp((20 - bodyFatPercent) / 10, 0.02, 0.12);
+}
 
 // ── Helpers ──────────────────────────────────────────────────────────
 
@@ -67,10 +107,12 @@ function sizeToIntensity(size: number): 0 | 1 | 2 | 3 {
   return 3;
 }
 
-/** Amber color at opacity proportional to intensity for highlighted muscles */
-function highlightColor(intensity: 0 | 1 | 2 | 3): string {
-  const alphaMap = [0.15, 0.3, 0.5, 0.7];
-  return `rgba(232, 168, 56, ${alphaMap[intensity]})`;
+/** Amber color at opacity proportional to intensity, dampened by body fat */
+function highlightColor(intensity: 0 | 1 | 2 | 3, bodyFatPercent: number): string {
+  const def = clamp((25 - bodyFatPercent) / 15, 0, 1);
+  const baseAlpha = [0.15, 0.3, 0.5, 0.7];
+  const alpha = baseAlpha[intensity] * (0.4 + def * 0.6);
+  return `rgba(232, 168, 56, ${alpha.toFixed(2)})`;
 }
 
 function slugToDisplayName(slug: string): string {
@@ -89,14 +131,13 @@ function buildBodyData(
   const highlighted = new Set(highlightedMuscles);
   const parts: ExtendedBodyPart[] = [];
 
-  // Helper to push a part
   function addPart(slug: string, size: number, sourceMuscle: string | null) {
     const intensity = sizeToIntensity(size);
     const isHighlighted = sourceMuscle !== null && highlighted.has(sourceMuscle);
     const part: ExtendedBodyPart = {
       slug: slug as any,
       intensity,
-      ...(isHighlighted ? { color: highlightColor(intensity) } : {}),
+      ...(isHighlighted ? { color: highlightColor(intensity, bodyFatPercent) } : {}),
     };
     parts.push(part);
   }
@@ -146,6 +187,9 @@ export function BodyFigure({
   } | null>(null);
 
   const data = buildBodyData(muscles, bodyFatPercent, highlightedMuscles);
+  const intensityColors = getIntensityColors(bodyFatPercent);
+  const defaultFill = getDefaultFill(bodyFatPercent);
+  const strokeOpacity = getStrokeOpacity(bodyFatPercent);
   const scale = Math.min(width / 220, height / 400) * 1.1;
 
   return (
@@ -163,7 +207,7 @@ export function BodyFigure({
 
         <Body
           data={data}
-          colors={INTENSITY_COLORS}
+          colors={intensityColors}
           scale={scale}
           side={side}
           gender="male"
@@ -176,8 +220,8 @@ export function BodyFigure({
             setTimeout(() => setTooltip(null), 2000);
           }}
           border="none"
-          defaultFill={themeColors.surface}
-          defaultStroke="rgba(242, 240, 235, 0.06)"
+          defaultFill={defaultFill}
+          defaultStroke={`rgba(242, 240, 235, ${strokeOpacity})`}
           defaultStrokeWidth={0.5}
         />
 
