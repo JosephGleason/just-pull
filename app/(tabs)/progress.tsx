@@ -8,6 +8,7 @@ import {
   FlatList,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../src/context";
 import { COMPOUND_KEYS } from "../../src/program";
 import { ProgressChart } from "../../src/components/ProgressChart";
@@ -29,6 +30,7 @@ function keyToDisplayName(key: string): string {
 
 export default function ProgressScreen() {
   const { history, weights, settings, cycleState } = useAppContext();
+  const insets = useSafeAreaInsets();
   const [selectedKey, setSelectedKey] = useState<string>(COMPOUND_KEYS[0]);
 
   const units = settings?.units ?? "lb";
@@ -46,7 +48,7 @@ export default function ProgressScreen() {
   }
 
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+    <ScrollView style={styles.container} contentContainerStyle={[styles.content, { paddingTop: insets.top + 20 }]}>
       <Text style={styles.screenTitle}>Progress</Text>
 
       {/* Exercise Picker */}
@@ -152,7 +154,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     ...typography.title,
     paddingHorizontal: spacing.md,
-    paddingTop: 56,
+    paddingTop: 20,
     paddingBottom: spacing.md,
   },
   sectionLabel: {

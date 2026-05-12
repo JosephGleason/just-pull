@@ -13,6 +13,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../src/context";
 import { COMPOUND_KEYS } from "../../src/program";
 import { calculateNutrition } from "../../src/hooks/useNutrition";
@@ -222,6 +223,7 @@ function PickerModal<T extends string>({
 // --- main screen -------------------------------------------------------------
 
 export default function SettingsScreen() {
+  const insets = useSafeAreaInsets();
   const context = useAppContext();
   const { settings, cycleState, weights, isLoading } = context;
 
@@ -489,7 +491,7 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
         keyboardShouldPersistTaps="handled"
       >
 

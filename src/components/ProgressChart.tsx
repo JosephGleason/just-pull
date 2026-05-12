@@ -90,11 +90,11 @@ export function ProgressChart({ exerciseKey, history, units }: ProgressChartProp
       {/* SVG chart using absolute-positioned Views (no SVG dependency needed) */}
       <View style={{ width: chartWidth, height: CHART_HEIGHT, position: "relative" }}>
         {/* Y-axis labels */}
-        {yTicks.map((tick) => {
+        {yTicks.map((tick, i) => {
           const y = toY(tick) - 8;
           return (
             <Text
-              key={tick}
+              key={`label-${i}`}
               style={[styles.axisLabel, { position: "absolute", left: 0, top: y, width: CHART_PADDING.left - 4 }]}
             >
               {tick}
@@ -103,11 +103,11 @@ export function ProgressChart({ exerciseKey, history, units }: ProgressChartProp
         })}
 
         {/* Grid lines */}
-        {yTicks.map((tick) => {
+        {yTicks.map((tick, i) => {
           const y = toY(tick);
           return (
             <View
-              key={`grid-${tick}`}
+              key={`grid-${i}`}
               style={{
                 position: "absolute",
                 left: CHART_PADDING.left,

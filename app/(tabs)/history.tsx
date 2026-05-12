@@ -1,5 +1,6 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../src/context";
 import { CalendarGrid } from "../../src/components/CalendarGrid";
 import { WorkoutLog, ExerciseType } from "../../src/types";
@@ -18,6 +19,7 @@ function getWeightColor(type: ExerciseType): string {
 }
 
 export default function HistoryScreen() {
+  const insets = useSafeAreaInsets();
   const { history } = useAppContext();
 
   const now = new Date();
@@ -85,7 +87,7 @@ export default function HistoryScreen() {
   return (
     <ScrollView
       style={styles.scroll}
-      contentContainerStyle={styles.scrollContent}
+      contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
     >
       <CalendarGrid
         workoutDates={workoutDates}
