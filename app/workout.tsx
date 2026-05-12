@@ -10,6 +10,8 @@ import { SetLogger } from "../src/components/SetLogger";
 import { RestTimer } from "../src/components/RestTimer";
 import { WorkoutSummary } from "../src/components/WorkoutSummary";
 import { SetLog, ExerciseLog } from "../src/types";
+import { generateWarmupSets } from "../src/hooks/useWarmup";
+import { WarmupSuggestion } from "../src/components/WarmupSuggestion";
 import { colors, typography, spacing } from "../src/theme";
 
 export default function WorkoutScreen() {
@@ -31,6 +33,7 @@ export default function WorkoutScreen() {
   const [currentSetIndex, setCurrentSetIndex] = useState(0);
   const [isComplete, setIsComplete] = useState(false);
   const hasStartedRef = useRef(false);
+  const [warmupDismissed, setWarmupDismissed] = useState<Record<number, boolean>>({});
 
   // Start or resume workout on mount
   useEffect(() => {
@@ -119,11 +122,27 @@ export default function WorkoutScreen() {
 
   const isChinups = currentExercise?.key.startsWith("chinups") ?? false;
 
+  // Warmup logic: show for first set of non-black exercises
+  const showWarmup =
+    currentSetIndex === 0 &&
+    currentExercise?.type !== "black" &&
+    !warmupDismissed[currentExerciseIndex];
+
+  const barWeight = (settings?.units ?? "lb") === "kg" ? 20 : 45;
+  const warmupSets = showWarmup
+    ? generateWarmupSets(targetWeight, barWeight)
+    : [];
+
   const handleCompleteSet = useCallback(
     async (set: SetLog) => {
       if (!cycleState || !programExercise || !currentExercise) return;
 
       await logSet(currentExerciseIndex, set);
+
+      // Dismiss warmup after first working set is logged
+      if (currentSetIndex === 0) {
+        setWarmupDismissed((prev) => ({ ...prev, [currentExerciseIndex]: true }));
+      }
 
       const nextSetIdx = currentSetIndex + 1;
       const isLastSetOfExercise = nextSetIdx >= totalSets;
@@ -265,6 +284,19 @@ export default function WorkoutScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {showWarmup && warmupSets.length > 0 && (
+        <WarmupSuggestion
+          warmupSets={warmupSets}
+          units={settings?.units ?? "lb"}
+          onDismiss={() =>
+            setWarmupDismissed((prev) => ({
+              ...prev,
+              [currentExerciseIndex]: true,
+            }))
+          }
+        />
+      )}
+
       <SetLogger
         exerciseName={currentExercise.name}
         exerciseKey={currentExercise.key}
