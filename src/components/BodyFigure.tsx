@@ -1,13 +1,13 @@
-import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, TouchableWithoutFeedback } from "react-native";
-import Svg, { Path, G } from "react-native-svg";
+import React, { useState, useMemo, useCallback } from "react";
 import {
-  FRONT_REGIONS,
-  BACK_REGIONS,
-  SEPARATION_LINES,
-  getRegionPath,
-  type BodyRegion,
-} from "./body/paths";
+  View,
+  Text,
+  StyleSheet,
+  TouchableWithoutFeedback,
+} from "react-native";
+import Body, { type ExtendedBodyPart, type Slug } from "react-native-body-highlighter";
+import Svg, { Path } from "react-native-svg";
+import { getFatOverlayPath } from "./body/fatOverlay";
 import { colors as themeColors, typography, spacing, radius } from "../theme";
 
 interface BodyFigureProps {
@@ -24,6 +24,46 @@ interface BodyFigureProps {
 
 function clamp(v: number, lo: number, hi: number): number {
   return Math.min(hi, Math.max(lo, v));
+}
+
+// ── Muscle-group → library slug mapping ─────────────────────────────────
+// Our app's muscle groups don't always map 1:1 to the library's slugs.
+// Front slugs: abs, adductors, ankles, biceps, calves, chest, deltoids,
+//              feet, forearm, hair, hands, head, knees, neck, obliques,
+//              quadriceps, tibialis, trapezius, triceps
+// Back slugs:  adductors, ankles, calves, deltoids, feet, forearm,
+//              gluteal, hair, hamstring, hands, head, lower-back, neck,
+//              trapezius, triceps, upper-back
+
+const MUSCLE_TO_FRONT_SLUGS: Record<string, Slug[]> = {
+  chest: ["chest"],
+  shoulders: ["deltoids"],
+  biceps: ["biceps"],
+  triceps: ["triceps"],
+  forearms: ["forearm"],
+  core: ["abs", "obliques"],
+  quads: ["quadriceps"],
+  calves: ["calves"],
+};
+
+const MUSCLE_TO_BACK_SLUGS: Record<string, Slug[]> = {
+  back: ["upper-back", "lower-back", "trapezius"],
+  shoulders: ["deltoids"],
+  triceps: ["triceps"],
+  forearms: ["forearm"],
+  glutes: ["gluteal"],
+  hamstrings: ["hamstring"],
+  calves: ["calves"],
+};
+
+// Reverse lookup: slug → our muscle group name (for press handler)
+const SLUG_TO_MUSCLE_FRONT: Record<string, string> = {};
+for (const [muscle, slugs] of Object.entries(MUSCLE_TO_FRONT_SLUGS)) {
+  for (const slug of slugs) SLUG_TO_MUSCLE_FRONT[slug] = muscle;
+}
+const SLUG_TO_MUSCLE_BACK: Record<string, string> = {};
+for (const [muscle, slugs] of Object.entries(MUSCLE_TO_BACK_SLUGS)) {
+  for (const slug of slugs) SLUG_TO_MUSCLE_BACK[slug] = muscle;
 }
 
 // ── Intensity colors by body fat level ───────────────────────────────────
@@ -94,41 +134,25 @@ function highlightColor(
   return `rgba(232, 168, 56, ${alpha.toFixed(2)})`;
 }
 
-/** Human-readable label for a region */
-function regionDisplayName(region: BodyRegion): string {
+/** Human-readable label for a slug */
+function slugDisplayName(slug: string): string {
   const names: Record<string, string> = {
-    head: "head",
-    neck: "neck",
-    "shoulder-l": "shoulders",
-    "shoulder-r": "shoulders",
-    "chest-l": "chest",
-    "chest-r": "chest",
-    "bicep-l": "biceps",
-    "bicep-r": "biceps",
-    "forearm-l": "forearms",
-    "forearm-r": "forearms",
-    core: "core",
-    "quad-l": "quads",
-    "quad-r": "quads",
-    "calf-l": "calves",
-    "calf-r": "calves",
-    "head-back": "head",
-    "neck-back": "neck",
-    "rear-delt-l": "shoulders",
-    "rear-delt-r": "shoulders",
-    "back-l": "back",
-    "back-r": "back",
-    "tricep-l": "triceps",
-    "tricep-r": "triceps",
-    "forearm-back-l": "forearms",
-    "forearm-back-r": "forearms",
-    glutes: "glutes",
-    "hamstring-l": "hamstrings",
-    "hamstring-r": "hamstrings",
-    "calf-back-l": "calves",
-    "calf-back-r": "calves",
+    abs: "core",
+    obliques: "core",
+    chest: "chest",
+    deltoids: "shoulders",
+    biceps: "biceps",
+    triceps: "triceps",
+    forearm: "forearms",
+    quadriceps: "quads",
+    calves: "calves",
+    "upper-back": "back",
+    "lower-back": "back",
+    trapezius: "back",
+    gluteal: "glutes",
+    hamstring: "hamstrings",
   };
-  return names[region.id] ?? region.id;
+  return names[slug] ?? slug;
 }
 
 // ── Component ────────────────────────────────────────────────────────────
@@ -165,131 +189,76 @@ export function BodyFigure({
     [bodyFatPercent],
   );
 
-  const regions = side === "front" ? FRONT_REGIONS : BACK_REGIONS;
-  const sepLines =
-    side === "front" ? SEPARATION_LINES.front : SEPARATION_LINES.back;
+  const slugMap =
+    side === "front" ? MUSCLE_TO_FRONT_SLUGS : MUSCLE_TO_BACK_SLUGS;
+  const slugToMuscle =
+    side === "front" ? SLUG_TO_MUSCLE_FRONT : SLUG_TO_MUSCLE_BACK;
 
-  // Scale the 200x400 SVG viewbox to fit the container
+  // Build the data array for react-native-body-highlighter
+  const data = useMemo<ExtendedBodyPart[]>(() => {
+    const parts: ExtendedBodyPart[] = [];
+
+    for (const [muscleKey, slugs] of Object.entries(slugMap)) {
+      const muscleSize = muscles[muscleKey] ?? 0;
+      const intensity = sizeToIntensity(muscleSize);
+      const isHighlighted = highlighted.has(muscleKey);
+
+      let fill: string;
+      if (isHighlighted) {
+        fill = highlightColor(intensity, bodyFatPercent);
+      } else {
+        fill = intensityColors[intensity];
+      }
+
+      for (const slug of slugs) {
+        parts.push({
+          slug,
+          intensity: intensity > 0 ? intensity : undefined,
+          styles: {
+            fill,
+            stroke: `rgba(242, 240, 235, ${strokeOpacity})`,
+            strokeWidth: 0.5,
+          },
+        });
+      }
+    }
+
+    return parts;
+  }, [
+    muscles,
+    bodyFatPercent,
+    highlighted,
+    intensityColors,
+    strokeOpacity,
+    slugMap,
+  ]);
+
+  // Scale: the library renders at 200*scale x 400*scale
   const scale = Math.min(width / 220, height / 420) * 1.1;
+
+  // Fat overlay
+  const fatPath = useMemo(
+    () => getFatOverlayPath(bodyFatPercent, side),
+    [bodyFatPercent, side],
+  );
+  const fatOpacity = clamp((bodyFatPercent - 10) / 25, 0, 0.7);
+
+  // The library SVG dimensions
   const svgWidth = 200 * scale;
   const svgHeight = 400 * scale;
 
-  // Separation line opacity: higher at low BF, nearly invisible at high BF
-  const sepOpacity = clamp((20 - bodyFatPercent) / 10, 0.02, 0.12);
-
-  function handleRegionPress(region: BodyRegion) {
-    const name = regionDisplayName(region);
-    const muscleKey = region.muscle || name;
-    const rawValue = muscles[muscleKey] ?? 0;
-    setTooltip({ name, value: Math.round(rawValue * 100) });
-    setTimeout(() => setTooltip(null), 2000);
-  }
-
-  function renderRegion(region: BodyRegion) {
-    const muscleSize = region.muscle ? (muscles[region.muscle] ?? 0) : 0;
-    const d = getRegionPath(region, bodyFatPercent, muscleSize);
-
-    const intensity = sizeToIntensity(muscleSize);
-    const isHighlighted =
-      region.muscle !== "" && highlighted.has(region.muscle);
-
-    let fill: string;
-    if (isHighlighted) {
-      fill = highlightColor(intensity, bodyFatPercent);
-    } else if (region.muscle === "") {
-      fill = defaultFill;
-    } else {
-      fill = intensityColors[intensity];
-    }
-
-    const strokeColor = `rgba(242, 240, 235, ${strokeOpacity})`;
-
-    return (
-      <Path
-        key={region.id}
-        d={d}
-        fill={fill}
-        stroke={strokeColor}
-        strokeWidth={0.5}
-        onPress={() => handleRegionPress(region)}
-      />
-    );
-  }
-
-  function renderSeparationLines() {
-    const lines: React.ReactElement[] = [];
-    const strokeColor = `rgba(242, 240, 235, ${sepOpacity})`;
-
-    if (side === "front") {
-      const front = SEPARATION_LINES.front;
-
-      lines.push(
-        <Path
-          key="pecLine"
-          d={front.pecLine}
-          stroke={strokeColor}
-          strokeWidth={0.4}
-          fill="none"
-        />,
-      );
-      lines.push(
-        <Path
-          key="centerLine"
-          d={front.centerLine}
-          stroke={strokeColor}
-          strokeWidth={0.3}
-          fill="none"
-        />,
-      );
-      front.abLines.forEach((d, i) =>
-        lines.push(
-          <Path
-            key={`ab-${i}`}
-            d={d}
-            stroke={strokeColor}
-            strokeWidth={0.4}
-            fill="none"
-          />,
-        ),
-      );
-      front.quadSep.forEach((d, i) =>
-        lines.push(
-          <Path
-            key={`qsep-${i}`}
-            d={d}
-            stroke={strokeColor}
-            strokeWidth={0.35}
-            fill="none"
-          />,
-        ),
-      );
-    } else {
-      const back = SEPARATION_LINES.back;
-
-      lines.push(
-        <Path
-          key="spineLine"
-          d={back.spineLine}
-          stroke={strokeColor}
-          strokeWidth={0.3}
-          fill="none"
-        />,
-      );
-      back.latLine.forEach((d, i) =>
-        lines.push(
-          <Path
-            key={`lat-${i}`}
-            d={d}
-            stroke={strokeColor}
-            strokeWidth={0.35}
-            fill="none"
-          />,
-        ),
-      );
-    }
-
-    return lines;
-  }
+  const handlePress = useCallback(
+    (part: ExtendedBodyPart) => {
+      if (!part.slug) return;
+      const muscleKey = slugToMuscle[part.slug];
+      if (!muscleKey) return;
+      const name = slugDisplayName(part.slug);
+      const rawValue = muscles[muscleKey] ?? 0;
+      setTooltip({ name, value: Math.round(rawValue * 100) });
+      setTimeout(() => setTooltip(null), 2000);
+    },
+    [muscles, slugToMuscle],
+  );
 
   return (
     <TouchableWithoutFeedback onPress={onToggleSide}>
@@ -304,16 +273,45 @@ export function BodyFigure({
           </View>
         )}
 
-        <Svg
-          width={svgWidth}
-          height={svgHeight}
-          viewBox="0 0 200 400"
-        >
-          <G>
-            {regions.map(renderRegion)}
-            {renderSeparationLines()}
-          </G>
-        </Svg>
+        {/* Layer 1: Muscle anatomy from library */}
+        <Body
+          data={data}
+          colors={intensityColors}
+          scale={scale}
+          side={side}
+          gender="male"
+          onBodyPartPress={handlePress}
+          border="none"
+          defaultFill={defaultFill}
+          defaultStroke={`rgba(242, 240, 235, ${strokeOpacity})`}
+          defaultStrokeWidth={0.5}
+        />
+
+        {/* Layer 2: Fat overlay — covers muscles at high BF% */}
+        {fatOpacity > 0.01 && (
+          <Svg
+            style={[
+              StyleSheet.absoluteFill,
+              {
+                // Center over the Body component
+                width: svgWidth,
+                height: svgHeight,
+                alignSelf: "center",
+              },
+            ]}
+            viewBox={
+              side === "front" ? "0 0 724 1448" : "724 0 724 1448"
+            }
+            preserveAspectRatio="xMidYMid meet"
+            pointerEvents="none"
+          >
+            <Path
+              d={fatPath}
+              fill={`rgba(11, 11, 14, ${fatOpacity.toFixed(2)})`}
+              stroke="none"
+            />
+          </Svg>
+        )}
 
         {/* Side label */}
         <Text style={styles.sideLabel}>
