@@ -11,7 +11,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../src/context";
 import { COMPOUND_KEYS } from "../../src/program";
 import { ProgressChart } from "../../src/components/ProgressChart";
-import { colors, typography, spacing, radius } from "../../src/theme";
+import { MuscleHeatmap } from "../../src/components/MuscleHeatmap";
+import { getBest1RM } from "../../src/hooks/useOneRepMax";
+import { colors, typography, spacing, radius, fonts } from "../../src/theme";
 
 /** Convert a key like "bench_4" -> "Bench (4 rep)" */
 function keyToDisplayName(key: string): string {
@@ -26,7 +28,7 @@ function keyToDisplayName(key: string): string {
 }
 
 export default function ProgressScreen() {
-  const { history, weights, settings } = useAppContext();
+  const { history, weights, settings, cycleState } = useAppContext();
   const [selectedKey, setSelectedKey] = useState<string>(COMPOUND_KEYS[0]);
 
   const units = settings?.units ?? "lb";
@@ -84,12 +86,21 @@ export default function ProgressScreen() {
         />
       </View>
 
+      {/* Muscle Heatmap */}
+      {cycleState && (
+        <>
+          <Text style={styles.sectionLabel}>MUSCLES THIS WEEK</Text>
+          <MuscleHeatmap history={history} cycleState={cycleState} />
+        </>
+      )}
+
       {/* Working Weights Dashboard */}
       <Text style={styles.sectionLabel}>WORKING WEIGHTS</Text>
       <View style={styles.grid}>
         {(COMPOUND_KEYS as unknown as string[]).map((key) => {
           const ew = weights[key];
           const weight = ew?.working ?? null;
+          const best1RM = getBest1RM(history, key);
           return (
             <View key={key} style={styles.weightCard}>
               <Text style={styles.weightCardName} numberOfLines={1}>
@@ -102,6 +113,11 @@ export default function ProgressScreen() {
                 </Text>
               ) : (
                 <Text style={styles.weightCardEmpty}>{"—"}</Text>
+              )}
+              {best1RM > 0 && (
+                <Text style={styles.weightCard1RM}>
+                  Est. 1RM: {best1RM}
+                </Text>
               )}
             </View>
           );
@@ -208,5 +224,12 @@ const styles = StyleSheet.create({
   weightCardEmpty: {
     color: colors.textTertiary,
     ...typography.displaySmall,
+  },
+  weightCard1RM: {
+    color: colors.textSecondary,
+    ...typography.caption,
+    marginTop: spacing.xs,
+    textTransform: "none" as const,
+    letterSpacing: 0.5,
   },
 });
