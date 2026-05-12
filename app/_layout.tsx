@@ -1,13 +1,7 @@
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
-import { useFonts, BebasNeue_400Regular } from "@expo-google-fonts/bebas-neue";
-import {
-  PlusJakartaSans_400Regular,
-  PlusJakartaSans_500Medium,
-  PlusJakartaSans_600SemiBold,
-  PlusJakartaSans_700Bold,
-} from "@expo-google-fonts/plus-jakarta-sans";
+import { useFonts } from "expo-font";
 import { AppProvider, useAppContext } from "../src/context";
 import { colors } from "../src/theme";
 
@@ -43,16 +37,16 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
-    BebasNeue_400Regular,
-    PlusJakartaSans_400Regular,
-    PlusJakartaSans_500Medium,
-    PlusJakartaSans_600SemiBold,
-    PlusJakartaSans_700Bold,
+    "BebasNeue_400Regular": require("../assets/fonts/BebasNeue_400Regular.ttf"),
+    "PlusJakartaSans_400Regular": require("../assets/fonts/PlusJakartaSans_400Regular.ttf"),
+    "PlusJakartaSans_500Medium": require("../assets/fonts/PlusJakartaSans_500Medium.ttf"),
+    "PlusJakartaSans_600SemiBold": require("../assets/fonts/PlusJakartaSans_600SemiBold.ttf"),
+    "PlusJakartaSans_700Bold": require("../assets/fonts/PlusJakartaSans_700Bold.ttf"),
   });
 
   if (!fontsLoaded) {
     return (
-      <View style={styles.splash}>
+      <View style={splashStyles.container}>
         <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
@@ -65,8 +59,8 @@ export default function RootLayout() {
   );
 }
 
-const styles = StyleSheet.create({
-  splash: {
+const splashStyles = StyleSheet.create({
+  container: {
     flex: 1,
     backgroundColor: colors.bg,
     justifyContent: "center",
