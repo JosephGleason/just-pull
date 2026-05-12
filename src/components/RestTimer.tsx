@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react";
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, typography, spacing } from "../theme";
 
 interface RestTimerProps {
@@ -23,6 +24,7 @@ export function RestTimer({
   onDismiss,
   onExtend,
 }: RestTimerProps) {
+  const insets = useSafeAreaInsets();
   const pulseAnim = useRef(new Animated.Value(1)).current;
   const isUrgent = secondsLeft > 0 && secondsLeft <= 10;
 
@@ -55,7 +57,7 @@ export function RestTimer({
   const widthPercent = Math.min(progress * 100, 100);
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Thin amber line at the very top */}
       <View style={styles.lineTrack}>
         <View style={[styles.lineFill, { width: `${widthPercent}%` }]} />
