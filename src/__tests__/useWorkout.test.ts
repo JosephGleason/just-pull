@@ -1,4 +1,4 @@
-jest.mock("uuid", () => ({ v4: () => "test-uuid" }));
+jest.mock("expo-crypto", () => ({ randomUUID: () => "test-uuid" }));
 jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
   ImpactFeedbackStyle: { Medium: "medium" },

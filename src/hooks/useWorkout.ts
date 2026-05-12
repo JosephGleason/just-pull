@@ -1,4 +1,4 @@
-import { v4 as uuid } from "uuid";
+import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
 import { CurrentSession, ExerciseLog, SetLog, WorkoutLog, ProgramExercise, ExerciseWeight, CycleState } from "../types";
 import { getProgramDay, getSetsForWeek } from "../program";
@@ -132,7 +132,7 @@ export function useWorkout() {
     }
 
     const workoutLog: WorkoutLog = {
-      id: uuid(),
+      id: Crypto.randomUUID(),
       date: new Date().toISOString().split("T")[0],
       day: currentSession.day,
       week: currentSession.week,
