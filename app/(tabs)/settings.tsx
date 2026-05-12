@@ -17,7 +17,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useAppContext } from "../../src/context";
 import { COMPOUND_KEYS } from "../../src/program";
 import { calculateNutrition } from "../../src/hooks/useNutrition";
-import { exportAllData, importAllData } from "../../src/storage";
+import { exportAllData, importAllData, clearAllData } from "../../src/storage";
 import {
   Settings,
   CycleState,
@@ -832,6 +832,32 @@ export default function SettingsScreen() {
           >
             <Text style={[styles.dataBtnText, styles.dataBtnTextMuted]}>
               Import Data
+            </Text>
+          </TouchableOpacity>
+          <View style={styles.divider} />
+          <TouchableOpacity
+            style={styles.dataBtn}
+            onPress={() => {
+              Alert.alert(
+                "Clear All Data",
+                "This will delete all workout history, weights, and settings. You'll need to go through onboarding again. This cannot be undone.",
+                [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Clear Everything",
+                    style: "destructive",
+                    onPress: async () => {
+                      await clearAllData();
+                      context.reload();
+                    },
+                  },
+                ]
+              );
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={[styles.dataBtnText, { color: colors.red }]}>
+              Clear All Data
             </Text>
           </TouchableOpacity>
         </View>
