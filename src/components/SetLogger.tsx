@@ -7,12 +7,7 @@ import {
   TextInput,
 } from "react-native";
 import { ExerciseType, SetLog } from "../types";
-
-const TYPE_COLORS: Record<ExerciseType, string> = {
-  red: "#EF4444",
-  blue: "#3B82F6",
-  black: "#A3A3A3",
-};
+import { colors, typography, spacing, radius } from "../theme";
 
 interface SetLoggerProps {
   exerciseName: string;
@@ -49,7 +44,6 @@ export function SetLogger({
   const [reps, setReps] = useState(String(targetReps));
 
   const isAmrap = exerciseType === "black";
-  const borderColor = TYPE_COLORS[exerciseType];
   const increment = exerciseType === "black" ? 5 : 2.5;
 
   const handleWeightChange = (delta: number) => {
@@ -68,29 +62,26 @@ export function SetLogger({
     });
   };
 
-  const weightLabel = isChinups ? "Added Weight" : "Weight";
+  const weightLabel = isChinups ? "ADDED WEIGHT" : "WEIGHT";
 
-  // Weight +/- buttons are more prominent for AMRAP (drop sets) than compounds
-  const weightButtonSize = isAmrap ? 52 : 48;
+  const weightButtonSize = isAmrap ? 52 : 44;
 
   return (
     <View style={styles.container}>
+      {/* Set counter */}
+      <View style={styles.setCounterRow}>
+        <Text style={styles.setCounter}>
+          SET {setNumber} OF {totalSets}
+        </Text>
+        {isPrAttempt && (
+          <View style={styles.prBadge}>
+            <Text style={styles.prBadgeText}>PR</Text>
+          </View>
+        )}
+      </View>
+
       {/* Exercise name */}
-      <Text style={[styles.exerciseName, { color: borderColor }]}>
-        {exerciseName}
-      </Text>
-
-      {/* Set subtitle */}
-      <Text style={styles.setSubtitle}>
-        Set {setNumber} of {totalSets}
-      </Text>
-
-      {/* PR badge */}
-      {isPrAttempt && (
-        <View style={styles.prBadge}>
-          <Text style={styles.prBadgeText}>PR ATTEMPT</Text>
-        </View>
-      )}
+      <Text style={styles.exerciseName}>{exerciseName}</Text>
 
       {/* Previous performance */}
       {previousPerformance && (
@@ -129,7 +120,7 @@ export function SetLogger({
       </View>
 
       {/* Reps input */}
-      <Text style={styles.sectionLabel}>Reps</Text>
+      <Text style={styles.sectionLabel}>REPS</Text>
       {isAmrap && (
         <Text style={styles.amrapHint}>AMRAP (~{targetReps})</Text>
       )}
@@ -170,7 +161,7 @@ export function SetLogger({
         onPress={handleComplete}
         activeOpacity={0.8}
       >
-        <Text style={styles.completeButtonText}>COMPLETE SET</Text>
+        <Text style={styles.completeButtonText}>Complete Set</Text>
       </TouchableOpacity>
     </View>
   );
@@ -179,128 +170,122 @@ export function SetLogger({
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 20,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.lg,
     alignItems: "center",
   },
-  exerciseName: {
-    fontSize: 28,
-    fontWeight: "800",
-    textAlign: "center",
-    marginBottom: 4,
+  setCounterRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.xs,
   },
-  setSubtitle: {
-    fontSize: 16,
-    color: "#A3A3A3",
-    marginBottom: 12,
+  setCounter: {
+    color: colors.textSecondary,
+    ...typography.caption2,
+  },
+  exerciseName: {
+    color: colors.text,
+    ...typography.title1,
+    textAlign: "center",
+    marginBottom: spacing.xs,
   },
   prBadge: {
-    backgroundColor: "#7C3AED",
-    paddingHorizontal: 16,
-    paddingVertical: 6,
-    borderRadius: 20,
-    marginBottom: 12,
+    backgroundColor: colors.teal,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+    borderRadius: 10,
+    marginLeft: spacing.sm,
   },
   prBadgeText: {
-    color: "#FFD700",
-    fontSize: 14,
-    fontWeight: "800",
-    letterSpacing: 1,
+    color: colors.bg,
+    fontSize: 11,
+    fontWeight: "700",
+    letterSpacing: 0.5,
   },
   previousPerformance: {
-    fontSize: 14,
-    color: "#666666",
-    marginBottom: 20,
+    color: colors.textTertiary,
+    ...typography.caption1,
+    marginBottom: spacing.lg,
   },
   sectionLabel: {
-    fontSize: 13,
-    color: "#666666",
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    marginBottom: 8,
-    marginTop: 8,
+    color: colors.textSecondary,
+    ...typography.caption2,
+    marginBottom: spacing.sm,
+    marginTop: spacing.md,
   },
   weightRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   weightButton: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
+    backgroundColor: colors.surfaceTertiary,
+    borderRadius: radius.md,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#333333",
   },
   weightButtonText: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "700",
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: "600",
   },
   weightDisplay: {
     alignItems: "center",
-    marginHorizontal: 24,
+    marginHorizontal: spacing.xl,
     minWidth: 120,
   },
   weightValue: {
-    color: "#FFFFFF",
-    fontSize: 48,
-    fontWeight: "800",
+    color: colors.text,
+    ...typography.displayLarge,
   },
   weightUnit: {
-    color: "#666666",
-    fontSize: 14,
-    marginTop: -4,
+    color: colors.textTertiary,
+    ...typography.caption1,
+    marginTop: -2,
   },
   amrapHint: {
-    fontSize: 13,
-    color: "#A3A3A3",
-    marginBottom: 4,
-    marginTop: -4,
+    color: colors.orange,
+    ...typography.caption1,
+    marginBottom: spacing.xs,
+    marginTop: -spacing.xs,
   },
   repsRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 32,
+    marginBottom: spacing.xl,
   },
   repsButton: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
-    width: 48,
-    height: 48,
+    backgroundColor: colors.surfaceTertiary,
+    borderRadius: radius.md,
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#333333",
   },
   repsButtonText: {
-    color: "#FFFFFF",
-    fontSize: 24,
-    fontWeight: "700",
+    color: colors.text,
+    fontSize: 22,
+    fontWeight: "600",
   },
   repsInput: {
-    color: "#FFFFFF",
-    fontSize: 48,
-    fontWeight: "800",
+    color: colors.text,
+    ...typography.displayMedium,
     textAlign: "center",
     minWidth: 100,
-    marginHorizontal: 16,
+    marginHorizontal: spacing.md,
   },
   completeButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 16,
-    paddingVertical: 20,
-    paddingHorizontal: 48,
+    backgroundColor: colors.green,
+    borderRadius: radius.lg,
+    paddingVertical: 18,
     alignSelf: "stretch",
     alignItems: "center",
-    minHeight: 64,
+    minHeight: 60,
     justifyContent: "center",
   },
   completeButtonText: {
-    color: "#FFFFFF",
-    fontSize: 20,
-    fontWeight: "800",
-    letterSpacing: 1,
+    color: colors.text,
+    fontSize: 18,
+    fontWeight: "700",
   },
 });

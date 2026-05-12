@@ -28,8 +28,9 @@ import {
   WeekNumber,
   TrainingDay,
 } from "../../src/types";
+import { colors, typography, spacing, radius } from "../../src/theme";
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+// --- helpers ----------------------------------------------------------------
 
 function keyToDisplayName(key: string): string {
   const lastUnderscore = key.lastIndexOf("_");
@@ -48,7 +49,7 @@ function formatSeconds(s: number): string {
   return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
-// ─── tiny shared components ──────────────────────────────────────────────────
+// --- tiny shared components --------------------------------------------------
 
 function SectionHeader({ title }: { title: string }) {
   return (
@@ -72,13 +73,13 @@ function SettingsRow({
       <Text style={styles.rowLabel}>{label}</Text>
       <View style={styles.rowValueWrap}>
         <Text style={styles.rowValue}>{value}</Text>
-        <Text style={styles.rowChevron}>›</Text>
+        <Text style={styles.rowChevron}>{"›"}</Text>
       </View>
     </TouchableOpacity>
   );
 }
 
-// ─── edit modal ──────────────────────────────────────────────────────────────
+// --- edit modal --------------------------------------------------------------
 
 interface EditModalProps {
   visible: boolean;
@@ -124,7 +125,7 @@ function EditModal({
             keyboardType={keyboardType}
             autoFocus
             selectTextOnFocus
-            placeholderTextColor="#555"
+            placeholderTextColor={colors.textTertiary}
           />
           <View style={styles.modalButtons}>
             <TouchableOpacity
@@ -146,7 +147,7 @@ function EditModal({
   );
 }
 
-// ─── picker modal (simple list) ──────────────────────────────────────────────
+// --- picker modal (simple list) ----------------------------------------------
 
 interface PickerOption<T extends string> {
   label: string;
@@ -202,12 +203,12 @@ function PickerModal<T extends string>({
                 {opt.label}
               </Text>
               {selected === opt.value && (
-                <Text style={styles.pickerCheck}>✓</Text>
+                <Text style={styles.pickerCheck}>{"✓"}</Text>
               )}
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: 8 }]}
+            style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: spacing.sm }]}
             onPress={onCancel}
           >
             <Text style={styles.modalCancelText}>Cancel</Text>
@@ -218,13 +219,13 @@ function PickerModal<T extends string>({
   );
 }
 
-// ─── main screen ─────────────────────────────────────────────────────────────
+// --- main screen -------------------------------------------------------------
 
 export default function SettingsScreen() {
   const context = useAppContext();
   const { settings, cycleState, weights, isLoading } = context;
 
-  // ── modal state ──
+  // -- modal state --
   const [editModal, setEditModal] = useState<{
     visible: boolean;
     title: string;
@@ -246,7 +247,7 @@ export default function SettingsScreen() {
     onSelect: () => {},
   });
 
-  // ── nutrition local state (for the form) ──
+  // -- nutrition local state (for the form) --
   const defaultNutrition: NutritionSettings = {
     age: 30,
     weight: 180,
@@ -267,7 +268,7 @@ export default function SettingsScreen() {
     }
   }, [settings?.nutrition]);
 
-  // ── helpers to open modals ──
+  // -- helpers to open modals --
   const openEdit = useCallback(
     (title: string, initialValue: string, onSave: (v: string) => void) => {
       setEditModal({ visible: true, title, initialValue, onSave });
@@ -300,12 +301,12 @@ export default function SettingsScreen() {
     []
   );
 
-  // ── guard ──
+  // -- guard --
   if (isLoading || !settings || !cycleState) {
     return (
       <View style={styles.centered}>
         {isLoading ? (
-          <ActivityIndicator size="large" color="#4CAF50" />
+          <ActivityIndicator size="large" color={colors.accent} />
         ) : (
           <Text style={styles.emptyText}>
             Complete onboarding to access settings.
@@ -319,7 +320,7 @@ export default function SettingsScreen() {
   const safeSettings: Settings = settings;
   const safeCycleState: CycleState = cycleState;
 
-  // ── section handlers ──
+  // -- section handlers --
 
   // Weights
   function handleEditWeight(key: string) {
@@ -394,7 +395,7 @@ export default function SettingsScreen() {
   ) {
     const labels: Record<string, string> = {
       cycleNumber: "Cycle Number",
-      weekNumber: "Week (1–3)",
+      weekNumber: "Week (1-3)",
       nextDay: "Next Day (1, 2, 3, 5, or 6)",
     };
     const current = safeCycleState[field];
@@ -474,7 +475,7 @@ export default function SettingsScreen() {
     );
   }
 
-  // ── computed ──
+  // -- computed --
   const nutritionTargets =
     safeSettings.nutrition
       ? calculateNutrition(safeSettings.nutrition, safeSettings.units)
@@ -482,7 +483,7 @@ export default function SettingsScreen() {
 
   const formTargets = calculateNutrition(nutritionForm, safeSettings.units);
 
-  // ── render ──────────────────────────────────────────────────────────────────
+  // -- render -----------------------------------------------------------------
 
   return (
     <View style={styles.container}>
@@ -492,7 +493,7 @@ export default function SettingsScreen() {
         keyboardShouldPersistTaps="handled"
       >
 
-        {/* ── 1. Working Weights ── */}
+        {/* -- 1. Working Weights -- */}
         <SectionHeader title="Working Weights" />
         <View style={styles.card}>
           {COMPOUND_KEYS.map((key, i) => (
@@ -507,7 +508,7 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        {/* ── 2. Increments ── */}
+        {/* -- 2. Increments -- */}
         <SectionHeader title="Weight Increments" />
         <View style={styles.card}>
           {COMPOUND_KEYS.map((key, i) => (
@@ -522,7 +523,7 @@ export default function SettingsScreen() {
           ))}
         </View>
 
-        {/* ── 3. Rest Timer ── */}
+        {/* -- 3. Rest Timer -- */}
         <SectionHeader title="Rest Timer" />
         <View style={styles.card}>
           <SettingsRow
@@ -538,7 +539,7 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {/* ── 4. Units ── */}
+        {/* -- 4. Units -- */}
         <SectionHeader title="Units" />
         <View style={styles.card}>
           <View style={styles.segmentRow}>
@@ -568,7 +569,7 @@ export default function SettingsScreen() {
           </Text>
         </View>
 
-        {/* ── 5. Cycle Position ── */}
+        {/* -- 5. Cycle Position -- */}
         <SectionHeader title="Cycle Position" />
         <View style={styles.card}>
           <SettingsRow
@@ -615,16 +616,16 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* ── 6. Nutrition Calculator ── */}
+        {/* -- 6. Nutrition Calculator -- */}
         <SectionHeader title="Nutrition Calculator" />
         <View style={styles.card}>
           {/* Current saved targets */}
           {safeSettings.nutrition && nutritionTargets && (
             <View style={styles.nutritionTargetsRow}>
-              <NutritionBadge label="kcal" value={nutritionTargets.calories} color="#F59E0B" />
-              <NutritionBadge label="protein" value={nutritionTargets.protein} color="#4CAF50" />
-              <NutritionBadge label="carbs" value={nutritionTargets.carbs} color="#3B82F6" />
-              <NutritionBadge label="fat" value={nutritionTargets.fat} color="#EF4444" />
+              <NutritionBadge label="kcal" value={nutritionTargets.calories} color={colors.orange} />
+              <NutritionBadge label="protein" value={nutritionTargets.protein} color={colors.green} />
+              <NutritionBadge label="carbs" value={nutritionTargets.carbs} color={colors.accent} />
+              <NutritionBadge label="fat" value={nutritionTargets.fat} color={colors.red} />
             </View>
           )}
 
@@ -766,7 +767,7 @@ export default function SettingsScreen() {
                   [
                     { label: "Bulk (+400 kcal)", value: "bulk" },
                     { label: "Maintain", value: "maintain" },
-                    { label: "Cut (−400 kcal)", value: "cut" },
+                    { label: "Cut (-400 kcal)", value: "cut" },
                   ],
                   nutritionForm.goal,
                   (v) => {
@@ -785,12 +786,12 @@ export default function SettingsScreen() {
           {/* Preview */}
           <View style={styles.divider} />
           <View style={styles.nutritionPreview}>
-            <Text style={styles.nutritionPreviewTitle}>Preview</Text>
+            <Text style={styles.nutritionPreviewTitle}>PREVIEW</Text>
             <View style={styles.nutritionTargetsRow}>
-              <NutritionBadge label="kcal" value={formTargets.calories} color="#F59E0B" />
-              <NutritionBadge label="protein" value={formTargets.protein} color="#4CAF50" />
-              <NutritionBadge label="carbs" value={formTargets.carbs} color="#3B82F6" />
-              <NutritionBadge label="fat" value={formTargets.fat} color="#EF4444" />
+              <NutritionBadge label="kcal" value={formTargets.calories} color={colors.orange} />
+              <NutritionBadge label="protein" value={formTargets.protein} color={colors.green} />
+              <NutritionBadge label="carbs" value={formTargets.carbs} color={colors.accent} />
+              <NutritionBadge label="fat" value={formTargets.fat} color={colors.red} />
             </View>
           </View>
 
@@ -811,7 +812,7 @@ export default function SettingsScreen() {
           </View>
         </View>
 
-        {/* ── 7. Data ── */}
+        {/* -- 7. Data -- */}
         <SectionHeader title="Data" />
         <View style={styles.card}>
           <TouchableOpacity
@@ -858,7 +859,7 @@ export default function SettingsScreen() {
   );
 }
 
-// ─── mini badge component ────────────────────────────────────────────────────
+// --- mini badge component ----------------------------------------------------
 
 function NutritionBadge({
   label,
@@ -870,14 +871,14 @@ function NutritionBadge({
   color: string;
 }) {
   return (
-    <View style={[styles.badge, { borderColor: color }]}>
+    <View style={styles.badge}>
       <Text style={[styles.badgeValue, { color }]}>{value}</Text>
       <Text style={styles.badgeLabel}>{label}</Text>
     </View>
   );
 }
 
-// ─── label helpers ───────────────────────────────────────────────────────────
+// --- label helpers -----------------------------------------------------------
 
 function activityLabel(a: ActivityLevel): string {
   const m: Record<ActivityLevel, string> = {
@@ -899,50 +900,47 @@ function goalLabel(g: Goal): string {
   return m[g] ?? g;
 }
 
-// ─── styles ──────────────────────────────────────────────────────────────────
+// --- styles ------------------------------------------------------------------
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.bg,
   },
   centered: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.bg,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    padding: spacing.xl,
   },
   emptyText: {
-    color: "#888",
-    fontSize: 16,
+    color: colors.textSecondary,
+    ...typography.body,
     textAlign: "center",
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: spacing.md,
   },
 
   // section header
   sectionHeader: {
-    paddingHorizontal: 4,
-    paddingTop: 24,
-    paddingBottom: 8,
+    paddingHorizontal: spacing.xs,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.sm,
   },
   sectionHeaderText: {
-    color: "#888",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1.2,
-    textTransform: "uppercase",
+    color: colors.textSecondary,
+    ...typography.caption2,
   },
 
   // card
   card: {
-    backgroundColor: "#111",
-    borderRadius: 14,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
     overflow: "hidden",
   },
 
@@ -951,13 +949,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     paddingVertical: 14,
     minHeight: 52,
   },
   rowLabel: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: colors.text,
+    ...typography.body,
     flex: 1,
   },
   rowValueWrap: {
@@ -966,54 +964,51 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   rowValue: {
-    color: "#4CAF50",
-    fontSize: 16,
-    fontWeight: "600",
+    color: colors.textSecondary,
+    ...typography.body,
   },
   rowChevron: {
-    color: "#555",
+    color: colors.textTertiary,
     fontSize: 20,
     lineHeight: 22,
   },
 
   divider: {
     height: StyleSheet.hairlineWidth,
-    backgroundColor: "#222",
-    marginHorizontal: 16,
+    backgroundColor: colors.separator,
+    marginLeft: spacing.md,
   },
 
   // units segment control
   segmentRow: {
     flexDirection: "row",
-    margin: 16,
-    borderRadius: 10,
+    margin: spacing.md,
+    borderRadius: radius.sm,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "#333",
+    backgroundColor: colors.surfaceTertiary,
   },
   segmentBtn: {
     flex: 1,
     paddingVertical: 12,
     alignItems: "center",
-    backgroundColor: "#1a1a1a",
   },
   segmentBtnActive: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.accent,
   },
   segmentText: {
-    color: "#888",
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: "600",
     letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   segmentTextActive: {
-    color: "#000",
+    color: colors.text,
   },
   unitsNote: {
-    color: "#555",
-    fontSize: 12,
-    paddingHorizontal: 16,
+    color: colors.textTertiary,
+    ...typography.caption1,
+    paddingHorizontal: spacing.md,
     paddingBottom: 14,
     textAlign: "center",
   },
@@ -1021,75 +1016,68 @@ const styles = StyleSheet.create({
   // deload toggle
   deloadToggle: {
     paddingHorizontal: 18,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: "#222",
+    paddingVertical: spacing.sm,
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceTertiary,
   },
   deloadToggleActive: {
-    backgroundColor: "#7C3AED",
+    backgroundColor: colors.accent,
   },
   deloadToggleText: {
-    color: "#888",
+    color: colors.textSecondary,
     fontSize: 14,
     fontWeight: "600",
   },
   deloadToggleTextActive: {
-    color: "#FFFFFF",
+    color: colors.text,
   },
 
   // nutrition fields
   nutritionField: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
     paddingVertical: 14,
     minHeight: 52,
   },
   nutritionLabel: {
-    color: "#FFFFFF",
-    fontSize: 16,
+    color: colors.text,
+    ...typography.body,
     flex: 1,
   },
   nutritionValueBtn: {
     paddingHorizontal: 12,
     paddingVertical: 6,
-    borderRadius: 8,
-    backgroundColor: "#1e1e1e",
+    borderRadius: radius.sm,
+    backgroundColor: colors.surfaceTertiary,
     minWidth: 72,
     alignItems: "center",
   },
   nutritionValueText: {
-    color: "#4CAF50",
+    color: colors.accent,
     fontSize: 15,
     fontWeight: "600",
   },
 
   // nutrition preview
   nutritionPreview: {
-    padding: 16,
+    padding: spacing.md,
   },
   nutritionPreviewTitle: {
-    color: "#888",
-    fontSize: 12,
-    fontWeight: "700",
-    letterSpacing: 1,
-    textTransform: "uppercase",
-    marginBottom: 12,
+    color: colors.textSecondary,
+    ...typography.caption2,
+    marginBottom: spacing.md,
   },
   nutritionTargetsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingHorizontal: 8,
-    paddingVertical: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.md,
   },
 
   // badge
   badge: {
     alignItems: "center",
-    borderWidth: 1.5,
-    borderRadius: 10,
-    paddingVertical: 8,
-    paddingHorizontal: 12,
     minWidth: 64,
   },
   badgeValue: {
@@ -1097,56 +1085,54 @@ const styles = StyleSheet.create({
     fontWeight: "700",
   },
   badgeLabel: {
-    color: "#888",
-    fontSize: 11,
+    color: colors.textSecondary,
+    ...typography.caption2,
     marginTop: 2,
   },
 
   // nutrition action buttons
   nutritionActions: {
     flexDirection: "row",
-    padding: 16,
-    gap: 12,
+    padding: spacing.md,
+    gap: spacing.md,
   },
   actionBtn: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: radius.md,
     alignItems: "center",
   },
   clearBtn: {
-    backgroundColor: "#2a1a1a",
-    borderWidth: 1,
-    borderColor: "#EF4444",
+    backgroundColor: colors.surfaceTertiary,
   },
   clearBtnText: {
-    color: "#EF4444",
+    color: colors.red,
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   saveBtn: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.accent,
   },
   saveBtnText: {
-    color: "#000",
+    color: colors.text,
     fontSize: 15,
     fontWeight: "700",
   },
 
   // data
   dataBtn: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     minHeight: 52,
     justifyContent: "center",
   },
   dataBtnText: {
-    color: "#4CAF50",
-    fontSize: 16,
-    fontWeight: "600",
+    color: colors.accent,
+    ...typography.body,
+    fontWeight: "500",
   },
   dataBtnTextMuted: {
-    color: "#555",
+    color: colors.textTertiary,
   },
 
   // edit modal
@@ -1155,57 +1141,52 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(0,0,0,0.75)",
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    padding: spacing.xl,
   },
   modalBox: {
-    backgroundColor: "#1a1a1a",
-    borderRadius: 16,
-    padding: 24,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.lg,
+    padding: spacing.xl,
     width: "100%",
     maxWidth: 400,
-    borderWidth: 1,
-    borderColor: "#333",
   },
   modalTitle: {
-    color: "#FFFFFF",
-    fontSize: 17,
-    fontWeight: "700",
-    marginBottom: 16,
+    color: colors.text,
+    ...typography.title3,
+    marginBottom: spacing.md,
   },
   modalInput: {
-    backgroundColor: "#111",
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#333",
-    color: "#FFFFFF",
+    backgroundColor: colors.surfaceTertiary,
+    borderRadius: radius.md,
+    color: colors.text,
     fontSize: 20,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   modalButtons: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.md,
   },
   modalBtn: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: 10,
+    borderRadius: radius.md,
     alignItems: "center",
   },
   modalCancelBtn: {
-    backgroundColor: "#222",
+    backgroundColor: colors.surfaceTertiary,
   },
   modalCancelText: {
-    color: "#888",
+    color: colors.textSecondary,
     fontSize: 15,
     fontWeight: "600",
   },
   modalSaveBtn: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.accent,
   },
   modalSaveText: {
-    color: "#000",
+    color: colors.text,
     fontSize: 15,
     fontWeight: "700",
   },
@@ -1216,23 +1197,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 14,
-    paddingHorizontal: 4,
+    paddingHorizontal: spacing.xs,
     borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: "#2a2a2a",
+    borderBottomColor: colors.separator,
   },
   pickerOptionSelected: {
     // subtle tint
   },
   pickerOptionText: {
-    color: "#CCCCCC",
-    fontSize: 16,
+    color: colors.textSecondary,
+    ...typography.body,
   },
   pickerOptionTextSelected: {
-    color: "#4CAF50",
+    color: colors.accent,
     fontWeight: "700",
   },
   pickerCheck: {
-    color: "#4CAF50",
+    color: colors.accent,
     fontSize: 18,
     fontWeight: "700",
   },

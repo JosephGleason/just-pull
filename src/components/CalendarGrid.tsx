@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
+import { colors, typography, spacing, radius } from "../theme";
 
 interface CalendarGridProps {
   workoutDates: Set<string>;
@@ -62,13 +63,13 @@ export function CalendarGrid({
       {/* Month/year header */}
       <View style={styles.header}>
         <TouchableOpacity onPress={onPrevMonth} style={styles.navButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.navArrow}>{"<"}</Text>
+          <Text style={styles.navArrow}>{"‹"}</Text>
         </TouchableOpacity>
         <Text style={styles.monthLabel}>
           {MONTH_NAMES[month]} {year}
         </Text>
         <TouchableOpacity onPress={onNextMonth} style={styles.navButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}>
-          <Text style={styles.navArrow}>{">"}</Text>
+          <Text style={styles.navArrow}>{"›"}</Text>
         </TouchableOpacity>
       </View>
 
@@ -116,31 +117,30 @@ export function CalendarGrid({
 
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#111",
-    borderRadius: 14,
-    padding: 12,
-    marginBottom: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
+    marginBottom: spacing.md,
   },
   header: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    marginBottom: 12,
-    paddingHorizontal: 4,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.xs,
   },
   navButton: {
-    paddingHorizontal: 8,
-    paddingVertical: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   navArrow: {
-    color: "#4CAF50",
-    fontSize: 20,
-    fontWeight: "700",
+    color: colors.accent,
+    fontSize: 24,
+    fontWeight: "500",
   },
   monthLabel: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "700",
+    color: colors.text,
+    ...typography.title2,
   },
   row: {
     flexDirection: "row",
@@ -148,40 +148,39 @@ const styles = StyleSheet.create({
   cell: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: 4,
-    minHeight: 48,
+    paddingVertical: spacing.xs,
+    minHeight: 44,
     justifyContent: "center",
   },
   dayLabel: {
-    color: "#666",
-    fontSize: 12,
+    color: colors.textTertiary,
+    ...typography.caption1,
     fontWeight: "600",
     textTransform: "uppercase",
   },
   dayCircle: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
+    width: 34,
+    height: 34,
+    borderRadius: 17,
     alignItems: "center",
     justifyContent: "center",
   },
   selectedCircle: {
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.accent,
   },
   dayNumber: {
-    color: "#E0E0E0",
-    fontSize: 14,
-    fontWeight: "500",
+    color: colors.text,
+    ...typography.body,
   },
   selectedDayNumber: {
-    color: "#FFFFFF",
+    color: colors.text,
     fontWeight: "700",
   },
   dot: {
-    width: 5,
-    height: 5,
+    width: 6,
+    height: 6,
     borderRadius: 3,
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.green,
     marginTop: 2,
   },
 });

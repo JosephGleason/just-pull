@@ -3,11 +3,12 @@ import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useAppContext } from "../../src/context";
 import { CalendarGrid } from "../../src/components/CalendarGrid";
 import { WorkoutLog, ExerciseType } from "../../src/types";
+import { colors, typography, spacing, radius } from "../../src/theme";
 
-const TYPE_COLORS: Record<ExerciseType, string> = {
-  red: "#EF4444",
-  blue: "#3B82F6",
-  black: "#A3A3A3",
+const TYPE_DOT_COLORS: Record<ExerciseType, string> = {
+  red: colors.orange,
+  blue: colors.accent,
+  black: "#8E8E93",
 };
 
 export default function HistoryScreen() {
@@ -99,17 +100,19 @@ export default function HistoryScreen() {
 
           {/* Exercise list */}
           {selectedWorkout.exercises.map((ex, ei) => (
-            <View key={ei} style={[styles.exerciseCard, { borderLeftColor: TYPE_COLORS[ex.type] }]}>
-              <Text style={styles.exerciseName}>{ex.name}</Text>
+            <View key={ei} style={styles.exerciseCard}>
+              <View style={styles.exerciseNameRow}>
+                <View style={[styles.typeDot, { backgroundColor: TYPE_DOT_COLORS[ex.type] }]} />
+                <Text style={styles.exerciseName}>{ex.name}</Text>
+              </View>
               <View style={styles.setsRow}>
                 {ex.sets.map((s, si) => (
-                  <View key={si} style={styles.setChip}>
-                    <Text style={styles.setChipText}>
-                      {s.weight} × {s.reps}
-                      {s.isAmrap ? "*" : ""}
-                      {s.isPr ? " PR" : ""}
-                    </Text>
-                  </View>
+                  <Text key={si} style={styles.setText}>
+                    {s.weight} x {s.reps}
+                    {s.isAmrap ? "*" : ""}
+                    {s.isPr ? " PR" : ""}
+                    {si < ex.sets.length - 1 ? "  " : ""}
+                  </Text>
                 ))}
               </View>
             </View>
@@ -128,64 +131,64 @@ export default function HistoryScreen() {
 const styles = StyleSheet.create({
   scroll: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.bg,
   },
   scrollContent: {
-    padding: 16,
+    padding: spacing.md,
     paddingBottom: 40,
   },
   emptyPanel: {
     alignItems: "center",
-    marginTop: 24,
+    marginTop: spacing.xl,
   },
   emptyText: {
-    color: "#666",
-    fontSize: 15,
+    color: colors.textSecondary,
+    ...typography.body,
   },
   sessionPanel: {
-    backgroundColor: "#111",
-    borderRadius: 14,
-    padding: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.md,
   },
   sessionHeader: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 14,
+    color: colors.text,
+    ...typography.title3,
+    marginBottom: spacing.md,
   },
   exerciseCard: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 10,
-    padding: 12,
-    marginBottom: 10,
-    borderLeftWidth: 4,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  exerciseNameRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: spacing.sm,
+  },
+  typeDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: spacing.sm,
   },
   exerciseName: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "700",
-    marginBottom: 8,
+    color: colors.text,
+    ...typography.bodyBold,
   },
   setsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 6,
+    marginLeft: spacing.md,
   },
-  setChip: {
-    backgroundColor: "#2A2A2A",
-    borderRadius: 6,
-    paddingVertical: 3,
-    paddingHorizontal: 8,
-  },
-  setChipText: {
-    color: "#E0E0E0",
-    fontSize: 13,
-    fontWeight: "500",
+  setText: {
+    color: colors.textSecondary,
+    ...typography.body,
   },
   totalText: {
-    color: "#666",
-    fontSize: 13,
-    marginTop: 10,
+    color: colors.textTertiary,
+    ...typography.caption1,
+    marginTop: spacing.sm,
     textAlign: "right",
   },
 });

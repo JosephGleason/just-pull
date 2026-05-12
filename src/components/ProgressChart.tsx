@@ -1,6 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import { WorkoutLog } from "../types";
+import { colors, typography, spacing, radius } from "../theme";
 
 interface ProgressChartProps {
   exerciseKey: string;
@@ -113,7 +114,7 @@ export function ProgressChart({ exerciseKey, history, units }: ProgressChartProp
                 top: y,
                 width: plotWidth,
                 height: 1,
-                backgroundColor: "#2A2A2A",
+                backgroundColor: colors.separator,
               }}
             />
           );
@@ -141,7 +142,7 @@ export function ProgressChart({ exerciseKey, history, units }: ProgressChartProp
                 top: y1,
                 width: length,
                 height: 2,
-                backgroundColor: "#4CAF50",
+                backgroundColor: colors.accent,
                 transformOrigin: "left center",
                 transform: [{ rotate: `${angle}deg` }],
               }}
@@ -155,12 +156,12 @@ export function ProgressChart({ exerciseKey, history, units }: ProgressChartProp
             key={`dot-${i}`}
             style={{
               position: "absolute",
-              left: toX(i) - 4,
-              top: toY(point.weight) - 4,
-              width: 8,
-              height: 8,
-              borderRadius: 4,
-              backgroundColor: "#4CAF50",
+              left: toX(i) - 3,
+              top: toY(point.weight) - 3,
+              width: 6,
+              height: 6,
+              borderRadius: 3,
+              backgroundColor: colors.accent,
             }}
           />
         ))}
@@ -185,7 +186,7 @@ export function ProgressChart({ exerciseKey, history, units }: ProgressChartProp
         ))}
 
         {/* Units label */}
-        <Text style={[styles.axisLabel, { position: "absolute", right: 0, top: 0, color: "#666" }]}>
+        <Text style={[styles.axisLabel, { position: "absolute", right: 0, top: 0, color: colors.textTertiary }]}>
           {units}
         </Text>
       </View>
@@ -203,39 +204,39 @@ const styles = StyleSheet.create({
     height: CHART_HEIGHT,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "#111",
-    borderRadius: 12,
-    marginHorizontal: 16,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    marginHorizontal: spacing.md,
   },
   emptyText: {
-    color: "#666",
+    color: colors.textSecondary,
     fontSize: 16,
     fontWeight: "600",
   },
   emptySubtext: {
-    color: "#444",
+    color: colors.textTertiary,
     fontSize: 13,
-    marginTop: 4,
+    marginTop: spacing.xs,
   },
   chartContainer: {
-    marginHorizontal: 16,
-    backgroundColor: "#111",
-    borderRadius: 12,
-    padding: 8,
+    marginHorizontal: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.sm,
   },
   axisLabel: {
-    color: "#888",
-    fontSize: 10,
+    color: colors.textTertiary,
+    ...typography.caption1,
   },
   latestLabel: {
-    color: "#888",
-    fontSize: 12,
+    color: colors.textSecondary,
+    ...typography.caption1,
     textAlign: "right",
-    paddingRight: 4,
+    paddingRight: spacing.xs,
     marginTop: 2,
   },
   latestValue: {
-    color: "#4CAF50",
+    color: colors.accent,
     fontWeight: "700",
   },
 });

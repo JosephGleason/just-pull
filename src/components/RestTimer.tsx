@@ -1,5 +1,6 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import { colors, typography, spacing, radius } from "../theme";
 
 interface RestTimerProps {
   secondsLeft: number;
@@ -34,14 +35,14 @@ export function RestTimer({
       </View>
 
       <View style={styles.row}>
-        <TouchableOpacity onPress={onDismiss} style={styles.actionButton} activeOpacity={0.7}>
-          <Text style={styles.actionButtonText}>Dismiss</Text>
+        <TouchableOpacity onPress={onDismiss} activeOpacity={0.7}>
+          <Text style={styles.actionText}>Dismiss</Text>
         </TouchableOpacity>
 
         <Text style={styles.timeDisplay}>{formatTime(secondsLeft)}</Text>
 
-        <TouchableOpacity onPress={onExtend} style={styles.actionButton} activeOpacity={0.7}>
-          <Text style={styles.actionButtonText}>+30s</Text>
+        <TouchableOpacity onPress={onExtend} activeOpacity={0.7}>
+          <Text style={styles.actionText}>+30s</Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -54,46 +55,34 @@ const styles = StyleSheet.create({
     bottom: 0,
     left: 0,
     right: 0,
-    backgroundColor: "#1A1A1A",
-    borderTopWidth: 1,
-    borderTopColor: "#333333",
+    backgroundColor: colors.surfaceElevated,
     paddingBottom: 34, // safe area
-    paddingHorizontal: 16,
+    maxHeight: 70,
   },
   progressTrack: {
     height: 4,
-    backgroundColor: "#333333",
-    borderRadius: 2,
+    backgroundColor: colors.separator,
   },
   progressFill: {
     height: 4,
-    backgroundColor: "#4CAF50",
+    backgroundColor: colors.accent,
     borderRadius: 2,
   },
   row: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingVertical: 12,
+    paddingVertical: 10,
+    paddingHorizontal: spacing.md,
   },
   timeDisplay: {
-    color: "#FFFFFF",
-    fontSize: 28,
-    fontWeight: "800",
+    color: colors.text,
+    ...typography.title1,
     fontVariant: ["tabular-nums"],
   },
-  actionButton: {
-    backgroundColor: "#2A2A2A",
-    borderRadius: 8,
-    paddingHorizontal: 20,
-    minWidth: 80,
-    minHeight: 48,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  actionButtonText: {
-    color: "#A3A3A3",
+  actionText: {
+    color: colors.textSecondary,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "500",
   },
 });

@@ -14,6 +14,7 @@ import { getTargetWeight } from "../../src/hooks/useWorkout";
 import { calculateNutrition } from "../../src/hooks/useNutrition";
 import { ExerciseCard } from "../../src/components/ExerciseCard";
 import { NutritionCard } from "../../src/components/NutritionCard";
+import { colors, typography, spacing, radius } from "../../src/theme";
 
 export default function TodayScreen() {
   const router = useRouter();
@@ -23,7 +24,7 @@ export default function TodayScreen() {
   if (isLoading) {
     return (
       <View style={styles.centered}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -59,24 +60,26 @@ export default function TodayScreen() {
             onPress={() => router.push("/workout")}
             activeOpacity={0.8}
           >
-            <Text style={styles.resumeText}>
-              Workout in progress — Resume?
-            </Text>
+            <Text style={styles.resumeLabel}>Workout in progress</Text>
+            <Text style={styles.resumeAction}>Resume</Text>
           </TouchableOpacity>
         )}
 
         {/* Header */}
+        <Text style={styles.dayLabel}>DAY {cycleState.nextDay}</Text>
         <View style={styles.headerRow}>
           <Text style={styles.headerTitle}>
-            Day {cycleState.nextDay} — Week {cycleState.weekNumber}, Cycle{" "}
-            {cycleState.cycleNumber}
+            Week {cycleState.weekNumber}, Cycle {cycleState.cycleNumber}
           </Text>
           {cycleState.isDeload && (
             <View style={styles.deloadBadge}>
-              <Text style={styles.deloadText}>Deload Cycle</Text>
+              <Text style={styles.deloadText}>Deload</Text>
             </View>
           )}
         </View>
+
+        {/* Nutrition Card */}
+        {nutritionTargets && <NutritionCard targets={nutritionTargets} />}
 
         {/* Exercise List */}
         {programDay.exercises.map((exercise) => {
@@ -102,9 +105,6 @@ export default function TodayScreen() {
             />
           );
         })}
-
-        {/* Nutrition Card */}
-        {nutritionTargets && <NutritionCard targets={nutritionTargets} />}
       </ScrollView>
 
       {/* Start Workout Button */}
@@ -124,75 +124,86 @@ export default function TodayScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.bg,
   },
   centered: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.bg,
     justifyContent: "center",
     alignItems: "center",
-    padding: 24,
+    padding: spacing.xl,
   },
   emptyText: {
-    color: "#888",
-    fontSize: 16,
+    color: colors.textSecondary,
+    ...typography.body,
     textAlign: "center",
   },
   scroll: {
     flex: 1,
   },
   scrollContent: {
-    padding: 16,
+    padding: spacing.md,
     paddingBottom: 100,
   },
   resumeBanner: {
-    backgroundColor: "#F59E0B",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 16,
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.md,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
-  resumeText: {
-    color: "#000",
-    fontSize: 16,
-    fontWeight: "700",
+  resumeLabel: {
+    color: colors.text,
+    ...typography.body,
+  },
+  resumeAction: {
+    color: colors.accent,
+    ...typography.bodyBold,
+  },
+  dayLabel: {
+    color: colors.textSecondary,
+    ...typography.caption2,
+    marginBottom: spacing.xs,
   },
   headerRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 20,
+    marginBottom: spacing.lg,
     flexWrap: "wrap",
-    gap: 10,
+    gap: spacing.sm,
   },
   headerTitle: {
-    color: "#FFFFFF",
-    fontSize: 22,
-    fontWeight: "800",
+    color: colors.text,
+    ...typography.title1,
   },
   deloadBadge: {
-    backgroundColor: "#7C3AED",
-    borderRadius: 8,
-    paddingVertical: 4,
-    paddingHorizontal: 10,
+    backgroundColor: "rgba(255, 159, 10, 0.15)",
+    borderRadius: radius.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
   deloadText: {
-    color: "#FFFFFF",
+    color: colors.orange,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   startButton: {
     position: "absolute",
     bottom: 24,
-    left: 16,
-    right: 16,
-    backgroundColor: "#4CAF50",
-    borderRadius: 14,
-    paddingVertical: 18,
+    left: spacing.md,
+    right: spacing.md,
+    backgroundColor: colors.accent,
+    borderRadius: radius.lg,
+    paddingVertical: 16,
     alignItems: "center",
+    minHeight: 56,
+    justifyContent: "center",
   },
   startButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "700",
   },
 });

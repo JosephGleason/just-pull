@@ -10,8 +10,9 @@ import {
 import { useAppContext } from "../../src/context";
 import { COMPOUND_KEYS } from "../../src/program";
 import { ProgressChart } from "../../src/components/ProgressChart";
+import { colors, typography, spacing, radius } from "../../src/theme";
 
-/** Convert a key like "bench_4" → "Bench (4 rep)" */
+/** Convert a key like "bench_4" -> "Bench (4 rep)" */
 function keyToDisplayName(key: string): string {
   const parts = key.split("_");
   // last part is typically a number
@@ -34,7 +35,7 @@ export default function ProgressScreen() {
       <Text style={styles.screenTitle}>Progress</Text>
 
       {/* Exercise Picker */}
-      <Text style={styles.sectionLabel}>Exercise</Text>
+      <Text style={styles.sectionLabel}>EXERCISE</Text>
       <FlatList
         data={COMPOUND_KEYS as unknown as string[]}
         horizontal
@@ -71,7 +72,7 @@ export default function ProgressScreen() {
       </View>
 
       {/* Working Weights Dashboard */}
-      <Text style={styles.sectionLabel}>Working Weights</Text>
+      <Text style={styles.sectionLabel}>WORKING WEIGHTS</Text>
       <View style={styles.grid}>
         {(COMPOUND_KEYS as unknown as string[]).map((key) => {
           const ew = weights[key];
@@ -87,7 +88,7 @@ export default function ProgressScreen() {
                   <Text style={styles.weightCardUnit}>{units}</Text>
                 </Text>
               ) : (
-                <Text style={styles.weightCardEmpty}>—</Text>
+                <Text style={styles.weightCardEmpty}>{"—"}</Text>
               )}
             </View>
           );
@@ -100,99 +101,86 @@ export default function ProgressScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000",
+    backgroundColor: colors.bg,
   },
   content: {
     paddingBottom: 40,
   },
   screenTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    paddingHorizontal: 16,
+    color: colors.text,
+    ...typography.displayMedium,
+    paddingHorizontal: spacing.md,
     paddingTop: 56,
-    paddingBottom: 16,
+    paddingBottom: spacing.md,
   },
   sectionLabel: {
-    fontSize: 13,
-    fontWeight: "600",
-    color: "#888",
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    paddingHorizontal: 16,
-    marginBottom: 8,
-    marginTop: 20,
+    color: colors.textSecondary,
+    ...typography.caption2,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
+    marginTop: spacing.lg,
   },
   pickerScroll: {
     flexGrow: 0,
   },
   pickerList: {
-    paddingHorizontal: 16,
-    gap: 8,
+    paddingHorizontal: spacing.md,
+    gap: spacing.sm,
   },
   pill: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 20,
+    backgroundColor: colors.surface,
+    borderRadius: spacing.lg,
     paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
+    paddingVertical: spacing.sm,
   },
   pillSelected: {
-    backgroundColor: "#1C3A1F",
-    borderColor: "#4CAF50",
+    backgroundColor: colors.accent,
   },
   pillText: {
-    color: "#888",
+    color: colors.textSecondary,
     fontSize: 13,
     fontWeight: "600",
   },
   pillTextSelected: {
-    color: "#4CAF50",
+    color: colors.text,
   },
   chartSection: {
-    marginTop: 12,
+    marginTop: spacing.md,
   },
   chartTitle: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
-    paddingHorizontal: 16,
-    marginBottom: 10,
+    color: colors.text,
+    ...typography.title3,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
   },
   grid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 12,
-    gap: 8,
+    paddingHorizontal: spacing.md - 4,
+    gap: spacing.sm,
   },
   weightCard: {
     width: "47%",
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     padding: 14,
-    borderWidth: 1,
-    borderColor: "#2A2A2A",
   },
   weightCardName: {
-    fontSize: 12,
-    color: "#888",
-    marginBottom: 6,
-    fontWeight: "500",
+    color: colors.textSecondary,
+    ...typography.caption2,
+    marginBottom: spacing.sm,
   },
   weightCardValue: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    color: colors.text,
+    ...typography.displayMedium,
   },
   weightCardUnit: {
     fontSize: 14,
     fontWeight: "400",
-    color: "#888",
+    color: colors.textSecondary,
   },
   weightCardEmpty: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#444",
+    color: colors.textTertiary,
+    ...typography.displayMedium,
   },
 });

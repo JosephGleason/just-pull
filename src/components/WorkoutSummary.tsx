@@ -8,12 +8,7 @@ import {
   ScrollView,
 } from "react-native";
 import { ExerciseLog, ExerciseType } from "../types";
-
-const TYPE_COLORS: Record<ExerciseType, string> = {
-  red: "#EF4444",
-  blue: "#3B82F6",
-  black: "#A3A3A3",
-};
+import { colors, typography, spacing, radius } from "../theme";
 
 interface WorkoutSummaryProps {
   exercises: ExerciseLog[];
@@ -46,12 +41,15 @@ export function WorkoutSummary({
       style={styles.container}
       contentContainerStyle={styles.content}
     >
-      <Text style={styles.header}>Workout Complete!</Text>
+      {/* Checkmark */}
+      <Text style={styles.checkmark}>✓</Text>
+
+      <Text style={styles.header}>Workout Complete</Text>
 
       {/* PR celebration */}
       {prsHit.length > 0 && (
         <View style={styles.prSection}>
-          <Text style={styles.prTitle}>New PRs!</Text>
+          <Text style={styles.prTitle}>New PRs</Text>
           {prsHit.map((name) => (
             <Text key={name} style={styles.prItem}>
               {name}
@@ -63,10 +61,7 @@ export function WorkoutSummary({
       {/* Exercise summary */}
       <View style={styles.exerciseList}>
         {exercises.map((ex) => (
-          <View
-            key={ex.key}
-            style={[styles.exerciseRow, { borderLeftColor: TYPE_COLORS[ex.type] }]}
-          >
+          <View key={ex.key} style={styles.exerciseRow}>
             <Text style={styles.exerciseName}>{ex.name}</Text>
             <Text style={styles.exerciseSets}>
               {ex.sets.length} {ex.sets.length === 1 ? "set" : "sets"}
@@ -105,95 +100,91 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   content: {
-    paddingHorizontal: 24,
-    paddingTop: 48,
-    paddingBottom: 48,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xxl,
+    paddingBottom: spacing.xxl,
     alignItems: "center",
   },
+  checkmark: {
+    fontSize: 56,
+    color: colors.green,
+    marginBottom: spacing.md,
+  },
   header: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    marginBottom: 24,
+    color: colors.text,
+    ...typography.title1,
+    marginBottom: spacing.xl,
     textAlign: "center",
   },
   prSection: {
-    backgroundColor: "#1A1A1A",
-    borderRadius: 12,
-    padding: 16,
-    marginBottom: 24,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.xl,
     alignSelf: "stretch",
-    borderWidth: 1,
-    borderColor: "#7C3AED",
   },
   prTitle: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#FFD700",
-    marginBottom: 8,
+    color: colors.teal,
+    ...typography.title3,
+    marginBottom: spacing.sm,
     textAlign: "center",
   },
   prItem: {
-    fontSize: 16,
-    color: "#FFFFFF",
+    color: colors.text,
+    ...typography.body,
     textAlign: "center",
-    marginBottom: 4,
+    marginBottom: spacing.xs,
   },
   exerciseList: {
     alignSelf: "stretch",
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   exerciseRow: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#1A1A1A",
-    borderRadius: 10,
-    padding: 14,
-    marginBottom: 8,
-    borderLeftWidth: 4,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    padding: spacing.md,
+    marginBottom: spacing.sm,
   },
   exerciseName: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.text,
+    ...typography.body,
+    fontWeight: "600",
   },
   exerciseSets: {
-    fontSize: 14,
-    color: "#A3A3A3",
+    color: colors.textSecondary,
+    ...typography.caption1,
   },
   totalSets: {
-    fontSize: 16,
-    color: "#A3A3A3",
-    marginBottom: 32,
+    color: colors.textSecondary,
+    ...typography.body,
+    marginBottom: spacing.xl,
   },
   finishButton: {
-    backgroundColor: "#4CAF50",
-    borderRadius: 16,
-    paddingVertical: 18,
+    backgroundColor: colors.accent,
+    borderRadius: radius.lg,
+    paddingVertical: 16,
     alignSelf: "stretch",
     alignItems: "center",
-    minHeight: 60,
+    minHeight: 56,
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   finishButtonText: {
-    color: "#FFFFFF",
-    fontSize: 18,
-    fontWeight: "800",
+    color: colors.text,
+    fontSize: 17,
+    fontWeight: "700",
   },
   discardButton: {
-    backgroundColor: "#2A2A2A",
-    borderRadius: 16,
-    paddingVertical: 14,
     alignSelf: "stretch",
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#EF4444",
+    paddingVertical: spacing.md,
   },
   discardButtonText: {
-    color: "#EF4444",
+    color: colors.red,
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "500",
   },
 });

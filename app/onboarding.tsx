@@ -12,6 +12,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useAppContext } from "../src/context";
 import { setOnboardingComplete } from "../src/storage";
 import { createInitialCycleState } from "../src/hooks/useCycleState";
@@ -24,26 +25,11 @@ import {
   ActivityLevel,
   Goal,
 } from "../src/types";
+import { colors, typography, spacing, radius } from "../src/theme";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-const COLORS = {
-  bg: "#0A0A0A",
-  card: "#161616",
-  cardBorder: "#222",
-  accent: "#6C63FF",
-  accentDim: "#4A43CC",
-  text: "#FFFFFF",
-  textDim: "#888",
-  textMuted: "#555",
-  inputBg: "#1A1A1A",
-  inputBorder: "#333",
-  inputFocus: "#6C63FF",
-  success: "#34D399",
-  error: "#EF4444",
-};
-
-// ─── Compound exercise config ────────────────────────────────────────
+// --- Compound exercise config ------------------------------------------------
 interface CompoundConfig {
   label: string;
   keys: string[];
@@ -93,7 +79,7 @@ const GOALS: { value: Goal; label: string }[] = [
   { value: "cut", label: "Cut" },
 ];
 
-// ─── Step indicator ──────────────────────────────────────────────────
+// --- Step indicator ----------------------------------------------------------
 function StepIndicator({ current, total }: { current: number; total: number }) {
   return (
     <View style={styles.stepRow}>
@@ -111,7 +97,7 @@ function StepIndicator({ current, total }: { current: number; total: number }) {
   );
 }
 
-// ─── Step 1: Units ───────────────────────────────────────────────────
+// --- Step 1: Units -----------------------------------------------------------
 function StepUnits({
   units,
   onSelect,
@@ -169,7 +155,7 @@ function StepUnits({
   );
 }
 
-// ─── Step 2: Starting Weights ────────────────────────────────────────
+// --- Step 2: Starting Weights ------------------------------------------------
 function StepWeights({
   units,
   weights,
@@ -209,7 +195,7 @@ function StepWeights({
                     ? String(ex.defaultLb)
                     : String(ex.defaultKg)
                 }
-                placeholderTextColor={COLORS.textMuted}
+                placeholderTextColor={colors.textTertiary}
                 value={weights[ex.label] ?? ""}
                 onChangeText={(v) => onChange(ex.label, v)}
                 selectTextOnFocus
@@ -223,7 +209,7 @@ function StepWeights({
   );
 }
 
-// ─── Step 3: Rest Timer ──────────────────────────────────────────────
+// --- Step 3: Rest Timer ------------------------------------------------------
 function StepTimer({
   compoundSec,
   accessorySec,
@@ -288,7 +274,7 @@ function StepTimer({
   );
 }
 
-// ─── Step 4: Nutrition ───────────────────────────────────────────────
+// --- Step 4: Nutrition -------------------------------------------------------
 function StepNutrition({
   nutrition,
   onChange,
@@ -316,7 +302,7 @@ function StepNutrition({
             style={styles.nutritionInput}
             keyboardType="numeric"
             placeholder="25"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textTertiary}
             value={nutrition.age ? String(nutrition.age) : ""}
             onChangeText={(v) => onChange("age", parseInt(v, 10) || 0)}
             selectTextOnFocus
@@ -330,7 +316,7 @@ function StepNutrition({
             style={styles.nutritionInput}
             keyboardType="numeric"
             placeholder="170"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textTertiary}
             value={nutrition.weight ? String(nutrition.weight) : ""}
             onChangeText={(v) => onChange("weight", parseInt(v, 10) || 0)}
             selectTextOnFocus
@@ -344,7 +330,7 @@ function StepNutrition({
             style={styles.nutritionInput}
             keyboardType="numeric"
             placeholder="70"
-            placeholderTextColor={COLORS.textMuted}
+            placeholderTextColor={colors.textTertiary}
             value={nutrition.height ? String(nutrition.height) : ""}
             onChangeText={(v) => onChange("height", parseInt(v, 10) || 0)}
             selectTextOnFocus
@@ -437,9 +423,9 @@ function StepNutrition({
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =============================================================================
 // Main Onboarding Screen
-// ═════════════════════════════════════════════════════════════════════
+// =============================================================================
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -462,7 +448,7 @@ export default function OnboardingScreen() {
   // Step 4 state
   const [nutrition, setNutrition] = useState<Partial<NutritionSettings>>({});
 
-  // ─── Navigation helpers ────────────────────────────────────────────
+  // --- Navigation helpers ----------------------------------------------------
   const animateTransition = (nextStep: number) => {
     Animated.timing(fadeAnim, {
       toValue: 0,
@@ -511,7 +497,7 @@ export default function OnboardingScreen() {
     handleComplete(true);
   };
 
-  // ─── Completion ────────────────────────────────────────────────────
+  // --- Completion ------------------------------------------------------------
   const handleComplete = async (skipNutrition: boolean) => {
     const selectedUnits = units!;
 
@@ -573,7 +559,7 @@ export default function OnboardingScreen() {
       };
     }
 
-    // Save everything — setSettings last because the root layout
+    // Save everything -- setSettings last because the root layout
     // gates on settings being non-null to switch away from onboarding
     await setWeights(weightsMap);
     await setCycleState(createInitialCycleState());
@@ -581,19 +567,19 @@ export default function OnboardingScreen() {
     await setSettings(settings);
   };
 
-  // ─── Weight change handler ─────────────────────────────────────────
+  // --- Weight change handler -------------------------------------------------
   const handleWeightChange = (label: string, value: string) => {
     // Only allow digits and decimal point
     const cleaned = value.replace(/[^0-9.]/g, "");
     setStartingWeights((prev) => ({ ...prev, [label]: cleaned }));
   };
 
-  // ─── Nutrition change handler ──────────────────────────────────────
+  // --- Nutrition change handler ----------------------------------------------
   const handleNutritionChange = (field: string, value: any) => {
     setNutrition((prev) => ({ ...prev, [field]: value }));
   };
 
-  // ─── Render current step ──────────────────────────────────────────
+  // --- Render current step ---------------------------------------------------
   const renderStep = () => {
     switch (step) {
       case 0:
@@ -694,48 +680,48 @@ export default function OnboardingScreen() {
   );
 }
 
-// ═════════════════════════════════════════════════════════════════════
+// =============================================================================
 // Styles
-// ═════════════════════════════════════════════════════════════════════
+// =============================================================================
 const styles = StyleSheet.create({
   root: {
     flex: 1,
-    backgroundColor: COLORS.bg,
+    backgroundColor: colors.bg,
   },
   container: {
     flex: 1,
     paddingTop: 60,
     paddingBottom: 36,
-    paddingHorizontal: 24,
+    paddingHorizontal: spacing.xl,
   },
 
   // Header
   header: {
     alignItems: "center",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   brand: {
     fontSize: 14,
     fontWeight: "700",
-    color: COLORS.accent,
+    color: colors.accent,
     letterSpacing: 4,
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   stepRow: {
     flexDirection: "row",
-    gap: 8,
+    gap: spacing.sm,
   },
   stepDot: {
     width: 32,
     height: 4,
     borderRadius: 2,
-    backgroundColor: COLORS.cardBorder,
+    backgroundColor: colors.separator,
   },
   stepDotActive: {
-    backgroundColor: COLORS.accent,
+    backgroundColor: colors.accent,
   },
   stepDotDone: {
-    backgroundColor: COLORS.accentDim,
+    backgroundColor: "rgba(10, 132, 255, 0.4)",
   },
 
   // Content
@@ -748,87 +734,83 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   stepTitle: {
-    fontSize: 28,
-    fontWeight: "800",
-    color: COLORS.text,
-    marginBottom: 8,
+    color: colors.text,
+    ...typography.title1,
+    marginBottom: spacing.sm,
   },
   stepSubtitle: {
-    fontSize: 15,
-    color: COLORS.textDim,
-    marginBottom: 28,
+    color: colors.textSecondary,
+    ...typography.body,
+    marginBottom: spacing.xl,
     lineHeight: 22,
   },
 
   // Step 1: Units
   unitButtons: {
-    gap: 16,
-    marginTop: 16,
+    gap: spacing.md,
+    marginTop: spacing.md,
   },
   unitButton: {
-    backgroundColor: COLORS.card,
-    borderWidth: 2,
-    borderColor: COLORS.cardBorder,
-    borderRadius: 16,
-    paddingVertical: 28,
-    paddingHorizontal: 24,
+    backgroundColor: colors.surface,
+    borderWidth: 1.5,
+    borderColor: colors.separator,
+    borderRadius: radius.lg,
+    paddingVertical: spacing.xl,
+    paddingHorizontal: spacing.xl,
     flexDirection: "row",
     alignItems: "center",
-    gap: 16,
+    gap: spacing.md,
   },
   unitButtonActive: {
-    borderColor: COLORS.accent,
-    backgroundColor: "#1A1730",
+    borderColor: colors.accent,
   },
   unitEmoji: {
     fontSize: 28,
     fontWeight: "800",
-    color: COLORS.accent,
+    color: colors.accent,
     width: 60,
     textAlign: "center",
   },
   unitLabel: {
     fontSize: 22,
     fontWeight: "700",
-    color: COLORS.textDim,
+    color: colors.textSecondary,
   },
   unitLabelActive: {
-    color: COLORS.text,
+    color: colors.text,
   },
 
   // Step 2: Weights
   weightScroll: {
     flex: 1,
-    marginHorizontal: -24,
-    paddingHorizontal: 24,
+    marginHorizontal: -spacing.xl,
+    paddingHorizontal: spacing.xl,
   },
   weightScrollContent: {
-    paddingBottom: 24,
+    paddingBottom: spacing.xl,
   },
   weightRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: COLORS.card,
-    borderRadius: 12,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
     paddingVertical: 14,
-    paddingHorizontal: 16,
-    marginBottom: 10,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
+    paddingHorizontal: spacing.md,
+    marginBottom: spacing.sm,
   },
   weightLabelCol: {
     flex: 1,
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   weightLabel: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: COLORS.text,
+    color: colors.text,
+    ...typography.body,
+    fontWeight: "600",
   },
   weightHint: {
-    fontSize: 12,
-    color: COLORS.textMuted,
+    color: colors.textTertiary,
+    ...typography.caption1,
     marginTop: 2,
   },
   weightInputWrapper: {
@@ -837,104 +819,94 @@ const styles = StyleSheet.create({
     gap: 6,
   },
   weightInput: {
-    backgroundColor: COLORS.inputBg,
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    borderRadius: 8,
-    color: COLORS.text,
+    backgroundColor: colors.surfaceTertiary,
+    borderRadius: radius.md,
+    color: colors.text,
     fontSize: 18,
     fontWeight: "700",
     textAlign: "center",
     width: 80,
-    height: 48,
-    paddingHorizontal: 8,
+    height: 50,
+    paddingHorizontal: spacing.sm,
   },
   weightUnit: {
     fontSize: 14,
-    color: COLORS.textDim,
+    color: colors.textSecondary,
     fontWeight: "600",
     width: 24,
   },
 
   // Step 3: Timer
   timerCard: {
-    backgroundColor: COLORS.card,
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 16,
-    borderWidth: 1,
-    borderColor: COLORS.cardBorder,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    padding: spacing.lg,
+    marginBottom: spacing.md,
   },
   timerLabel: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: COLORS.text,
+    color: colors.text,
+    ...typography.title3,
     marginBottom: 2,
   },
   timerHint: {
-    fontSize: 13,
-    color: COLORS.textMuted,
-    marginBottom: 16,
+    color: colors.textTertiary,
+    ...typography.caption1,
+    marginBottom: spacing.md,
   },
   timerInputRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: spacing.sm,
   },
   timerInput: {
-    backgroundColor: COLORS.inputBg,
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    borderRadius: 8,
-    color: COLORS.text,
+    backgroundColor: colors.surfaceTertiary,
+    borderRadius: radius.md,
+    color: colors.text,
     fontSize: 22,
     fontWeight: "700",
     textAlign: "center",
     width: 80,
-    height: 52,
+    height: 50,
   },
   timerSec: {
     fontSize: 15,
-    color: COLORS.textDim,
+    color: colors.textSecondary,
     fontWeight: "600",
   },
   timerFormatted: {
     fontSize: 18,
-    color: COLORS.accent,
+    color: colors.accent,
     fontWeight: "700",
     marginLeft: "auto",
   },
 
   // Step 4: Nutrition
   nutritionField: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   nutritionLabel: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: COLORS.text,
-    marginBottom: 8,
+    color: colors.text,
+    ...typography.bodyBold,
+    marginBottom: spacing.sm,
   },
   nutritionInput: {
-    backgroundColor: COLORS.inputBg,
-    borderWidth: 1,
-    borderColor: COLORS.inputBorder,
-    borderRadius: 10,
-    color: COLORS.text,
+    backgroundColor: colors.surfaceTertiary,
+    borderRadius: radius.md,
+    color: colors.text,
     fontSize: 18,
     fontWeight: "600",
-    height: 52,
-    paddingHorizontal: 16,
+    height: 50,
+    paddingHorizontal: spacing.md,
   },
   pillRow: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 8,
+    gap: spacing.sm,
   },
   pill: {
-    backgroundColor: COLORS.card,
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
-    borderColor: COLORS.cardBorder,
+    borderColor: colors.separator,
     borderRadius: 24,
     paddingVertical: 10,
     paddingHorizontal: 18,
@@ -942,16 +914,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   pillActive: {
-    borderColor: COLORS.accent,
-    backgroundColor: "#1A1730",
+    borderColor: colors.accent,
   },
   pillText: {
     fontSize: 14,
     fontWeight: "600",
-    color: COLORS.textDim,
+    color: colors.textSecondary,
   },
   pillTextActive: {
-    color: COLORS.text,
+    color: colors.text,
   },
 
   // Footer
@@ -959,12 +930,12 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    paddingTop: 16,
+    paddingTop: spacing.md,
   },
   footerRight: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
+    gap: spacing.md,
   },
   backButton: {
     minWidth: 64,
@@ -972,42 +943,40 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   backButtonText: {
-    fontSize: 16,
+    color: colors.textSecondary,
+    ...typography.body,
     fontWeight: "600",
-    color: COLORS.textDim,
   },
   skipButton: {
     height: 48,
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: 12,
-    borderWidth: 1.5,
-    borderColor: COLORS.inputBorder,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceTertiary,
   },
   skipButtonText: {
-    fontSize: 16,
+    color: colors.textSecondary,
+    ...typography.body,
     fontWeight: "600",
-    color: COLORS.textDim,
   },
   nextButton: {
-    backgroundColor: COLORS.accent,
-    height: 52,
-    paddingHorizontal: 32,
-    borderRadius: 14,
+    backgroundColor: colors.accent,
+    height: 56,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.lg,
     justifyContent: "center",
     alignItems: "center",
     minWidth: 100,
   },
   nextButtonDisabled: {
-    backgroundColor: COLORS.cardBorder,
+    backgroundColor: colors.surfaceTertiary,
   },
   nextButtonText: {
-    fontSize: 17,
-    fontWeight: "700",
-    color: COLORS.text,
+    color: colors.text,
+    ...typography.bodyBold,
   },
   nextButtonTextDisabled: {
-    color: COLORS.textMuted,
+    color: colors.textTertiary,
   },
 });

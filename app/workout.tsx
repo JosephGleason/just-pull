@@ -10,6 +10,7 @@ import { SetLogger } from "../src/components/SetLogger";
 import { RestTimer } from "../src/components/RestTimer";
 import { WorkoutSummary } from "../src/components/WorkoutSummary";
 import { SetLog, ExerciseLog } from "../src/types";
+import { colors, typography, spacing } from "../src/theme";
 
 export default function WorkoutScreen() {
   const router = useRouter();
@@ -139,7 +140,7 @@ export default function WorkoutScreen() {
           (s) => s.isPr && s.reps < targetReps
         );
         if (prSetsFailedTarget) {
-          // PR failed — mark it
+          // PR failed -- mark it
           await failPr(currentExercise.key);
         }
       }
@@ -233,7 +234,7 @@ export default function WorkoutScreen() {
   if (isLoading || (!session && !isComplete)) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color={colors.accent} />
         <Text style={styles.loadingText}>Preparing workout...</Text>
       </View>
     );
@@ -257,7 +258,7 @@ export default function WorkoutScreen() {
   if (!currentExercise || !programExercise) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color="#4CAF50" />
+        <ActivityIndicator size="large" color={colors.accent} />
       </View>
     );
   }
@@ -280,7 +281,7 @@ export default function WorkoutScreen() {
         onWeightChange={() => {}}
       />
 
-      {/* Rest timer overlay at bottom — does not block SetLogger */}
+      {/* Rest timer overlay at bottom -- does not block SetLogger */}
       <RestTimer
         secondsLeft={timer.secondsLeft}
         isRunning={timer.isRunning}
@@ -295,17 +296,17 @@ export default function WorkoutScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: colors.bg,
   },
   loadingContainer: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: colors.bg,
     justifyContent: "center",
     alignItems: "center",
   },
   loadingText: {
-    color: "#A3A3A3",
-    fontSize: 16,
-    marginTop: 12,
+    color: colors.textSecondary,
+    ...typography.body,
+    marginTop: spacing.md,
   },
 });
