@@ -93,20 +93,6 @@ export function BodyFigure({
           />
         )}
 
-        {/* Amber glow overlay for highlighted muscles */}
-        {highlightedMuscles.length > 0 && (
-          <View
-            style={[
-              styles.glowOverlay,
-              {
-                width: imageWidth * 0.6,
-                height: imageHeight * 0.5,
-                top: imageHeight * 0.15,
-              },
-            ]}
-          />
-        )}
-
         {/* Side label */}
         <Text style={styles.sideLabel}>
           {side === "front" ? "FRONT" : "BACK"}
