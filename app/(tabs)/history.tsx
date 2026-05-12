@@ -72,6 +72,16 @@ export default function HistoryScreen() {
     return selectedWorkout.exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
   }, [selectedWorkout]);
 
+  if (history.length === 0) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Text style={styles.emptyHistoryText}>
+          Your workout history will appear here
+        </Text>
+      </View>
+    );
+  }
+
   return (
     <ScrollView
       style={styles.scroll}
@@ -139,6 +149,18 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: spacing.md,
     paddingBottom: 40,
+  },
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+  },
+  emptyHistoryText: {
+    color: colors.textSecondary,
+    ...typography.body,
+    textAlign: "center",
   },
   emptyPanel: {
     alignItems: "center",

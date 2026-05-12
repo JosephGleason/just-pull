@@ -1,5 +1,5 @@
-import React from "react";
-import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import React, { useEffect, useRef } from "react";
+import { View, Text, StyleSheet, TouchableOpacity, Animated } from "react-native";
 import { colors, typography, spacing } from "../theme";
 
 interface RestTimerProps {
@@ -23,6 +23,32 @@ export function RestTimer({
   onDismiss,
   onExtend,
 }: RestTimerProps) {
+  const pulseAnim = useRef(new Animated.Value(1)).current;
+  const isUrgent = secondsLeft > 0 && secondsLeft <= 10;
+
+  useEffect(() => {
+    if (isUrgent) {
+      const pulse = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulseAnim, {
+            toValue: 0.5,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulseAnim, {
+            toValue: 1,
+            duration: 500,
+            useNativeDriver: true,
+          }),
+        ])
+      );
+      pulse.start();
+      return () => pulse.stop();
+    } else {
+      pulseAnim.setValue(1);
+    }
+  }, [isUrgent, pulseAnim]);
+
   if (!isRunning && secondsLeft <= 0) return null;
 
   // Progress goes from 100% (full) to 0% (done) — shrinks right to left
@@ -36,7 +62,9 @@ export function RestTimer({
       </View>
 
       {/* Time display centered */}
-      <Text style={styles.timeDisplay}>{formatTime(secondsLeft)}</Text>
+      <Animated.Text style={[styles.timeDisplay, isUrgent && { opacity: pulseAnim }]}>
+        {formatTime(secondsLeft)}
+      </Animated.Text>
 
       {/* Dismiss / extend row */}
       <View style={styles.row}>
@@ -70,7 +98,7 @@ const styles = StyleSheet.create({
   },
   timeDisplay: {
     color: colors.text,
-    ...typography.displayMedium,
+    ...typography.displayLarge,
     textAlign: "center",
     marginTop: spacing.sm,
     fontVariant: ["tabular-nums"],

@@ -17,19 +17,19 @@ export function NutritionCard({ targets }: NutritionCardProps) {
       </View>
       <View style={styles.separator} />
       <View style={styles.macros}>
-        <View style={styles.macroCol}>
+        <View style={[styles.macroPill, { backgroundColor: "rgba(91, 212, 136, 0.08)" }]}>
           <Text style={[styles.macroValue, { color: colors.green }]}>
             {targets.protein}g
           </Text>
           <Text style={styles.macroLabel}>PROTEIN</Text>
         </View>
-        <View style={styles.macroCol}>
+        <View style={[styles.macroPill, { backgroundColor: "rgba(232, 168, 56, 0.08)" }]}>
           <Text style={[styles.macroValue, { color: colors.accent }]}>
             {targets.carbs}g
           </Text>
           <Text style={styles.macroLabel}>CARBS</Text>
         </View>
-        <View style={styles.macroCol}>
+        <View style={[styles.macroPill, { backgroundColor: "rgba(199, 121, 47, 0.08)" }]}>
           <Text style={[styles.macroValue, { color: colors.accentDim }]}>
             {targets.fat}g
           </Text>
@@ -44,6 +44,8 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     padding: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -74,8 +76,11 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-around",
   },
-  macroCol: {
+  macroPill: {
     alignItems: "center",
+    borderRadius: 10,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
   },
   macroValue: {
     ...typography.displaySmall,

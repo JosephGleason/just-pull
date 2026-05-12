@@ -7,6 +7,7 @@ import {
   TouchableOpacity,
   FlatList,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useAppContext } from "../../src/context";
 import { COMPOUND_KEYS } from "../../src/program";
 import { ProgressChart } from "../../src/components/ProgressChart";
@@ -29,6 +30,18 @@ export default function ProgressScreen() {
   const [selectedKey, setSelectedKey] = useState<string>(COMPOUND_KEYS[0]);
 
   const units = settings?.units ?? "lb";
+  const hasHistory = history.length > 0;
+
+  if (!hasHistory) {
+    return (
+      <View style={styles.emptyContainer}>
+        <Ionicons name="barbell-outline" size={48} color={colors.textTertiary} />
+        <Text style={styles.emptyMessage}>
+          Complete your first workout to see progress
+        </Text>
+      </View>
+    );
+  }
 
   return (
     <ScrollView style={styles.container} contentContainerStyle={styles.content}>
@@ -105,6 +118,19 @@ const styles = StyleSheet.create({
   },
   content: {
     paddingBottom: 40,
+  },
+  emptyContainer: {
+    flex: 1,
+    backgroundColor: colors.bg,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.xl,
+  },
+  emptyMessage: {
+    color: colors.textSecondary,
+    ...typography.body,
+    textAlign: "center",
+    marginTop: spacing.md,
   },
   screenTitle: {
     color: colors.text,

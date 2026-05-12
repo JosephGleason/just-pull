@@ -4,7 +4,7 @@
 export const colors = {
   // Backgrounds
   bg: "#0B0B0E",                    // Near-black, barely warm
-  surface: "#151518",              // Cards — barely visible elevation
+  surface: "#16161A",              // Cards — slightly more visible elevation
   surfaceElevated: "#1E1E22",     // Elevated content, modals, inputs
   surfaceTertiary: "#28282D",     // Pressed states, active inputs
 
@@ -22,6 +22,9 @@ export const colors = {
   text: "#F2F0EB",                 // Warm white — NOT pure white
   textSecondary: "#8A897F",       // Warm gray
   textTertiary: "#504F48",        // Dark warm gray
+
+  // Borders
+  cardBorder: "rgba(255, 255, 255, 0.04)", // Barely-visible warm white edge
 
   // Separators
   separator: "#1E1E22",

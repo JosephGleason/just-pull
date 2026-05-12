@@ -97,11 +97,11 @@ export function SetLogger({
           <Text style={styles.weightButtonText}>-</Text>
         </TouchableOpacity>
 
-        <View style={styles.weightDisplay}>
+        <View style={[styles.weightDisplay, isPrAttempt && styles.weightDisplayPr]}>
           <Text style={[styles.weightValue, isPrAttempt && styles.weightValuePr]}>
             {currentWeight}
+            <Text style={styles.weightUnitInline}> {units}</Text>
           </Text>
-          <Text style={styles.weightUnit}>{units}</Text>
         </View>
 
         <TouchableOpacity
@@ -155,7 +155,7 @@ export function SetLogger({
         onPress={handleComplete}
         activeOpacity={0.8}
       >
-        <Text style={styles.completeButtonText}>COMPLETE</Text>
+        <Text style={styles.completeButtonText}>LOG SET</Text>
       </TouchableOpacity>
     </View>
   );
@@ -213,15 +213,17 @@ const styles = StyleSheet.create({
   },
   weightButton: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: 24,
-    width: 48,
-    height: 48,
+    borderRadius: 26,
+    width: 52,
+    height: 52,
     justifyContent: "center",
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
   },
   weightButtonText: {
     color: colors.accent,
-    fontSize: 22,
+    fontSize: 24,
     fontFamily: "PlusJakartaSans_600SemiBold",
   },
   weightDisplay: {
@@ -229,17 +231,25 @@ const styles = StyleSheet.create({
     marginHorizontal: spacing.xl,
     minWidth: 140,
   },
+  weightDisplayPr: {
+    shadowColor: colors.accent,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
+    elevation: 8,
+  },
   weightValue: {
     color: colors.text,
-    ...typography.displayXL,
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 64,
   },
   weightValuePr: {
     color: colors.accent,
   },
-  weightUnit: {
+  weightUnitInline: {
     color: colors.textTertiary,
-    ...typography.micro,
-    marginTop: -4,
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 28,
   },
   amrapHint: {
     color: colors.accent,

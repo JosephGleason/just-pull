@@ -5,8 +5,10 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Pressable,
   ActivityIndicator,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useAppContext } from "../../src/context";
 import { getProgramDay, getSetsForWeek } from "../../src/program";
@@ -18,6 +20,7 @@ import { colors, typography, spacing, radius } from "../../src/theme";
 
 export default function TodayScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { settings, cycleState, weights, currentSession, isLoading } =
     useAppContext();
 
@@ -51,7 +54,7 @@ export default function TodayScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
       >
         {/* Resume Workout Banner */}
         {currentSession && (
@@ -66,9 +69,9 @@ export default function TodayScreen() {
         )}
 
         {/* Header */}
-        <Text style={styles.dayLabel}>DAY {cycleState.nextDay}</Text>
+        <Text style={styles.dayNumber}>DAY {cycleState.nextDay}</Text>
         <View style={styles.headerRow}>
-          <Text style={styles.headerTitle}>
+          <Text style={styles.headerSubtitle}>
             Week {cycleState.weekNumber}, Cycle {cycleState.cycleNumber}
           </Text>
           {cycleState.isDeload && (
@@ -109,13 +112,15 @@ export default function TodayScreen() {
 
       {/* Start Workout Button */}
       {!currentSession && (
-        <TouchableOpacity
-          style={styles.startButton}
+        <Pressable
+          style={({ pressed }) => [styles.startButton, pressed && styles.startButtonPressed]}
           onPress={() => router.push("/workout")}
-          activeOpacity={0.8}
         >
-          <Text style={styles.startButtonText}>Start Workout</Text>
-        </TouchableOpacity>
+          <Text style={styles.startButtonText}>
+            Begin{" "}
+            <Text style={styles.startButtonDay}>Day {cycleState.nextDay}</Text>
+          </Text>
+        </Pressable>
       )}
     </View>
   );
@@ -162,9 +167,9 @@ const styles = StyleSheet.create({
     color: colors.accent,
     ...typography.bodyBold,
   },
-  dayLabel: {
-    color: colors.textSecondary,
-    ...typography.caption,
+  dayNumber: {
+    color: colors.text,
+    ...typography.displayLarge,
     marginBottom: spacing.xs,
   },
   headerRow: {
@@ -174,9 +179,9 @@ const styles = StyleSheet.create({
     flexWrap: "wrap",
     gap: spacing.sm,
   },
-  headerTitle: {
-    color: colors.text,
-    ...typography.title,
+  headerSubtitle: {
+    color: colors.textSecondary,
+    ...typography.caption,
   },
   deloadBadge: {
     backgroundColor: colors.accentGlow,
@@ -199,9 +204,17 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
+  startButtonPressed: {
+    transform: [{ scale: 0.98 }],
+  },
   startButtonText: {
     color: colors.bg,
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 17,
+  },
+  startButtonDay: {
+    color: colors.bg,
+    fontFamily: "BebasNeue_400Regular",
+    fontSize: 20,
   },
 });

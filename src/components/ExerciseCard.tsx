@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, Pressable } from "react-native";
 import { ExerciseType } from "../types";
 import { colors, typography, spacing, radius } from "../theme";
 
@@ -36,12 +36,18 @@ export function ExerciseCard({
   units,
   isChinups,
 }: ExerciseCardProps) {
+  const isCompound = type === "blue" || type === "red";
+
   if (isResting) {
     return (
-      <View style={[styles.card, styles.restingCard]}>
-        <Text style={styles.restingName}>{name}</Text>
-        <Text style={styles.restingLabel}>Rest this week</Text>
-      </View>
+      <Pressable style={({ pressed }) => [styles.card, styles.restingCard, pressed && styles.cardPressed]}>
+        <View style={styles.header}>
+          <View style={styles.nameCol}>
+            <Text style={styles.restingName}>{name}</Text>
+          </View>
+          <Text style={styles.restingLabel}>Rest this week</Text>
+        </View>
+      </Pressable>
     );
   }
 
@@ -53,7 +59,7 @@ export function ExerciseCard({
   const weightColor = getWeightColor(type);
 
   return (
-    <View style={styles.card}>
+    <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
       <View style={styles.header}>
         <View style={styles.nameCol}>
           <Text style={styles.name}>{name}</Text>
@@ -66,10 +72,10 @@ export function ExerciseCard({
           {isAmrap && (
             <Text style={styles.amrapLabel}>AMRAP</Text>
           )}
-          <Text style={[styles.weight, { color: weightColor }]}>{weightLabel}</Text>
+          <Text style={[isCompound ? styles.weight : styles.weightSmall, { color: weightColor }]}>{weightLabel}</Text>
         </View>
       </View>
-    </View>
+    </Pressable>
   );
 }
 
@@ -77,8 +83,13 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
     padding: spacing.lg,
-    marginBottom: spacing.md,
+    marginBottom: 12,
+  },
+  cardPressed: {
+    backgroundColor: colors.surfaceElevated,
   },
   restingCard: {
     opacity: 0.35,
@@ -107,6 +118,9 @@ const styles = StyleSheet.create({
   weight: {
     ...typography.displayLarge,
   },
+  weightSmall: {
+    ...typography.displaySmall,
+  },
   amrapLabel: {
     color: colors.accent,
     ...typography.caption,
@@ -115,11 +129,11 @@ const styles = StyleSheet.create({
   restingName: {
     color: colors.textTertiary,
     ...typography.subtitle,
+    textDecorationLine: "line-through",
   },
   restingLabel: {
     color: colors.textTertiary,
     ...typography.micro,
     fontStyle: "italic",
-    marginTop: spacing.xs,
   },
 });
