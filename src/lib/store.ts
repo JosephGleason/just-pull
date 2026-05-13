@@ -18,7 +18,9 @@ configureSyncedSupabase({
   fieldDeleted: "deleted",
 });
 
-// --- Single-row tables: as: 'value', no generateId ---
+// --- Single-row tables: as: 'value' ---
+// generateId returns auth uid so Legend-State can track the row locally
+const authId = () => auth$.uid.get()!;
 
 // Profile row is created by DB trigger on signup — read + update only
 export const profile$ = observable(
@@ -27,6 +29,7 @@ export const profile$ = observable(
     collection: "profiles",
     as: "value",
     actions: ["read", "update"],
+    generateId: authId,
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: { name: "ls_profiles", plugin: persistPlugin, retrySync: true },
     retry: { infinite: true },
@@ -39,6 +42,7 @@ export const nutrition$ = observable(
     supabase,
     collection: "nutrition_settings",
     as: "value",
+    generateId: authId,
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: { name: "ls_nutrition", plugin: persistPlugin, retrySync: true },
     retry: { infinite: true },
@@ -51,6 +55,7 @@ export const cycle_state$ = observable(
     supabase,
     collection: "cycle_state",
     as: "value",
+    generateId: authId,
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     realtime: true,
     persist: {
@@ -68,6 +73,7 @@ export const current_session$ = observable(
     supabase,
     collection: "current_session",
     as: "value",
+    generateId: authId,
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     realtime: true,
     persist: {
