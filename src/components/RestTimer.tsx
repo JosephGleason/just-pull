@@ -84,11 +84,7 @@ export function RestTimer({
 
 const styles = StyleSheet.create({
   container: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    paddingTop: 0,
+    width: "100%",
   },
   lineTrack: {
     height: 3,

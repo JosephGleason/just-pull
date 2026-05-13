@@ -297,6 +297,14 @@ export default function WorkoutScreen() {
         />
       )}
 
+      <RestTimer
+        secondsLeft={timer.secondsLeft}
+        isRunning={timer.isRunning}
+        progress={timer.progress}
+        onDismiss={handleTimerDismiss}
+        onExtend={handleTimerExtend}
+      />
+
       <SetLogger
         exerciseName={currentExercise.name}
         exerciseKey={currentExercise.key}
@@ -311,15 +319,6 @@ export default function WorkoutScreen() {
         isChinups={isChinups}
         onComplete={handleCompleteSet}
         onWeightChange={() => {}}
-      />
-
-      {/* Rest timer overlay at top -- does not block SetLogger */}
-      <RestTimer
-        secondsLeft={timer.secondsLeft}
-        isRunning={timer.isRunning}
-        progress={timer.progress}
-        onDismiss={handleTimerDismiss}
-        onExtend={handleTimerExtend}
       />
     </View>
   );
