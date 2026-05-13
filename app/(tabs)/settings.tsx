@@ -1070,44 +1070,44 @@ export default function SettingsScreen() {
           <TouchableOpacity
             style={styles.dataBtn}
             onPress={() => {
-              Alert.alert(
-                "Clear All Data",
-                "This will delete all workout history, weights, and settings. You'll need to go through onboarding again. This cannot be undone.",
-                [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Clear Everything",
-                    style: "destructive",
-                    onPress: async () => {
-                      const uid = auth$.uid.get();
-                      // Clean server data FIRST while auth token is still valid
-                      if (uid) {
-                        await supabase.from("exercise_weights").delete().eq("user_id", uid);
-                        await supabase.from("increments").delete().eq("user_id", uid);
-                        await supabase.from("workouts").delete().eq("user_id", uid);
-                        await supabase.from("body_log").delete().eq("user_id", uid);
-                        await supabase.from("current_session").delete().eq("id", uid);
-                        await supabase.from("nutrition_settings").delete().eq("id", uid);
-                        await supabase.from("cycle_state").delete().eq("id", uid);
-                        await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
-                      }
-                      // Clear local cache
-                      await AsyncStorage.multiRemove([
-                        "ls_profiles", "ls_profiles__m",
-                        "ls_nutrition", "ls_nutrition__m",
-                        "ls_cycle_state", "ls_cycle_state__m",
-                        "ls_current_session", "ls_current_session__m",
-                        "ls_exercise_weights", "ls_exercise_weights__m",
-                        "ls_increments", "ls_increments__m",
-                        "ls_workouts", "ls_workouts__m",
-                        "ls_body_log", "ls_body_log__m",
-                      ]);
-                      // Sign out LAST — unmounts tabs after cleanup is done
-                      await signOut();
-                    },
-                  },
-                ]
-              );
+              const doClear = async () => {
+                const uid = auth$.uid.get();
+                if (uid) {
+                  await supabase.from("exercise_weights").delete().eq("user_id", uid);
+                  await supabase.from("increments").delete().eq("user_id", uid);
+                  await supabase.from("workouts").delete().eq("user_id", uid);
+                  await supabase.from("body_log").delete().eq("user_id", uid);
+                  await supabase.from("current_session").delete().eq("id", uid);
+                  await supabase.from("nutrition_settings").delete().eq("id", uid);
+                  await supabase.from("cycle_state").delete().eq("id", uid);
+                  await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
+                }
+                await AsyncStorage.multiRemove([
+                  "ls_profiles", "ls_profiles__m",
+                  "ls_nutrition", "ls_nutrition__m",
+                  "ls_cycle_state", "ls_cycle_state__m",
+                  "ls_current_session", "ls_current_session__m",
+                  "ls_exercise_weights", "ls_exercise_weights__m",
+                  "ls_increments", "ls_increments__m",
+                  "ls_workouts", "ls_workouts__m",
+                  "ls_body_log", "ls_body_log__m",
+                ]);
+                await signOut();
+              };
+              if (Platform.OS === "web") {
+                if (window.confirm("This will delete all data. This cannot be undone. Continue?")) {
+                  doClear();
+                }
+              } else {
+                Alert.alert(
+                  "Clear All Data",
+                  "This will delete all workout history, weights, and settings. You'll need to go through onboarding again. This cannot be undone.",
+                  [
+                    { text: "Cancel", style: "cancel" },
+                    { text: "Clear Everything", style: "destructive", onPress: doClear },
+                  ]
+                );
+              }
             }}
             activeOpacity={0.7}
           >
@@ -1122,16 +1122,22 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <TouchableOpacity
             style={styles.dataBtn}
-            onPress={() => {
-              Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-                { text: "Cancel", style: "cancel" },
-                {
-                  text: "Sign Out",
-                  onPress: async () => {
-                    await signOut();
+            onPress={async () => {
+              if (Platform.OS === "web") {
+                if (window.confirm("Are you sure you want to sign out?")) {
+                  await signOut();
+                }
+              } else {
+                Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+                  { text: "Cancel", style: "cancel" },
+                  {
+                    text: "Sign Out",
+                    onPress: async () => {
+                      await signOut();
+                    },
                   },
-                },
-              ]);
+                ]);
+              }
             }}
             activeOpacity={0.7}
           >
