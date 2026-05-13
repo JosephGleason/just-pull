@@ -15,6 +15,7 @@ configureSyncedSupabase({
   changesSince: "last-sync",
   fieldCreatedAt: "created_at",
   fieldUpdatedAt: "updated_at",
+  fieldDeleted: "deleted",
 });
 
 // --- Single-row tables: as: 'value', no generateId ---
