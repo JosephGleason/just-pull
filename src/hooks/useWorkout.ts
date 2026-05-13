@@ -60,6 +60,8 @@ export function buildSessionExercises(
   return exercises;
 }
 
+let lastSessionSnapshot: CurrentSessionData | null = null;
+
 export function useWorkout() {
   const startWorkout = () => {
     const cycleState = cycle_state$.get();
@@ -82,6 +84,16 @@ export function useWorkout() {
     if (!sessionRow?.data) return;
 
     const currentData = sessionRow.data;
+
+    // Snapshot before mutation so undoLastSet can restore
+    lastSessionSnapshot = {
+      ...currentData,
+      exercises: currentData.exercises.map((ex: ExerciseLog) => ({
+        ...ex,
+        sets: [...ex.sets],
+      })),
+    };
+
     const updatedExercises = currentData.exercises.map((ex: ExerciseLog, i: number) => {
       if (i !== exerciseIndex) return ex;
       return { ...ex, sets: [...ex.sets, set] };
@@ -90,6 +102,13 @@ export function useWorkout() {
     const updatedData: CurrentSessionData = { ...currentData, exercises: updatedExercises };
     current_session$.data.set(updatedData);
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+  };
+
+  const undoLastSet = () => {
+    if (!lastSessionSnapshot) return false;
+    current_session$.data.set(lastSessionSnapshot);
+    lastSessionSnapshot = null;
+    return true;
   };
 
   const failPr = (exerciseKey: string) => {
@@ -158,6 +177,7 @@ export function useWorkout() {
   return {
     startWorkout,
     logSet,
+    undoLastSet,
     failPr,
     finishWorkout,
     discardWorkout,

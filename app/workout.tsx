@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, Alert, ActivityIndicator } from "react-native";
+import { View, Text, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useWorkout, getTargetWeight, getTargetSets } from "../src/hooks/useWorkout";
@@ -13,7 +13,7 @@ import { WorkoutSummary } from "../src/components/WorkoutSummary";
 import { SetLog, ExerciseLog, WorkoutLogRow, ExerciseWeightInput, CurrentSessionData, CurrentSessionRow, CycleStateInput, ProfileRow } from "../src/types";
 import { generateWarmupSets } from "../src/hooks/useWarmup";
 import { WarmupSuggestion } from "../src/components/WarmupSuggestion";
-import { colors, typography, spacing } from "../src/theme";
+import { colors, typography, spacing, radius } from "../src/theme";
 
 export default function WorkoutScreen() {
   const router = useRouter();
@@ -26,7 +26,7 @@ export default function WorkoutScreen() {
   const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
   const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
   const isLoading = !profile;
-  const { startWorkout, logSet, failPr, finishWorkout, discardWorkout } =
+  const { startWorkout, logSet, undoLastSet, failPr, finishWorkout, discardWorkout } =
     useWorkout();
   const timer = useTimer();
 
@@ -36,6 +36,9 @@ export default function WorkoutScreen() {
   const hasStartedRef = useRef(false);
   const [warmupDismissed, setWarmupDismissed] = useState<Record<number, boolean>>({});
   const [ready, setReady] = useState(false);
+  const [showUndoToast, setShowUndoToast] = useState(false);
+  const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const undoIndexRef = useRef<{ exerciseIndex: number; setIndex: number } | null>(null);
 
   // Allow time for current_session$ to sync from Supabase before deciding
   // whether to resume or start fresh
@@ -57,6 +60,13 @@ export default function WorkoutScreen() {
       startWorkout();
     }
   }, [ready, isLoading, currentSession, cycleState]);
+
+  // Clear undo timer on unmount
+  useEffect(() => {
+    return () => {
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    };
+  }, []);
 
   const resumeSession = (exercises: ExerciseLog[]) => {
     if (!cycleState) return;
@@ -148,6 +158,15 @@ export default function WorkoutScreen() {
 
       await logSet(currentExerciseIndex, set);
 
+      // Show undo toast
+      undoIndexRef.current = { exerciseIndex: currentExerciseIndex, setIndex: currentSetIndex };
+      setShowUndoToast(true);
+      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+      undoTimerRef.current = setTimeout(() => {
+        setShowUndoToast(false);
+        undoIndexRef.current = null;
+      }, 5000);
+
       // Dismiss warmup after first working set is logged
       if (currentSetIndex === 0) {
         setWarmupDismissed((prev) => ({ ...prev, [currentExerciseIndex]: true }));
@@ -229,6 +248,19 @@ export default function WorkoutScreen() {
     ]
   );
 
+  const handleUndo = useCallback(() => {
+    if (!undoIndexRef.current) return;
+    const success = undoLastSet();
+    if (success) {
+      setCurrentExerciseIndex(undoIndexRef.current.exerciseIndex);
+      setCurrentSetIndex(undoIndexRef.current.setIndex);
+      setIsComplete(false);
+    }
+    setShowUndoToast(false);
+    undoIndexRef.current = null;
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+  }, [undoLastSet]);
+
   const handleFinish = useCallback(async () => {
     await finishWorkout();
     router.replace("/(tabs)");
@@ -278,6 +310,14 @@ export default function WorkoutScreen() {
           onFinish={handleFinish}
           onDiscard={handleDiscard}
         />
+        {showUndoToast && (
+          <View style={styles.undoToast}>
+            <Text style={styles.undoText}>Set logged</Text>
+            <TouchableOpacity onPress={handleUndo} style={styles.undoButton}>
+              <Text style={styles.undoButtonText}>Undo</Text>
+            </TouchableOpacity>
+          </View>
+        )}
       </View>
     );
   }
@@ -329,6 +369,15 @@ export default function WorkoutScreen() {
         onComplete={handleCompleteSet}
         onWeightChange={() => {}}
       />
+
+      {showUndoToast && (
+        <View style={styles.undoToast}>
+          <Text style={styles.undoText}>Set logged</Text>
+          <TouchableOpacity onPress={handleUndo} style={styles.undoButton}>
+            <Text style={styles.undoButtonText}>Undo</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </View>
   );
 }
@@ -348,5 +397,34 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     ...typography.body,
     marginTop: spacing.md,
+  },
+  undoToast: {
+    position: "absolute",
+    bottom: 80,
+    left: spacing.md,
+    right: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.cardBorder,
+  },
+  undoText: {
+    color: colors.textSecondary,
+    ...typography.body,
+  },
+  undoButton: {
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.md,
+    minHeight: 44,
+    justifyContent: "center",
+  },
+  undoButtonText: {
+    color: colors.accent,
+    ...typography.bodyBold,
   },
 });
