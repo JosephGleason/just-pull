@@ -17,6 +17,7 @@ import { createInitialCycleState } from "../src/hooks/useCycleState";
 import { ALL_EXERCISE_KEYS, COMPOUND_KEYS } from "../src/program";
 import { profile$, cycle_state$, weights$, increments$, nutrition$ } from "../src/lib/store";
 import { auth$ } from "../src/lib/auth";
+import { supabase } from "../src/lib/supabase";
 import {
   ExerciseWeightInput,
   NutritionInput,
@@ -496,7 +497,7 @@ export default function OnboardingScreen() {
   };
 
   // --- Completion ------------------------------------------------------------
-  const handleComplete = (skipNutrition: boolean) => {
+  const handleComplete = async (skipNutrition: boolean) => {
     const selectedUnits = units!;
 
     // 1. Update profile
@@ -529,12 +530,11 @@ export default function OnboardingScreen() {
       weights$[key].set({ exercise_key: key, working: 0, pr: null, pr_status: null } as any);
     }
 
-    // 4. Increments (compound only)
-    for (const ex of COMPOUND_EXERCISES) {
-      for (const key of ex.keys) {
-        increments$[key].set({ exercise_key: key, increment: ex.increment } as any);
-      }
-    }
+    // 4. Increments (compound only) — insert directly via Supabase
+    const incrementRows = COMPOUND_EXERCISES.flatMap((ex) =>
+      ex.keys.map((key) => ({ exercise_key: key, increment: ex.increment }))
+    );
+    await supabase.from("increments").insert(incrementRows);
 
     // 5. Optional nutrition
     const allNutritionFieldsFilled =
