@@ -1,5 +1,5 @@
 import { estimateOneRepMax, getBest1RM } from "../hooks/useOneRepMax";
-import { WorkoutLog } from "../types";
+import { WorkoutLogRow } from "../types";
 
 describe("estimateOneRepMax", () => {
   test("100lb x 10 reps = 133", () => {
@@ -28,14 +28,17 @@ describe("estimateOneRepMax", () => {
 });
 
 describe("getBest1RM", () => {
-  const history: WorkoutLog[] = [
-    {
+  const history: Record<string, WorkoutLogRow> = {
+    "1": {
       id: "1",
+      user_id: "test-user",
+      created_at: "2025-01-01T12:00:00Z",
+      updated_at: "2025-01-01T12:00:00Z",
       date: "2025-01-01",
       day: 1,
       week: 1,
       cycle: 1,
-      completedAt: "2025-01-01T12:00:00Z",
+      completed_at: "2025-01-01T12:00:00Z",
       exercises: [
         {
           name: "Bench",
@@ -43,19 +46,22 @@ describe("getBest1RM", () => {
           reps: 4,
           type: "red",
           sets: [
-            { weight: 185, reps: 4, isAmrap: false, isPr: false },
-            { weight: 185, reps: 4, isAmrap: false, isPr: false },
+            { weight: 185, reps: 4, is_amrap: false, is_pr: false },
+            { weight: 185, reps: 4, is_amrap: false, is_pr: false },
           ],
         },
       ],
     },
-    {
+    "2": {
       id: "2",
+      user_id: "test-user",
+      created_at: "2025-01-08T12:00:00Z",
+      updated_at: "2025-01-08T12:00:00Z",
       date: "2025-01-08",
       day: 2,
       week: 2,
       cycle: 1,
-      completedAt: "2025-01-08T12:00:00Z",
+      completed_at: "2025-01-08T12:00:00Z",
       exercises: [
         {
           name: "Bench",
@@ -63,8 +69,8 @@ describe("getBest1RM", () => {
           reps: 4,
           type: "red",
           sets: [
-            { weight: 200, reps: 3, isAmrap: false, isPr: false },
-            { weight: 190, reps: 5, isAmrap: false, isPr: false },
+            { weight: 200, reps: 3, is_amrap: false, is_pr: false },
+            { weight: 190, reps: 5, is_amrap: false, is_pr: false },
           ],
         },
         {
@@ -73,12 +79,12 @@ describe("getBest1RM", () => {
           reps: 4,
           type: "blue",
           sets: [
-            { weight: 225, reps: 4, isAmrap: false, isPr: false },
+            { weight: 225, reps: 4, is_amrap: false, is_pr: false },
           ],
         },
       ],
     },
-  ];
+  };
 
   test("finds highest estimate across all workouts for bench_4", () => {
     // 185 x 4 = 185 * (1 + 4/30) = 185 * 1.133 = 210 (rounded)
@@ -92,7 +98,7 @@ describe("getBest1RM", () => {
   });
 
   test("returns 0 for empty history", () => {
-    expect(getBest1RM([], "bench_4")).toBe(0);
+    expect(getBest1RM({}, "bench_4")).toBe(0);
   });
 
   test("finds correct value for squat_4", () => {

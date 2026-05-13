@@ -1,12 +1,15 @@
 import { computeMuscleStates } from "../hooks/useBodyModel";
-import { WorkoutLog, BodyLog } from "../types";
+import { WorkoutLogRow, BodyLogRow } from "../types";
 
 function makeWorkout(
   date: string,
   exercises: { key: string; sets: number }[]
-): WorkoutLog {
+): WorkoutLogRow {
   return {
     id: date,
+    user_id: "test-user",
+    created_at: date + "T12:00:00Z",
+    updated_at: date + "T12:00:00Z",
     date,
     day: 1,
     week: 1,
@@ -19,27 +22,43 @@ function makeWorkout(
       sets: Array.from({ length: e.sets }, () => ({
         weight: 100,
         reps: 4,
-        isAmrap: false,
-        isPr: false,
+        is_amrap: false,
+        is_pr: false,
       })),
     })),
-    completedAt: date + "T12:00:00Z",
+    completed_at: date + "T12:00:00Z",
+  };
+}
+
+function toRecord<T extends { id: string }>(items: T[]): Record<string, T> {
+  return Object.fromEntries(items.map((item) => [item.id, item]));
+}
+
+function makeBodyLog(date: string, weight: number, body_fat_percent: number): BodyLogRow {
+  return {
+    id: date,
+    user_id: "test-user",
+    created_at: date + "T00:00:00Z",
+    updated_at: date + "T00:00:00Z",
+    date,
+    weight,
+    body_fat_percent,
   };
 }
 
 describe("computeMuscleStates", () => {
   test("returns all zeroes with no history", () => {
-    const result = computeMuscleStates([], [], new Date("2025-01-01"));
+    const result = computeMuscleStates({}, {}, new Date("2025-01-01"));
     expect(result.muscles.chest).toBe(0);
     expect(result.muscles.back).toBe(0);
     expect(result.muscles.quads).toBe(0);
-    expect(result.monthsTrained).toBe(0);
-    expect(result.bodyFatPercent).toBe(0);
+    expect(result.months_trained).toBe(0);
+    expect(result.body_fat_percent).toBe(0);
   });
 
   test("training bench increases chest, shoulders, triceps but NOT quads", () => {
     const workouts = [makeWorkout("2025-01-06", [{ key: "bench_4", sets: 5 }])];
-    const result = computeMuscleStates(workouts, [], new Date("2025-01-06"));
+    const result = computeMuscleStates(toRecord(workouts), {}, new Date("2025-01-06"));
     expect(result.muscles.chest).toBeGreaterThan(0);
     expect(result.muscles.shoulders).toBeGreaterThan(0);
     expect(result.muscles.triceps).toBeGreaterThan(0);
@@ -55,15 +74,15 @@ describe("computeMuscleStates", () => {
 
     // Value right after training
     const postTraining = computeMuscleStates(
-      workouts,
-      [],
+      toRecord(workouts),
+      {},
       new Date("2025-01-10")
     );
 
     // Value 3 weeks later
     const afterDecay = computeMuscleStates(
-      workouts,
-      [],
+      toRecord(workouts),
+      {},
       new Date("2025-01-31")
     );
 
@@ -76,7 +95,7 @@ describe("computeMuscleStates", () => {
 
   test("muscle memory: regaining is faster than fresh gains", () => {
     // Build up chest over 10 sessions (weeks 1-5, ~2 per week)
-    const buildUpWorkouts: WorkoutLog[] = [];
+    const buildUpWorkouts: WorkoutLogRow[] = [];
     const startDate = new Date("2025-01-06");
     for (let i = 0; i < 10; i++) {
       const d = new Date(startDate);
@@ -95,8 +114,8 @@ describe("computeMuscleStates", () => {
     ];
 
     const afterRetrain = computeMuscleStates(
-      retrainWorkouts,
-      [],
+      toRecord(retrainWorkouts),
+      {},
       new Date("2025-04-07")
     );
 
@@ -108,8 +127,8 @@ describe("computeMuscleStates", () => {
     ];
 
     const freshGain = computeMuscleStates(
-      freshWorkouts,
-      [],
+      toRecord(freshWorkouts),
+      {},
       new Date("2025-04-07")
     );
 
@@ -120,39 +139,39 @@ describe("computeMuscleStates", () => {
   });
 
   test("body fat interpolates between two logs", () => {
-    const bodyLog: BodyLog[] = [
-      { date: "2025-01-01", weight: 200, bodyFatPercent: 20 },
-      { date: "2025-02-01", weight: 190, bodyFatPercent: 18 },
+    const bodyLog: BodyLogRow[] = [
+      makeBodyLog("2025-01-01", 200, 20),
+      makeBodyLog("2025-02-01", 190, 18),
     ];
 
     // Midpoint: Jan 16
-    const result = computeMuscleStates([], bodyLog, new Date("2025-01-16"));
-    // ~halfway → ~19% (within tolerance of interpolation)
-    expect(result.bodyFatPercent).toBeGreaterThan(18.5);
-    expect(result.bodyFatPercent).toBeLessThan(19.5);
+    const result = computeMuscleStates({}, toRecord(bodyLog), new Date("2025-01-16"));
+    // ~halfway -> ~19% (within tolerance of interpolation)
+    expect(result.body_fat_percent).toBeGreaterThan(18.5);
+    expect(result.body_fat_percent).toBeLessThan(19.5);
   });
 
   test("body fat drifts upward when inactive and no recent log", () => {
     // Historical high BF of 25% allows drift room above the recent 20%
-    const bodyLog: BodyLog[] = [
-      { date: "2024-06-01", weight: 210, bodyFatPercent: 25 },
-      { date: "2025-01-01", weight: 200, bodyFatPercent: 20 },
+    const bodyLog: BodyLogRow[] = [
+      makeBodyLog("2024-06-01", 210, 25),
+      makeBodyLog("2025-01-01", 200, 20),
     ];
 
     // 3 months later with NO training
-    const result = computeMuscleStates([], bodyLog, new Date("2025-04-01"));
+    const result = computeMuscleStates({}, toRecord(bodyLog), new Date("2025-04-01"));
     // BF should have drifted up from 20% (capped at max recorded 25%)
-    expect(result.bodyFatPercent).toBeGreaterThan(20);
-    expect(result.bodyFatPercent).toBeLessThanOrEqual(25);
+    expect(result.body_fat_percent).toBeGreaterThan(20);
+    expect(result.body_fat_percent).toBeLessThanOrEqual(25);
   });
 
   test("body fat does NOT drift when training is consistent", () => {
-    const bodyLog: BodyLog[] = [
-      { date: "2025-01-01", weight: 200, bodyFatPercent: 20 },
+    const bodyLog: BodyLogRow[] = [
+      makeBodyLog("2025-01-01", 200, 20),
     ];
 
     // Consistent training: 3+ sessions per week for the last 28 days
-    const workouts: WorkoutLog[] = [];
+    const workouts: WorkoutLogRow[] = [];
     // Generate workouts every 2 days for Jan through March
     for (let d = 1; d <= 90; d += 2) {
       const date = new Date("2025-01-01");
@@ -162,12 +181,12 @@ describe("computeMuscleStates", () => {
     }
 
     const result = computeMuscleStates(
-      workouts,
-      bodyLog,
+      toRecord(workouts),
+      toRecord(bodyLog),
       new Date("2025-04-01")
     );
-    // BF should NOT have drifted — should still be 20%
-    expect(result.bodyFatPercent).toBe(20);
+    // BF should NOT have drifted -- should still be 20%
+    expect(result.body_fat_percent).toBe(20);
   });
 
   test("months trained counts correctly", () => {
@@ -175,13 +194,13 @@ describe("computeMuscleStates", () => {
       makeWorkout("2025-01-15", [{ key: "bench_4", sets: 3 }]),
     ];
 
-    // Jan 15 to Apr 15 = 90 days → floor(90/30) = 3 months
+    // Jan 15 to Apr 15 = 90 days -> floor(90/30) = 3 months
     const result = computeMuscleStates(
-      workouts,
-      [],
+      toRecord(workouts),
+      {},
       new Date("2025-04-15")
     );
-    expect(result.monthsTrained).toBe(3);
+    expect(result.months_trained).toBe(3);
   });
 
   test("values are clamped to [0, 1] even with massive volume", () => {
@@ -195,7 +214,7 @@ describe("computeMuscleStates", () => {
       ]),
     ];
 
-    const result = computeMuscleStates(workouts, [], new Date("2025-01-06"));
+    const result = computeMuscleStates(toRecord(workouts), {}, new Date("2025-01-06"));
     expect(result.muscles.chest).toBeLessThanOrEqual(1);
     expect(result.muscles.chest).toBeGreaterThanOrEqual(0);
     expect(result.muscles.shoulders).toBeLessThanOrEqual(1);

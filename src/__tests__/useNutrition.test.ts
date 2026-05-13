@@ -1,12 +1,12 @@
 import { calculateNutrition } from "../hooks/useNutrition";
-import { NutritionSettings } from "../types";
+import { NutritionInput } from "../types";
 
-const baseSettings: NutritionSettings = {
+const baseSettings: NutritionInput = {
   age: 25,
   weight: 180,
   height: 70,
   sex: "male",
-  activityLevel: "moderate",
+  activity_level: "moderate",
   goal: "maintain",
 };
 
@@ -25,7 +25,7 @@ describe("calculateNutrition", () => {
   });
 
   test("protein in kg mode uses 2.2 conversion", () => {
-    const kgSettings: NutritionSettings = {
+    const kgSettings: NutritionInput = {
       ...baseSettings,
       weight: 82,
       height: 178,

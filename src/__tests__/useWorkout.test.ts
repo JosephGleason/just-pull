@@ -3,20 +3,24 @@ jest.mock("expo-haptics", () => ({
   impactAsync: jest.fn(),
   ImpactFeedbackStyle: { Medium: "medium" },
 }));
-jest.mock("../context", () => ({
-  useAppContext: jest.fn(),
+jest.mock("../lib/store", () => ({
+  weights$: { get: jest.fn() },
+  cycle_state$: { get: jest.fn() },
+  current_session$: { get: jest.fn(), set: jest.fn() },
+  increments$: { get: jest.fn() },
+  workouts$: {},
 }));
 
 import { buildSessionExercises, getTargetWeight } from "../hooks/useWorkout";
-import { CycleState, ExerciseWeight } from "../types";
+import { CycleStateInput, ExerciseWeightInput } from "../types";
 
-const baseCycle: CycleState = { cycleNumber: 2, weekNumber: 1, nextDay: 1, isDeload: false };
+const baseCycle: CycleStateInput = { cycle_number: 2, week_number: 1, next_day: 1, is_deload: false };
 
-const weights: Record<string, ExerciseWeight> = {
-  deadlift_4: { working: 225, pr: 235, prStatus: "pending" },
-  chinups_8: { working: 0, pr: 5, prStatus: "pending" },
-  bb_rows_4: { working: 135, pr: 140, prStatus: "pending" },
-  curls_12: { working: 30, pr: null, prStatus: null },
+const weights: Record<string, ExerciseWeightInput> = {
+  deadlift_4: { exercise_key: "deadlift_4", working: 225, pr: 235, pr_status: "pending" },
+  chinups_8: { exercise_key: "chinups_8", working: 0, pr: 5, pr_status: "pending" },
+  bb_rows_4: { exercise_key: "bb_rows_4", working: 135, pr: 140, pr_status: "pending" },
+  curls_12: { exercise_key: "curls_12", working: 30, pr: null, pr_status: null },
 };
 
 describe("buildSessionExercises", () => {
@@ -27,14 +31,14 @@ describe("buildSessionExercises", () => {
   });
 
   test("Day 1 Week 3 excludes deadlift (0 sets)", () => {
-    const cycle = { ...baseCycle, weekNumber: 3 as const };
+    const cycle = { ...baseCycle, week_number: 3 as const };
     const exercises = buildSessionExercises(cycle, weights);
     expect(exercises.map((e) => e.key)).not.toContain("deadlift_4");
     expect(exercises).toHaveLength(3);
   });
 
   test("deload week 1 excludes deadlift (2-2=0)", () => {
-    const cycle = { ...baseCycle, isDeload: true };
+    const cycle = { ...baseCycle, is_deload: true };
     const exercises = buildSessionExercises(cycle, weights);
     expect(exercises.map((e) => e.key)).not.toContain("deadlift_4");
   });
@@ -47,7 +51,7 @@ describe("buildSessionExercises", () => {
 
 describe("getTargetWeight", () => {
   test("cycle 1 returns working weight", () => {
-    const cycle1 = { ...baseCycle, cycleNumber: 1 };
+    const cycle1 = { ...baseCycle, cycle_number: 1 };
     expect(getTargetWeight("deadlift_4", weights, cycle1)).toBe(225);
   });
 
@@ -56,7 +60,7 @@ describe("getTargetWeight", () => {
   });
 
   test("cycle 2+ with failed PR returns working weight", () => {
-    const failedWeights = { ...weights, deadlift_4: { working: 225, pr: 235, prStatus: "failed" as const } };
+    const failedWeights = { ...weights, deadlift_4: { exercise_key: "deadlift_4", working: 225, pr: 235, pr_status: "failed" as const } };
     expect(getTargetWeight("deadlift_4", failedWeights, baseCycle)).toBe(225);
   });
 
