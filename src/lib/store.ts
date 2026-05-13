@@ -74,6 +74,7 @@ export const current_session$ = observable(
     collection: "current_session",
     ...singleRowBase,
     realtime: true,
+    fieldDeleted: false as any,
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: {
       name: "ls_current_session",
