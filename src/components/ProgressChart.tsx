@@ -1,11 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
-import { WorkoutLog } from "../types";
+import { WorkoutLogRow } from "../types";
 import { colors, typography, spacing, radius } from "../theme";
 
 interface ProgressChartProps {
   exerciseKey: string;
-  history: WorkoutLog[];
+  history: WorkoutLogRow[];
   units: string;
 }
 
@@ -14,11 +14,11 @@ interface DataPoint {
   weight: number;
 }
 
-function getDataPoints(exerciseKey: string, history: WorkoutLog[]): DataPoint[] {
+function getDataPoints(exerciseKey: string, history: WorkoutLogRow[]): DataPoint[] {
   const points: DataPoint[] = [];
 
   for (const workout of history) {
-    if (!workout.completedAt) continue;
+    if (!workout.completed_at) continue;
     const exercise = workout.exercises.find((e) => e.key === exerciseKey);
     if (!exercise || exercise.sets.length === 0) continue;
 

@@ -4,7 +4,7 @@ import { colors as themeColors, typography } from "../theme";
 
 interface BodyFigureProps {
   muscles: Record<string, number>;
-  bodyFatPercent: number;
+  body_fat_percent: number;
   highlightedMuscles: string[];
   side: "front" | "back";
   onToggleSide: () => void;
@@ -24,12 +24,12 @@ const BF_IMAGES: { bf: number; source: any }[] = [
   { bf: 40, source: require("../../assets/body/bf_40.png") },
 ];
 
-function getImagePair(bodyFatPercent: number): {
+function getImagePair(body_fat_percent: number): {
   lower: (typeof BF_IMAGES)[0];
   upper: (typeof BF_IMAGES)[0];
   t: number;
 } {
-  const bf = Math.max(5, Math.min(40, bodyFatPercent));
+  const bf = Math.max(5, Math.min(40, body_fat_percent));
 
   for (let i = 0; i < BF_IMAGES.length - 1; i++) {
     if (bf <= BF_IMAGES[i + 1].bf) {
@@ -45,7 +45,7 @@ function getImagePair(bodyFatPercent: number): {
 
 export function BodyFigure({
   muscles,
-  bodyFatPercent,
+  body_fat_percent,
   highlightedMuscles,
   side,
   onToggleSide,
@@ -53,8 +53,8 @@ export function BodyFigure({
   height,
 }: BodyFigureProps) {
   const { lower, upper, t } = useMemo(
-    () => getImagePair(bodyFatPercent),
-    [bodyFatPercent]
+    () => getImagePair(body_fat_percent),
+    [body_fat_percent]
   );
 
   const imageHeight = height * 0.95;

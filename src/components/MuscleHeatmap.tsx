@@ -1,11 +1,11 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
-import { WorkoutLog, CycleState } from "../types";
+import { WorkoutLogRow, CycleStateInput } from "../types";
 import { colors, typography, spacing, radius, fonts } from "../theme";
 
 interface MuscleHeatmapProps {
-  history: WorkoutLog[];
-  cycleState: CycleState;
+  history: WorkoutLogRow[];
+  cycleState: CycleStateInput;
 }
 
 type MuscleGroup =
@@ -113,8 +113,8 @@ function getHeatStyles(level: HeatLevel): {
 }
 
 function countSetsPerMuscle(
-  history: WorkoutLog[],
-  cycleState: CycleState
+  history: WorkoutLogRow[],
+  cycleState: CycleStateInput
 ): Record<MuscleGroup, number> {
   const counts: Record<MuscleGroup, number> = {
     chest: 0,
@@ -132,7 +132,7 @@ function countSetsPerMuscle(
   // Filter to workouts in the current week
   const thisWeekWorkouts = history.filter(
     (w) =>
-      w.cycle === cycleState.cycleNumber && w.week === cycleState.weekNumber
+      w.cycle === cycleState.cycle_number && w.week === cycleState.week_number
   );
 
   for (const workout of thisWeekWorkouts) {

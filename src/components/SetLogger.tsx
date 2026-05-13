@@ -60,8 +60,8 @@ export function SetLogger({
     onComplete({
       weight: currentWeight,
       reps: parsedReps,
-      isAmrap,
-      isPr: isPrAttempt,
+      is_amrap: isAmrap,
+      is_pr: isPrAttempt,
     });
   };
 
