@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSelector } from "@legendapp/state/react";
 import { workouts$ } from "../../src/lib/store";
 import { CalendarGrid } from "../../src/components/CalendarGrid";
 import { WorkoutLogRow, ExerciseType } from "../../src/types";
@@ -20,7 +21,7 @@ function getWeightColor(type: ExerciseType): string {
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
+  const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
   const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
 
   const now = new Date();

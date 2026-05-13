@@ -4,6 +4,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useWorkout, getTargetWeight, getTargetSets } from "../src/hooks/useWorkout";
 import { useTimer } from "../src/hooks/useTimer";
+import { useSelector } from "@legendapp/state/react";
 import { profile$, cycle_state$, weights$, current_session$, workouts$ } from "../src/lib/store";
 import { getProgramDay, getSetsForWeek } from "../src/program";
 import { SetLogger } from "../src/components/SetLogger";
@@ -17,12 +18,12 @@ import { colors, typography, spacing } from "../src/theme";
 export default function WorkoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const sessionRow = current_session$.get() as CurrentSessionRow | null;
+  const sessionRow = useSelector(current_session$) as CurrentSessionRow | null;
   const currentSession: CurrentSessionData | null = sessionRow?.data ?? null;
-  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
-  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
-  const profile = profile$.get() as ProfileRow | undefined;
-  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
+  const cycleState = (useSelector(cycle_state$) ?? null) as CycleStateInput | null;
+  const weights = (useSelector(weights$) ?? {}) as Record<string, ExerciseWeightInput>;
+  const profile = useSelector(profile$) as ProfileRow | undefined;
+  const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
   const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
   const isLoading = !profile;
   const { startWorkout, logSet, failPr, finishWorkout, discardWorkout } =

@@ -2,6 +2,7 @@ import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSelector } from "@legendapp/state/react";
 import { workouts$, body_log$ } from "../../src/lib/store";
 import { computeMuscleStates } from "../../src/hooks/useBodyModel";
 import { BodyFigure } from "../../src/components/BodyFigure";
@@ -28,8 +29,8 @@ function formatDate(date: Date): string {
 
 export default function BodyScreen() {
   const insets = useSafeAreaInsets();
-  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
-  const bodyLogRecord = (body_log$.get() ?? {}) as Record<string, BodyLogRow>;
+  const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
+  const bodyLogRecord = (useSelector(body_log$) ?? {}) as Record<string, BodyLogRow>;
   const [side, setSide] = useState<"front" | "back">("front");
   const [sliderValue, setSliderValue] = useState(1);
 

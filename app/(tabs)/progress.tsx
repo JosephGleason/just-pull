@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSelector } from "@legendapp/state/react";
 import { profile$, cycle_state$, weights$, workouts$ } from "../../src/lib/store";
 import { COMPOUND_KEYS } from "../../src/program";
 import { ProgressChart } from "../../src/components/ProgressChart";
@@ -30,10 +31,10 @@ function keyToDisplayName(key: string): string {
 }
 
 export default function ProgressScreen() {
-  const profile = profile$.get() as { units: string } | undefined;
-  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
-  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
-  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
+  const profile = useSelector(profile$) as { units: string } | undefined;
+  const cycleState = (useSelector(cycle_state$) ?? null) as CycleStateInput | null;
+  const weights = (useSelector(weights$) ?? {}) as Record<string, ExerciseWeightInput>;
+  const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
   const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
   const insets = useSafeAreaInsets();
   const [selectedKey, setSelectedKey] = useState<string>(COMPOUND_KEYS[0]);

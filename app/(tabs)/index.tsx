@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
+import { useSelector } from "@legendapp/state/react";
 import { profile$, cycle_state$, weights$, current_session$, nutrition$ } from "../../src/lib/store";
 import { getProgramDay, getSetsForWeek } from "../../src/program";
 import { getTargetWeight } from "../../src/hooks/useWorkout";
@@ -22,12 +23,12 @@ import { colors, typography, spacing, radius } from "../../src/theme";
 export default function TodayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const profile = profile$.get() as ProfileRow | undefined;
-  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
-  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
-  const sessionRow = current_session$.get() as CurrentSessionRow | null;
+  const profile = useSelector(profile$) as ProfileRow | undefined;
+  const cycleState = (useSelector(cycle_state$) ?? null) as CycleStateInput | null;
+  const weights = (useSelector(weights$) ?? {}) as Record<string, ExerciseWeightInput>;
+  const sessionRow = useSelector(current_session$) as CurrentSessionRow | null;
   const currentSession: CurrentSessionData | null = sessionRow?.data ?? null;
-  const nutritionData = (nutrition$.get() ?? null) as NutritionInput | null;
+  const nutritionData = (useSelector(nutrition$) ?? null) as NutritionInput | null;
   const isLoading = !profile;
 
   if (isLoading) {

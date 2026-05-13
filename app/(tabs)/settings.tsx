@@ -15,6 +15,7 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useSelector } from "@legendapp/state/react";
 import { profile$, cycle_state$, weights$, increments$, nutrition$, body_log$, workouts$, current_session$ } from "../../src/lib/store";
 import { signOut, auth$ } from "../../src/lib/auth";
 import { supabase } from "../../src/lib/supabase";
@@ -396,12 +397,12 @@ const bodyLogStyles = StyleSheet.create({
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const profile = profile$.get() as ProfileRow | undefined;
-  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
-  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
-  const incrementsRecord = (increments$.get() ?? {}) as Record<string, IncrementRow>;
-  const nutritionData = (nutrition$.get() ?? null) as NutritionInput | null;
-  const bodyLogRecord = (body_log$.get() ?? {}) as Record<string, BodyLogRow>;
+  const profile = useSelector(profile$) as ProfileRow | undefined;
+  const cycleState = (useSelector(cycle_state$) ?? null) as CycleStateInput | null;
+  const weights = (useSelector(weights$) ?? {}) as Record<string, ExerciseWeightInput>;
+  const incrementsRecord = (useSelector(increments$) ?? {}) as Record<string, IncrementRow>;
+  const nutritionData = (useSelector(nutrition$) ?? null) as NutritionInput | null;
+  const bodyLogRecord = (useSelector(body_log$) ?? {}) as Record<string, BodyLogRow>;
   const isLoading = !profile;
 
   // -- modal state --
