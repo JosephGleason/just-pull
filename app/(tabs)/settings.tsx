@@ -1080,6 +1080,10 @@ export default function SettingsScreen() {
                     style: "destructive",
                     onPress: async () => {
                       const uid = auth$.uid.get();
+                      // Sign out first — this routes to auth screen and unmounts tabs,
+                      // preventing components from reading stale observable data
+                      await signOut();
+                      // Then clean up server and local data in the background
                       if (uid) {
                         await supabase.from("exercise_weights").delete().eq("user_id", uid);
                         await supabase.from("increments").delete().eq("user_id", uid);
@@ -1100,7 +1104,6 @@ export default function SettingsScreen() {
                         "ls_workouts", "ls_workouts__m",
                         "ls_body_log", "ls_body_log__m",
                       ]);
-                      await signOut();
                     },
                   },
                 ]
