@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import * as Crypto from "expo-crypto";
 import {
   View,
@@ -446,7 +446,10 @@ export default function SettingsScreen() {
 
   // -- body log modal state --
   const [bodyLogModalVisible, setBodyLogModalVisible] = useState(false);
-  const bodyLog: BodyLogRow[] = Object.values(bodyLogRecord).sort((a, b) => a.date.localeCompare(b.date));
+  const bodyLog: BodyLogRow[] = useMemo(() =>
+    Object.values(bodyLogRecord).sort((a, b) => a.date.localeCompare(b.date)),
+    [bodyLogRecord]
+  );
 
   // -- nutrition local state (for the form) --
   const defaultNutrition: NutritionInput = {

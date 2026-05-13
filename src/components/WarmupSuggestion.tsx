@@ -38,6 +38,8 @@ export function WarmupSuggestion({
         onPress={onDismiss}
         style={styles.skipButton}
         activeOpacity={0.7}
+        accessibilityLabel="Skip warmup sets"
+        accessibilityRole="button"
       >
         <Text style={styles.skipText}>Skip warmup</Text>
       </TouchableOpacity>

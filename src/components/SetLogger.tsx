@@ -98,6 +98,8 @@ export function SetLogger({
             style={styles.platesButton}
             activeOpacity={0.7}
             hitSlop={8}
+            accessibilityLabel="Show plate calculator"
+            accessibilityRole="button"
           >
             <Ionicons name="layers-outline" size={16} color={colors.textSecondary} />
             <Text style={styles.platesButtonText}>PLATES</Text>
@@ -109,6 +111,8 @@ export function SetLogger({
           onPress={() => handleWeightChange(-increment)}
           style={styles.weightButton}
           activeOpacity={0.7}
+          accessibilityLabel="Decrease weight"
+          accessibilityRole="button"
         >
           <Text style={styles.weightButtonText}>-</Text>
         </TouchableOpacity>
@@ -124,6 +128,8 @@ export function SetLogger({
           onPress={() => handleWeightChange(increment)}
           style={styles.weightButton}
           activeOpacity={0.7}
+          accessibilityLabel="Increase weight"
+          accessibilityRole="button"
         >
           <Text style={styles.weightButtonText}>+</Text>
         </TouchableOpacity>
@@ -149,6 +155,8 @@ export function SetLogger({
           }
           style={styles.repsButton}
           activeOpacity={0.7}
+          accessibilityLabel="Decrease reps"
+          accessibilityRole="button"
         >
           <Text style={styles.repsButtonText}>-</Text>
         </TouchableOpacity>
@@ -168,6 +176,8 @@ export function SetLogger({
           }
           style={styles.repsButton}
           activeOpacity={0.7}
+          accessibilityLabel="Increase reps"
+          accessibilityRole="button"
         >
           <Text style={styles.repsButtonText}>+</Text>
         </TouchableOpacity>
@@ -178,6 +188,8 @@ export function SetLogger({
         style={styles.completeButton}
         onPress={handleComplete}
         activeOpacity={0.8}
+        accessibilityLabel="Log set"
+        accessibilityRole="button"
       >
         <Text style={styles.completeButtonText}>LOG SET</Text>
       </TouchableOpacity>

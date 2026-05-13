@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "@legendapp/state/react";
@@ -9,8 +9,6 @@ import { BodyFigure } from "../../src/components/BodyFigure";
 import { EXERCISE_MUSCLE_MAP } from "../../src/components/body/muscles";
 import { WorkoutLogRow, BodyLogRow } from "../../src/types";
 import { colors, typography, spacing } from "../../src/theme";
-
-const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
 
 /** Return the ISO date string's midnight UTC as a Date */
 function toDate(s: string): Date {
@@ -29,6 +27,7 @@ function formatDate(date: Date): string {
 
 export default function BodyScreen() {
   const insets = useSafeAreaInsets();
+  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
   const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
   const bodyLogRecord = (useSelector(body_log$) ?? {}) as Record<string, BodyLogRow>;
   const [side, setSide] = useState<"front" | "back">("front");

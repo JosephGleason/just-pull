@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
 import { CurrentSessionData, ExerciseLog, SetLog, WorkoutLogInput, ProgramExercise, ExerciseWeightInput, CycleStateInput } from "../types";
@@ -60,9 +61,8 @@ export function buildSessionExercises(
   return exercises;
 }
 
-let lastSessionSnapshot: CurrentSessionData | null = null;
-
 export function useWorkout() {
+  const lastSessionSnapshotRef = useRef<CurrentSessionData | null>(null);
   const startWorkout = () => {
     const cycleState = cycle_state$.get();
     if (!cycleState) return;
@@ -86,7 +86,7 @@ export function useWorkout() {
     const currentData = sessionRow.data;
 
     // Snapshot before mutation so undoLastSet can restore
-    lastSessionSnapshot = {
+    lastSessionSnapshotRef.current = {
       ...currentData,
       exercises: currentData.exercises.map((ex: ExerciseLog) => ({
         ...ex,
@@ -105,9 +105,9 @@ export function useWorkout() {
   };
 
   const undoLastSet = () => {
-    if (!lastSessionSnapshot) return false;
-    current_session$.data.set(lastSessionSnapshot);
-    lastSessionSnapshot = null;
+    if (!lastSessionSnapshotRef.current) return false;
+    current_session$.data.set(lastSessionSnapshotRef.current);
+    lastSessionSnapshotRef.current = null;
     return true;
   };
 

@@ -21,7 +21,7 @@ export const colors = {
   // Text
   text: "#F2F0EB",                 // Warm white — NOT pure white
   textSecondary: "#8A897F",       // Warm gray
-  textTertiary: "#504F48",        // Dark warm gray
+  textTertiary: "#6E6D66",        // Dark warm gray — raised for WCAG AA large-text contrast
 
   // Borders
   cardBorder: "rgba(255, 255, 255, 0.04)", // Barely-visible warm white edge

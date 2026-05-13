@@ -70,11 +70,11 @@ export function RestTimer({
 
       {/* Dismiss / extend row */}
       <View style={styles.row}>
-        <TouchableOpacity onPress={onDismiss} activeOpacity={0.7}>
+        <TouchableOpacity onPress={onDismiss} activeOpacity={0.7} accessibilityLabel="Dismiss rest timer" accessibilityRole="button">
           <Text style={styles.actionText}>Dismiss</Text>
         </TouchableOpacity>
 
-        <TouchableOpacity onPress={onExtend} activeOpacity={0.7}>
+        <TouchableOpacity onPress={onExtend} activeOpacity={0.7} accessibilityLabel="Extend rest timer 30 seconds" accessibilityRole="button">
           <Text style={styles.actionText}>+30s</Text>
         </TouchableOpacity>
       </View>

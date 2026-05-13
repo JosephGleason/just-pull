@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Dimensions } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { WorkoutLogRow } from "../types";
 import { colors, typography, spacing, radius } from "../theme";
 
@@ -7,6 +7,7 @@ interface ProgressChartProps {
   exerciseKey: string;
   history: WorkoutLogRow[];
   units: string;
+  width?: number;
 }
 
 interface DataPoint {
@@ -38,11 +39,11 @@ function formatDate(dateStr: string): string {
   return `${d.getMonth() + 1}/${d.getDate()}`;
 }
 
-const SCREEN_WIDTH = Dimensions.get("window").width;
+const DEFAULT_WIDTH = 360;
 const CHART_HEIGHT = 160;
 const CHART_PADDING = { top: 12, bottom: 24, left: 44, right: 12 };
 
-export function ProgressChart({ exerciseKey, history, units }: ProgressChartProps) {
+export function ProgressChart({ exerciseKey, history, units, width: screenWidth }: ProgressChartProps) {
   const data = getDataPoints(exerciseKey, history);
 
   if (data.length === 0) {
@@ -54,7 +55,7 @@ export function ProgressChart({ exerciseKey, history, units }: ProgressChartProp
     );
   }
 
-  const chartWidth = SCREEN_WIDTH - 32; // 16px horizontal padding on each side
+  const chartWidth = (screenWidth ?? DEFAULT_WIDTH) - 32; // 16px horizontal padding on each side
   const plotWidth = chartWidth - CHART_PADDING.left - CHART_PADDING.right;
   const plotHeight = CHART_HEIGHT - CHART_PADDING.top - CHART_PADDING.bottom;
 

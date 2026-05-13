@@ -22,7 +22,10 @@ function getWeightColor(type: ExerciseType): string {
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
   const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
-  const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
+  const history = useMemo(() =>
+    Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date)),
+    [workoutsRecord]
+  );
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());

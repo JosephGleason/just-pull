@@ -76,6 +76,7 @@ export default function AuthScreen() {
               keyboardType="email-address"
               autoCorrect={false}
               editable={!loading}
+              accessibilityLabel="Email address"
             />
           </View>
           <View>
@@ -90,6 +91,7 @@ export default function AuthScreen() {
               autoCapitalize="none"
               autoCorrect={false}
               editable={!loading}
+              accessibilityLabel="Password"
             />
           </View>
         </View>
@@ -101,6 +103,8 @@ export default function AuthScreen() {
             onPress={handleSignIn}
             disabled={loading}
             activeOpacity={0.7}
+            accessibilityLabel="Sign in"
+            accessibilityRole="button"
           >
             {loading ? (
               <ActivityIndicator color={colors.bg} />
@@ -114,6 +118,8 @@ export default function AuthScreen() {
             onPress={handleSignUp}
             disabled={loading}
             activeOpacity={0.7}
+            accessibilityLabel="Create account"
+            accessibilityRole="button"
           >
             <Text style={styles.createAccountButtonText}>Create Account</Text>
           </TouchableOpacity>

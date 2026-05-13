@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useMemo } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   TouchableOpacity,
   FlatList,
+  useWindowDimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -35,8 +36,12 @@ export default function ProgressScreen() {
   const cycleState = (useSelector(cycle_state$) ?? null) as CycleStateInput | null;
   const weights = (useSelector(weights$) ?? {}) as Record<string, ExerciseWeightInput>;
   const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
-  const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
+  const history = useMemo(() =>
+    Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date)),
+    [workoutsRecord]
+  );
   const insets = useSafeAreaInsets();
+  const { width: screenWidth } = useWindowDimensions();
   const [selectedKey, setSelectedKey] = useState<string>(COMPOUND_KEYS[0]);
 
   const units = profile?.units ?? "lb";
@@ -91,6 +96,7 @@ export default function ProgressScreen() {
           exerciseKey={selectedKey}
           history={history}
           units={units}
+          width={screenWidth}
         />
       </View>
 

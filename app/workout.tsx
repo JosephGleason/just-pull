@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback, useRef, useMemo } from "react";
 import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
@@ -24,7 +24,10 @@ export default function WorkoutScreen() {
   const weights = (useSelector(weights$) ?? {}) as Record<string, ExerciseWeightInput>;
   const profile = useSelector(profile$) as ProfileRow | undefined;
   const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
-  const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
+  const history = useMemo(() =>
+    Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date)),
+    [workoutsRecord]
+  );
   const isLoading = !profile;
   const { startWorkout, logSet, undoLastSet, failPr, finishWorkout, discardWorkout } =
     useWorkout();
@@ -322,7 +325,7 @@ export default function WorkoutScreen() {
         {showUndoToast && (
           <View style={styles.undoToast}>
             <Text style={styles.undoText}>Set logged</Text>
-            <TouchableOpacity onPress={handleUndo} style={styles.undoButton}>
+            <TouchableOpacity onPress={handleUndo} style={styles.undoButton} accessibilityLabel="Undo last set" accessibilityRole="button">
               <Text style={styles.undoButtonText}>Undo</Text>
             </TouchableOpacity>
           </View>

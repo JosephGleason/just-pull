@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   ScrollView,
-  Dimensions,
   Animated,
   KeyboardAvoidingView,
   Platform,
@@ -26,8 +25,6 @@ import {
   Goal,
 } from "../src/types";
 import { colors, typography, spacing, radius } from "../src/theme";
-
-const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 // --- Compound exercise config ------------------------------------------------
 interface CompoundConfig {
