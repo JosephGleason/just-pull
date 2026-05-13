@@ -16,7 +16,9 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { profile$, cycle_state$, weights$, increments$, nutrition$, body_log$, workouts$, current_session$ } from "../../src/lib/store";
-import { signOut } from "../../src/lib/auth";
+import { signOut, auth$ } from "../../src/lib/auth";
+import { supabase } from "../../src/lib/supabase";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { COMPOUND_KEYS } from "../../src/program";
 import { calculateNutrition } from "../../src/hooks/useNutrition";
 import {
@@ -1077,14 +1079,27 @@ export default function SettingsScreen() {
                     text: "Clear Everything",
                     style: "destructive",
                     onPress: async () => {
-                      profile$.set(null as any);
-                      nutrition$.set(null as any);
-                      cycle_state$.set(null as any);
-                      weights$.set({} as any);
-                      increments$.set({} as any);
-                      workouts$.set({} as any);
-                      body_log$.set({} as any);
-                      current_session$.set(null as any);
+                      const uid = auth$.uid.get();
+                      if (uid) {
+                        await supabase.from("exercise_weights").delete().eq("user_id", uid);
+                        await supabase.from("increments").delete().eq("user_id", uid);
+                        await supabase.from("workouts").delete().eq("user_id", uid);
+                        await supabase.from("body_log").delete().eq("user_id", uid);
+                        await supabase.from("current_session").delete().eq("id", uid);
+                        await supabase.from("nutrition_settings").delete().eq("id", uid);
+                        await supabase.from("cycle_state").delete().eq("id", uid);
+                        await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
+                      }
+                      await AsyncStorage.multiRemove([
+                        "ls_profiles", "ls_profiles__m",
+                        "ls_nutrition", "ls_nutrition__m",
+                        "ls_cycle_state", "ls_cycle_state__m",
+                        "ls_current_session", "ls_current_session__m",
+                        "ls_exercise_weights", "ls_exercise_weights__m",
+                        "ls_increments", "ls_increments__m",
+                        "ls_workouts", "ls_workouts__m",
+                        "ls_body_log", "ls_body_log__m",
+                      ]);
                       await signOut();
                     },
                   },
