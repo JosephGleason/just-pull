@@ -45,3 +45,4 @@ app-example
 # superpowers
 .superpowers/
 docs/superpowers/
+.env.local
