@@ -67,10 +67,27 @@ function formatBodyDate(iso: string): string {
 
 // --- tiny shared components --------------------------------------------------
 
-function SectionHeader({ title }: { title: string }) {
+function CollapsibleSection({
+  title,
+  children,
+  defaultOpen = false,
+}: {
+  title: string;
+  children: React.ReactNode;
+  defaultOpen?: boolean;
+}) {
+  const [isOpen, setIsOpen] = useState(defaultOpen);
   return (
-    <View style={styles.sectionHeader}>
-      <Text style={styles.sectionHeaderText}>{title}</Text>
+    <View>
+      <TouchableOpacity
+        style={styles.collapsibleHeader}
+        onPress={() => setIsOpen(!isOpen)}
+        activeOpacity={0.7}
+      >
+        <Text style={styles.sectionHeaderText}>{title}</Text>
+        <Text style={styles.sectionChevron}>{isOpen ? "▾" : "▸"}</Text>
+      </TouchableOpacity>
+      {isOpen && children}
     </View>
   );
 }
@@ -655,14 +672,6 @@ export default function SettingsScreen() {
     }
   }
 
-  function handleImport() {
-    Alert.alert(
-      "Import Data",
-      "Paste JSON import is not yet supported in this version. Export your data from another device and paste it here in a future update.",
-      [{ text: "OK" }]
-    );
-  }
-
   // -- computed --
   const nutritionTargets =
     nutritionData
@@ -682,127 +691,132 @@ export default function SettingsScreen() {
       >
 
         {/* -- 1. Working Weights -- */}
-        <SectionHeader title="Working Weights" />
-        <View style={styles.card}>
-          {COMPOUND_KEYS.map((key, i) => (
-            <View key={key}>
-              {i > 0 && <View style={styles.divider} />}
-              <SettingsRow
-                label={keyToDisplayName(key)}
-                value={`${weights[key]?.working ?? "—"} ${safeProfile.units}`}
-                onPress={() => handleEditWeight(key)}
-              />
-            </View>
-          ))}
-        </View>
+        <CollapsibleSection title="Working Weights">
+          <View style={styles.card}>
+            {COMPOUND_KEYS.map((key, i) => (
+              <View key={key}>
+                {i > 0 && <View style={styles.divider} />}
+                <SettingsRow
+                  label={keyToDisplayName(key)}
+                  value={`${weights[key]?.working ?? "—"} ${safeProfile.units}`}
+                  onPress={() => handleEditWeight(key)}
+                />
+              </View>
+            ))}
+          </View>
+        </CollapsibleSection>
 
         {/* -- 2. Increments -- */}
-        <SectionHeader title="Weight Increments" />
-        <View style={styles.card}>
-          {COMPOUND_KEYS.map((key, i) => (
-            <View key={key}>
-              {i > 0 && <View style={styles.divider} />}
-              <SettingsRow
-                label={keyToDisplayName(key)}
-                value={`${incrementsRecord[key]?.increment ?? 5} ${safeProfile.units}`}
-                onPress={() => handleEditIncrement(key)}
-              />
-            </View>
-          ))}
-        </View>
+        <CollapsibleSection title="Weight Increments">
+          <View style={styles.card}>
+            {COMPOUND_KEYS.map((key, i) => (
+              <View key={key}>
+                {i > 0 && <View style={styles.divider} />}
+                <SettingsRow
+                  label={keyToDisplayName(key)}
+                  value={`${incrementsRecord[key]?.increment ?? 5} ${safeProfile.units}`}
+                  onPress={() => handleEditIncrement(key)}
+                />
+              </View>
+            ))}
+          </View>
+        </CollapsibleSection>
 
         {/* -- 3. Rest Timer -- */}
-        <SectionHeader title="Rest Timer" />
-        <View style={styles.card}>
-          <SettingsRow
-            label="Compound"
-            value={formatSeconds(safeProfile.rest_timer_compound)}
-            onPress={() => handleEditRestTimer("rest_timer_compound")}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            label="Accessory"
-            value={formatSeconds(safeProfile.rest_timer_accessory)}
-            onPress={() => handleEditRestTimer("rest_timer_accessory")}
-          />
-        </View>
+        <CollapsibleSection title="Rest Timer" defaultOpen>
+          <View style={styles.card}>
+            <SettingsRow
+              label="Compound"
+              value={formatSeconds(safeProfile.rest_timer_compound)}
+              onPress={() => handleEditRestTimer("rest_timer_compound")}
+            />
+            <View style={styles.divider} />
+            <SettingsRow
+              label="Accessory"
+              value={formatSeconds(safeProfile.rest_timer_accessory)}
+              onPress={() => handleEditRestTimer("rest_timer_accessory")}
+            />
+          </View>
+        </CollapsibleSection>
 
         {/* -- 4. Units -- */}
-        <SectionHeader title="Units" />
-        <View style={styles.card}>
-          <View style={styles.segmentRow}>
-            {(["lb", "kg"] as Units[]).map((u) => (
+        <CollapsibleSection title="Units">
+          <View style={styles.card}>
+            <View style={styles.segmentRow}>
+              {(["lb", "kg"] as Units[]).map((u) => (
+                <TouchableOpacity
+                  key={u}
+                  style={[
+                    styles.segmentBtn,
+                    safeProfile.units === u && styles.segmentBtnActive,
+                  ]}
+                  onPress={() => handleUnitsChange(u)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[
+                      styles.segmentText,
+                      safeProfile.units === u && styles.segmentTextActive,
+                    ]}
+                  >
+                    {u}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.unitsNote}>
+              Changing units does not convert existing weights.
+            </Text>
+          </View>
+        </CollapsibleSection>
+
+        {/* -- 5. Cycle Position -- */}
+        <CollapsibleSection title="Cycle Position">
+          <View style={styles.card}>
+            <SettingsRow
+              label="Cycle"
+              value={String(safeCycleState.cycle_number)}
+              onPress={() => handleEditCycleField("cycle_number")}
+            />
+            <View style={styles.divider} />
+            <SettingsRow
+              label="Week"
+              value={String(safeCycleState.week_number)}
+              onPress={() => handleEditCycleField("week_number")}
+            />
+            <View style={styles.divider} />
+            <SettingsRow
+              label="Next Day"
+              value={String(safeCycleState.next_day)}
+              onPress={() => handleEditCycleField("next_day")}
+            />
+            <View style={styles.divider} />
+            <View style={styles.row}>
+              <Text style={styles.rowLabel}>Deload</Text>
               <TouchableOpacity
-                key={u}
                 style={[
-                  styles.segmentBtn,
-                  safeProfile.units === u && styles.segmentBtnActive,
+                  styles.deloadToggle,
+                  safeCycleState.is_deload && styles.deloadToggleActive,
                 ]}
-                onPress={() => handleUnitsChange(u)}
-                activeOpacity={0.8}
+                onPress={() =>
+                  cycle_state$.is_deload.set(!safeCycleState.is_deload)
+                }
               >
                 <Text
                   style={[
-                    styles.segmentText,
-                    safeProfile.units === u && styles.segmentTextActive,
+                    styles.deloadToggleText,
+                    safeCycleState.is_deload && styles.deloadToggleTextActive,
                   ]}
                 >
-                  {u}
+                  {safeCycleState.is_deload ? "On" : "Off"}
                 </Text>
               </TouchableOpacity>
-            ))}
+            </View>
           </View>
-          <Text style={styles.unitsNote}>
-            Changing units does not convert existing weights.
-          </Text>
-        </View>
-
-        {/* -- 5. Cycle Position -- */}
-        <SectionHeader title="Cycle Position" />
-        <View style={styles.card}>
-          <SettingsRow
-            label="Cycle"
-            value={String(safeCycleState.cycle_number)}
-            onPress={() => handleEditCycleField("cycle_number")}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            label="Week"
-            value={String(safeCycleState.week_number)}
-            onPress={() => handleEditCycleField("week_number")}
-          />
-          <View style={styles.divider} />
-          <SettingsRow
-            label="Next Day"
-            value={String(safeCycleState.next_day)}
-            onPress={() => handleEditCycleField("next_day")}
-          />
-          <View style={styles.divider} />
-          <View style={styles.row}>
-            <Text style={styles.rowLabel}>Deload</Text>
-            <TouchableOpacity
-              style={[
-                styles.deloadToggle,
-                safeCycleState.is_deload && styles.deloadToggleActive,
-              ]}
-              onPress={() =>
-                cycle_state$.is_deload.set(!safeCycleState.is_deload)
-              }
-            >
-              <Text
-                style={[
-                  styles.deloadToggleText,
-                  safeCycleState.is_deload && styles.deloadToggleTextActive,
-                ]}
-              >
-                {safeCycleState.is_deload ? "On" : "Off"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </View>
+        </CollapsibleSection>
 
         {/* -- 6. Nutrition Calculator -- */}
-        <SectionHeader title="Nutrition Calculator" />
+        <CollapsibleSection title="Nutrition Calculator">
         <View style={styles.card}>
           {/* Current saved targets */}
           {nutritionData && nutritionTargets && (
@@ -996,59 +1010,61 @@ export default function SettingsScreen() {
             </TouchableOpacity>
           </View>
         </View>
+        </CollapsibleSection>
 
         {/* -- 7. Body Measurements -- */}
-        <SectionHeader title="Body Measurements" />
-        <View style={styles.card}>
-          {/* Log button */}
-          <TouchableOpacity
-            style={styles.row}
-            onPress={() => setBodyLogModalVisible(true)}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.rowLabel}>Log Measurement</Text>
-            <View style={styles.rowValueWrap}>
-              <Text style={styles.rowChevron}>{"+"}</Text>
-            </View>
-          </TouchableOpacity>
+        <CollapsibleSection title="Body Measurements">
+          <View style={styles.card}>
+            {/* Log button */}
+            <TouchableOpacity
+              style={styles.row}
+              onPress={() => setBodyLogModalVisible(true)}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.rowLabel}>Log Measurement</Text>
+              <View style={styles.rowValueWrap}>
+                <Text style={styles.rowChevron}>{"+"}</Text>
+              </View>
+            </TouchableOpacity>
 
-          {/* History entries */}
-          {bodyLog.length > 0 && <View style={styles.divider} />}
-          {[...bodyLog].reverse().map((entry, i) => (
-            <View key={entry.date + i}>
-              {i > 0 && <View style={styles.divider} />}
-              <TouchableOpacity
-                style={styles.bodyLogRow}
-                activeOpacity={0.7}
-                onLongPress={() => {
-                  Alert.alert(
-                    "Delete Entry",
-                    `Remove log for ${formatBodyDate(entry.date)}?`,
-                    [
-                      { text: "Cancel", style: "cancel" },
-                      {
-                        text: "Delete",
-                        style: "destructive",
-                        onPress: () => {
-                          body_log$[entry.id].delete();
+            {/* History entries */}
+            {bodyLog.length > 0 && <View style={styles.divider} />}
+            {[...bodyLog].reverse().map((entry, i) => (
+              <View key={entry.date + i}>
+                {i > 0 && <View style={styles.divider} />}
+                <TouchableOpacity
+                  style={styles.bodyLogRow}
+                  activeOpacity={0.7}
+                  onLongPress={() => {
+                    Alert.alert(
+                      "Delete Entry",
+                      `Remove log for ${formatBodyDate(entry.date)}?`,
+                      [
+                        { text: "Cancel", style: "cancel" },
+                        {
+                          text: "Delete",
+                          style: "destructive",
+                          onPress: () => {
+                            body_log$[entry.id].delete();
+                          },
                         },
-                      },
-                    ]
-                  );
-                }}
-              >
-                <Text style={styles.bodyLogDate}>{formatBodyDate(entry.date)}</Text>
-                <Text style={styles.bodyLogValues}>
-                  {entry.weight} {safeProfile.units}
-                  {entry.body_fat_percent > 0 ? `  ·  ${entry.body_fat_percent}% BF` : ""}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          ))}
-        </View>
+                      ]
+                    );
+                  }}
+                >
+                  <Text style={styles.bodyLogDate}>{formatBodyDate(entry.date)}</Text>
+                  <Text style={styles.bodyLogValues}>
+                    {entry.weight} {safeProfile.units}
+                    {entry.body_fat_percent > 0 ? `  ·  ${entry.body_fat_percent}% BF` : ""}
+                  </Text>
+                </TouchableOpacity>
+              </View>
+            ))}
+          </View>
+        </CollapsibleSection>
 
         {/* -- 8. Data -- */}
-        <SectionHeader title="Data" />
+        <CollapsibleSection title="Data">
         <View style={styles.card}>
           <TouchableOpacity
             style={styles.dataBtn}
@@ -1056,16 +1072,6 @@ export default function SettingsScreen() {
             activeOpacity={0.7}
           >
             <Text style={styles.dataBtnText}>Export Data</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.dataBtn}
-            onPress={handleImport}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.dataBtnText, styles.dataBtnTextMuted]}>
-              Import Data
-            </Text>
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity
@@ -1122,34 +1128,36 @@ export default function SettingsScreen() {
             </Text>
           </TouchableOpacity>
         </View>
+        </CollapsibleSection>
 
         {/* -- 9. Account -- */}
-        <SectionHeader title="Account" />
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.dataBtn}
-            onPress={async () => {
-              if (Platform.OS === "web") {
-                if (window.confirm("Are you sure you want to sign out?")) {
-                  await signOut();
-                }
-              } else {
-                Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-                  { text: "Cancel", style: "cancel" },
-                  {
-                    text: "Sign Out",
-                    onPress: async () => {
-                      await signOut();
+        <CollapsibleSection title="Account">
+          <View style={styles.card}>
+            <TouchableOpacity
+              style={styles.dataBtn}
+              onPress={async () => {
+                if (Platform.OS === "web") {
+                  if (window.confirm("Are you sure you want to sign out?")) {
+                    await signOut();
+                  }
+                } else {
+                  Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+                    { text: "Cancel", style: "cancel" },
+                    {
+                      text: "Sign Out",
+                      onPress: async () => {
+                        await signOut();
+                      },
                     },
-                  },
-                ]);
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.dataBtnText}>Sign Out</Text>
-          </TouchableOpacity>
-        </View>
+                  ]);
+                }
+              }}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.dataBtnText}>Sign Out</Text>
+            </TouchableOpacity>
+          </View>
+        </CollapsibleSection>
 
         <View style={{ height: 48 }} />
       </ScrollView>
@@ -1260,15 +1268,23 @@ const styles = StyleSheet.create({
     padding: spacing.md,
   },
 
-  // section header
-  sectionHeader: {
-    paddingHorizontal: spacing.xs,
+  // collapsible section header
+  collapsibleHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     paddingTop: spacing.xl,
-    paddingBottom: spacing.sm,
+    minHeight: 44,
   },
   sectionHeaderText: {
     color: colors.textSecondary,
     ...typography.caption,
+  },
+  sectionChevron: {
+    color: colors.textTertiary,
+    fontSize: 14,
   },
 
   // card
@@ -1458,9 +1474,7 @@ const styles = StyleSheet.create({
     color: colors.accent,
     ...typography.body,
   },
-  dataBtnTextMuted: {
-    color: colors.textTertiary,
-  },
+
 
   // edit modal
   modalOverlay: {
