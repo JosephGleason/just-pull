@@ -1,4 +1,4 @@
-import { WorkoutLog, BodyLog, BodyModelState } from "../types";
+import { WorkoutLogRow, BodyLogRow, BodyModelState } from "../types";
 import {
   MUSCLE_GROUPS,
   MuscleGroup,
@@ -18,7 +18,7 @@ function toDate(s: string): Date {
 /** Milliseconds per day */
 const MS_PER_DAY = 86_400_000;
 
-/** Days between two dates (a − b), always using UTC midnights */
+/** Days between two dates (a - b), always using UTC midnights */
 function daysBetween(a: Date, b: Date): number {
   return Math.round((a.getTime() - b.getTime()) / MS_PER_DAY);
 }
@@ -26,7 +26,7 @@ function daysBetween(a: Date, b: Date): number {
 /** Get Monday-based week start (UTC) for a given date */
 function weekStart(d: Date): string {
   const copy = new Date(d);
-  const day = copy.getUTCDay(); // 0=Sun … 6=Sat
+  const day = copy.getUTCDay(); // 0=Sun ... 6=Sat
   const diff = day === 0 ? 6 : day - 1; // shift so Monday=0
   copy.setUTCDate(copy.getUTCDate() - diff);
   return copy.toISOString().slice(0, 10);
@@ -34,9 +34,9 @@ function weekStart(d: Date): string {
 
 /**
  * Compute weekly volume gain for a muscle using diminishing-returns tiers.
- *   0–10 sets  → each adds 0.01
- *  10–20 sets  → each adds 0.005
- *  20+   sets  → each adds 0.001
+ *   0-10 sets  -> each adds 0.01
+ *  10-20 sets  -> each adds 0.005
+ *  20+   sets  -> each adds 0.001
  * Capped at MAX_WEEKLY_GAIN.
  */
 function weeklyGain(sets: number): number {
@@ -56,25 +56,27 @@ function weeklyGain(sets: number): number {
  * date, return the full body-model state.
  */
 export function computeMuscleStates(
-  history: WorkoutLog[],
-  bodyLog: BodyLog[],
+  history: Record<string, WorkoutLogRow>,
+  bodyLog: Record<string, BodyLogRow>,
   asOfDate: Date
 ): BodyModelState {
-  // Initialise per-muscle state
-  const muscles: Record<string, number> = {};
-  const peakMuscles: Record<string, number> = {};
-  for (const mg of MUSCLE_GROUPS) {
-    muscles[mg] = 0;
-    peakMuscles[mg] = 0;
-  }
-
-  // Sort history by date ascending
-  const sorted = [...history].sort(
+  const sortedHistory = Object.values(history).sort(
+    (a, b) => toDate(a.date).getTime() - toDate(b.date).getTime()
+  );
+  const sortedBodyLog = Object.values(bodyLog).sort(
     (a, b) => toDate(a.date).getTime() - toDate(b.date).getTime()
   );
 
+  // Initialise per-muscle state
+  const muscles: Record<string, number> = {};
+  const peak_muscles: Record<string, number> = {};
+  for (const mg of MUSCLE_GROUPS) {
+    muscles[mg] = 0;
+    peak_muscles[mg] = 0;
+  }
+
   // ── Bucket workouts into ISO weeks ──────────────────────────────
-  // Each bucket: weekKey → { muscleSets: Record<MuscleGroup, number>, endDate: Date }
+  // Each bucket: weekKey -> { muscleSets: Record<MuscleGroup, number>, endDate: Date }
   interface WeekBucket {
     muscleSets: Record<string, number>;
     lastDate: Date;
@@ -82,7 +84,7 @@ export function computeMuscleStates(
 
   const weekBuckets = new Map<string, WeekBucket>();
 
-  for (const w of sorted) {
+  for (const w of sortedHistory) {
     const wDate = toDate(w.date);
     if (wDate > asOfDate) continue; // ignore future workouts
     const wk = weekStart(wDate);
@@ -137,15 +139,15 @@ export function computeMuscleStates(
       let gain = weeklyGain(Math.round(sets));
 
       // Muscle memory: if current size < peak, gains are doubled
-      if (muscles[mg] < peakMuscles[mg]) {
+      if (muscles[mg] < peak_muscles[mg]) {
         gain *= MEMORY_MULTIPLIER;
       }
 
       muscles[mg] = Math.min(1, muscles[mg] + gain);
 
       // Update peak
-      if (muscles[mg] > peakMuscles[mg]) {
-        peakMuscles[mg] = muscles[mg];
+      if (muscles[mg] > peak_muscles[mg]) {
+        peak_muscles[mg] = muscles[mg];
       }
     }
 
@@ -172,25 +174,21 @@ export function computeMuscleStates(
   }
 
   // ── Body fat interpolation ──────────────────────────────────────
-  let bodyFatPercent = 0;
-  let bodyWeight = 0;
-
-  const sortedBodyLog = [...bodyLog].sort(
-    (a, b) => toDate(a.date).getTime() - toDate(b.date).getTime()
-  );
+  let body_fat_percent = 0;
+  let body_weight = 0;
 
   if (sortedBodyLog.length === 0) {
-    bodyFatPercent = 0;
-    bodyWeight = 0;
+    body_fat_percent = 0;
+    body_weight = 0;
   } else if (sortedBodyLog.length === 1) {
-    bodyFatPercent = sortedBodyLog[0].bodyFatPercent;
-    bodyWeight = sortedBodyLog[0].weight;
+    body_fat_percent = sortedBodyLog[0].body_fat_percent;
+    body_weight = sortedBodyLog[0].weight;
   } else {
     const asOfMs = asOfDate.getTime();
 
     // Find surrounding log entries for interpolation
-    let before: BodyLog | null = null;
-    let after: BodyLog | null = null;
+    let before: BodyLogRow | null = null;
+    let after: BodyLogRow | null = null;
 
     for (const log of sortedBodyLog) {
       const logMs = toDate(log.date).getTime();
@@ -206,15 +204,15 @@ export function computeMuscleStates(
       const beforeMs = toDate(before.date).getTime();
       const afterMs = toDate(after.date).getTime();
       const t = (asOfMs - beforeMs) / (afterMs - beforeMs);
-      bodyFatPercent =
-        before.bodyFatPercent + t * (after.bodyFatPercent - before.bodyFatPercent);
-      bodyWeight = before.weight + t * (after.weight - before.weight);
+      body_fat_percent =
+        before.body_fat_percent + t * (after.body_fat_percent - before.body_fat_percent);
+      body_weight = before.weight + t * (after.weight - before.weight);
     } else if (before) {
-      bodyFatPercent = before.bodyFatPercent;
-      bodyWeight = before.weight;
+      body_fat_percent = before.body_fat_percent;
+      body_weight = before.weight;
     } else if (after) {
-      bodyFatPercent = after.bodyFatPercent;
-      bodyWeight = after.weight;
+      body_fat_percent = after.body_fat_percent;
+      body_weight = after.weight;
     }
   }
 
@@ -227,7 +225,7 @@ export function computeMuscleStates(
       // Check training frequency: count sessions in last 28 days
       const recentCutoff = new Date(asOfDate);
       recentCutoff.setUTCDate(recentCutoff.getUTCDate() - 28);
-      const recentSessions = sorted.filter(
+      const recentSessions = sortedHistory.filter(
         (w) =>
           toDate(w.date).getTime() >= recentCutoff.getTime() &&
           toDate(w.date).getTime() <= asOfDate.getTime()
@@ -237,25 +235,25 @@ export function computeMuscleStates(
       if (sessionsPerWeek < INACTIVE_THRESHOLD_SESSIONS_PER_WEEK) {
         const monthsSinceLastLog = daysSinceLastLog / 30;
         const drift = monthsSinceLastLog * BF_DRIFT_PER_MONTH;
-        const maxBf = Math.max(...sortedBodyLog.map((l) => l.bodyFatPercent));
-        bodyFatPercent = Math.min(maxBf, bodyFatPercent + drift);
+        const maxBf = Math.max(...sortedBodyLog.map((l) => l.body_fat_percent));
+        body_fat_percent = Math.min(maxBf, body_fat_percent + drift);
       }
     }
   }
 
   // ── Months trained ─────────────────────────────────────────────
-  let monthsTrained = 0;
-  if (sorted.length > 0) {
-    const firstWorkoutDate = toDate(sorted[0].date);
+  let months_trained = 0;
+  if (sortedHistory.length > 0) {
+    const firstWorkoutDate = toDate(sortedHistory[0].date);
     const totalDays = daysBetween(asOfDate, firstWorkoutDate);
-    monthsTrained = Math.floor(Math.max(0, totalDays) / 30);
+    months_trained = Math.floor(Math.max(0, totalDays) / 30);
   }
 
   return {
     muscles,
-    bodyFatPercent,
-    bodyWeight,
-    monthsTrained,
-    peakMuscles,
+    body_fat_percent,
+    body_weight,
+    months_trained,
+    peak_muscles,
   };
 }

@@ -1,4 +1,4 @@
-import { WorkoutLog } from "../types";
+import { WorkoutLogRow } from "../types";
 
 /**
  * Epley formula: 1RM = weight * (1 + reps / 30)
@@ -12,9 +12,10 @@ export function estimateOneRepMax(weight: number, reps: number): number {
 /**
  * Find the best 1RM estimate from a workout history for a given exercise key.
  */
-export function getBest1RM(history: WorkoutLog[], exerciseKey: string): number {
+export function getBest1RM(history: Record<string, WorkoutLogRow>, exerciseKey: string): number {
+  const workouts = Object.values(history);
   let best = 0;
-  for (const workout of history) {
+  for (const workout of workouts) {
     for (const exercise of workout.exercises) {
       if (exercise.key === exerciseKey) {
         for (const set of exercise.sets) {

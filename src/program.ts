@@ -92,9 +92,9 @@ export function getProgramDay(day: TrainingDay): ProgramDay {
 export function getSetsForWeek(
   exercise: ProgramExercise,
   week: WeekNumber,
-  isDeload: boolean
+  is_deload: boolean
 ): number {
   const base = exercise.sets[week - 1];
-  const adjusted = isDeload ? Math.max(0, base - 2) : base;
+  const adjusted = is_deload ? Math.max(0, base - 2) : base;
   return Math.max(0, adjusted);
 }

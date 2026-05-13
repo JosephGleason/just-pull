@@ -1,36 +1,36 @@
 import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
-import { CurrentSession, ExerciseLog, SetLog, WorkoutLog, ProgramExercise, ExerciseWeight, CycleState } from "../types";
+import { CurrentSessionData, ExerciseLog, SetLog, WorkoutLogInput, ProgramExercise, ExerciseWeightInput, CycleStateInput } from "../types";
 import { getProgramDay, getSetsForWeek } from "../program";
 import { advanceCycleState, resetPrsForNewCycle } from "./useCycleState";
-import { useAppContext } from "../context";
+import { weights$, cycle_state$, current_session$, increments$, workouts$ } from "../lib/store";
 
 export function getTargetSets(
   exerciseKey: string,
-  cycleState: CycleState,
+  cycleState: CycleStateInput,
   programExercises: ProgramExercise[]
 ): number {
   const exercise = programExercises.find((e) => e.key === exerciseKey);
   if (!exercise) return 0;
-  return getSetsForWeek(exercise, cycleState.weekNumber, cycleState.isDeload);
+  return getSetsForWeek(exercise, cycleState.week_number, cycleState.is_deload);
 }
 
 export function getTargetWeight(
   exerciseKey: string,
-  weights: Record<string, ExerciseWeight>,
-  cycleState: CycleState
+  weights: Record<string, ExerciseWeightInput>,
+  cycleState: CycleStateInput
 ): number {
   const w = weights[exerciseKey];
   if (!w) return 0;
 
   // Black exercises (no PR tracking) — always return working weight
-  if (w.prStatus === null) return w.working;
+  if (w.pr_status === null) return w.working;
 
   // Cycle 1 — always use working weight (PRs not yet set)
-  if (cycleState.cycleNumber <= 1) return w.working;
+  if (cycleState.cycle_number <= 1) return w.working;
 
   // Cycle 2+: use PR weight if pending or succeeded, working weight otherwise
-  if ((w.prStatus === "pending" || w.prStatus === "succeeded") && w.pr !== null) {
+  if ((w.pr_status === "pending" || w.pr_status === "succeeded") && w.pr !== null) {
     return w.pr;
   }
 
@@ -38,14 +38,14 @@ export function getTargetWeight(
 }
 
 export function buildSessionExercises(
-  cycleState: CycleState,
-  weights: Record<string, ExerciseWeight>
+  cycleState: CycleStateInput,
+  weights: Record<string, ExerciseWeightInput>
 ): ExerciseLog[] {
-  const programDay = getProgramDay(cycleState.nextDay);
+  const programDay = getProgramDay(cycleState.next_day);
   const exercises: ExerciseLog[] = [];
 
   for (const programExercise of programDay.exercises) {
-    const sets = getSetsForWeek(programExercise, cycleState.weekNumber, cycleState.isDeload);
+    const sets = getSetsForWeek(programExercise, cycleState.week_number, cycleState.is_deload);
     if (sets === 0) continue;
 
     exercises.push({
@@ -61,104 +61,97 @@ export function buildSessionExercises(
 }
 
 export function useWorkout() {
-  const {
-    cycleState,
-    weights,
-    settings,
-    currentSession,
-    setCurrentSession,
-    addWorkout,
-    setCycleState,
-    setWeights,
-  } = useAppContext();
-
-  const startWorkout = async () => {
+  const startWorkout = () => {
+    const cycleState = cycle_state$.get();
     if (!cycleState) return;
 
-    const exercises = buildSessionExercises(cycleState, weights);
-    const session: CurrentSession = {
-      startedAt: new Date().toISOString(),
-      day: cycleState.nextDay,
-      week: cycleState.weekNumber,
-      cycle: cycleState.cycleNumber,
+    const currentWeights = weights$.get() ?? {};
+    const exercises = buildSessionExercises(cycleState, currentWeights);
+    const sessionData: CurrentSessionData = {
+      started_at: new Date().toISOString(),
+      day: cycleState.next_day,
+      week: cycleState.week_number,
+      cycle: cycleState.cycle_number,
       exercises,
     };
-    await setCurrentSession(session);
+    current_session$.set({ data: sessionData } as any);
   };
 
-  const logSet = async (exerciseIndex: number, set: SetLog) => {
-    if (!currentSession) return;
+  const logSet = (exerciseIndex: number, set: SetLog) => {
+    const sessionRow = current_session$.get();
+    if (!sessionRow?.data) return;
 
-    const updatedExercises = currentSession.exercises.map((ex, i) => {
+    const currentData = sessionRow.data;
+    const updatedExercises = currentData.exercises.map((ex: ExerciseLog, i: number) => {
       if (i !== exerciseIndex) return ex;
       return { ...ex, sets: [...ex.sets, set] };
     });
 
-    const updated: CurrentSession = { ...currentSession, exercises: updatedExercises };
-    await setCurrentSession(updated);
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const updatedData: CurrentSessionData = { ...currentData, exercises: updatedExercises };
+    current_session$.data.set(updatedData);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   };
 
-  const failPr = async (exerciseKey: string) => {
-    const w = weights[exerciseKey];
+  const failPr = (exerciseKey: string) => {
+    const w = weights$[exerciseKey].get();
     if (!w) return;
-    const updatedWeights = {
-      ...weights,
-      [exerciseKey]: { ...w, prStatus: "failed" as const },
-    };
-    await setWeights(updatedWeights);
+    weights$[exerciseKey].pr_status.set("failed" as const);
   };
 
-  const finishWorkout = async () => {
-    if (!currentSession || !cycleState) return;
+  const finishWorkout = () => {
+    const sessionRow = current_session$.get();
+    const cycleState = cycle_state$.get();
+    if (!sessionRow?.data || !cycleState) return;
 
-    const programDay = getProgramDay(currentSession.day);
+    const currentData = sessionRow.data;
+    const currentWeights = weights$.get() ?? {};
 
     // Check PR success for compound exercises
-    let updatedWeights = { ...weights };
-    for (const ex of currentSession.exercises) {
-      const w = updatedWeights[ex.key];
-      if (!w || w.prStatus !== "pending" || w.pr === null) continue;
+    for (const ex of currentData.exercises) {
+      const w = currentWeights[ex.key];
+      if (!w || w.pr_status !== "pending" || w.pr === null) continue;
 
       // Check if all PR sets hit target reps
-      const prSets = ex.sets.filter((s) => s.isPr);
-      if (prSets.length > 0 && prSets.every((s) => s.reps >= ex.reps)) {
-        updatedWeights[ex.key] = { ...w, prStatus: "succeeded" as const };
+      const prSets = ex.sets.filter((s: SetLog) => s.is_pr);
+      if (prSets.length > 0 && prSets.every((s: SetLog) => s.reps >= ex.reps)) {
+        weights$[ex.key].set({ ...w, pr_status: "succeeded" as const });
       }
     }
 
-    if (updatedWeights !== weights) {
-      await setWeights(updatedWeights);
-    }
-
-    const workoutLog: WorkoutLog = {
+    const workoutLog: WorkoutLogInput = {
       id: Crypto.randomUUID(),
       date: new Date().toISOString().split("T")[0],
-      day: currentSession.day,
-      week: currentSession.week,
-      cycle: currentSession.cycle,
-      exercises: currentSession.exercises,
-      completedAt: new Date().toISOString(),
+      day: currentData.day,
+      week: currentData.week,
+      cycle: currentData.cycle,
+      exercises: currentData.exercises,
+      completed_at: new Date().toISOString(),
     };
 
-    await addWorkout(workoutLog);
+    workouts$[workoutLog.id].set(workoutLog as any);
 
     // Advance cycle state
     const newCycleState = advanceCycleState(cycleState);
-    const isNewCycle = newCycleState.cycleNumber !== cycleState.cycleNumber;
+    const isNewCycle = newCycleState.cycle_number !== cycleState.cycle_number;
 
-    let finalWeights = updatedWeights;
-    if (isNewCycle && settings) {
-      finalWeights = resetPrsForNewCycle(updatedWeights, settings.increments, newCycleState.cycleNumber);
-      await setWeights(finalWeights);
+    if (isNewCycle) {
+      const currentIncrements = increments$.get() ?? {};
+      const resetWeights = resetPrsForNewCycle(
+        weights$.get() ?? {},
+        currentIncrements,
+        newCycleState.cycle_number
+      );
+      for (const [key, newWeight] of Object.entries(resetWeights)) {
+        weights$[key].set(newWeight as any);
+      }
     }
 
-    await setCycleState(newCycleState);
-    await setCurrentSession(null);
+    cycle_state$.set(newCycleState as any);
+    current_session$.set(null as any);
   };
 
-  const discardWorkout = async () => {
-    await setCurrentSession(null);
+  const discardWorkout = () => {
+    current_session$.set(null as any);
   };
 
   return {

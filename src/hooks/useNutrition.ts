@@ -1,4 +1,4 @@
-import { NutritionSettings, NutritionTargets, Units } from "../types";
+import { NutritionInput, NutritionTargets, Units } from "../types";
 
 const ACTIVITY_MULTIPLIERS: Record<string, number> = {
   sedentary: 1.2,
@@ -15,7 +15,7 @@ const GOAL_OFFSETS: Record<string, number> = {
 };
 
 export function calculateNutrition(
-  nutrition: NutritionSettings,
+  nutrition: NutritionInput,
   units: Units
 ): NutritionTargets {
   const weightKg =
@@ -30,7 +30,7 @@ export function calculateNutrition(
     bmr = 10 * weightKg + 6.25 * heightCm - 5 * nutrition.age - 161;
   }
 
-  const tdee = bmr * ACTIVITY_MULTIPLIERS[nutrition.activityLevel];
+  const tdee = bmr * ACTIVITY_MULTIPLIERS[nutrition.activity_level];
   const calories = Math.round(tdee + GOAL_OFFSETS[nutrition.goal]);
 
   const weightLb =

@@ -1,14 +1,19 @@
+import { useEffect } from "react";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { View, ActivityIndicator, StyleSheet } from "react-native";
 import { useFonts } from "expo-font";
-import { AppProvider, useAppContext } from "../src/context";
+import { useSelector } from "@legendapp/state/react";
+import { initAuth, auth$ } from "../src/lib/auth";
+import { profile$, is_ready$ } from "../src/lib/store";
 import { colors } from "../src/theme";
 
 function RootNavigator() {
-  const { settings, isLoading } = useAppContext();
+  const isReady = useSelector(is_ready$);
+  const uid = useSelector(auth$.uid);
+  const profile = useSelector(profile$);
 
-  if (isLoading) {
+  if (!isReady) {
     return (
       <View style={splashStyles.container}>
         <ActivityIndicator size="large" color={colors.accent} />
@@ -16,16 +21,21 @@ function RootNavigator() {
     );
   }
 
+  const needsAuth = uid === null;
+  const needsOnboarding = !needsAuth && (profile === undefined || profile?.onboarding_complete === false);
+  const ready = !needsAuth && !needsOnboarding;
+
   return (
     <>
       <StatusBar style="light" />
       <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="onboarding" redirect={settings !== null} />
-        <Stack.Screen name="(tabs)" redirect={settings === null} />
+        <Stack.Screen name="auth" redirect={!needsAuth} />
+        <Stack.Screen name="onboarding" redirect={!needsOnboarding} />
+        <Stack.Screen name="(tabs)" redirect={!ready} />
         <Stack.Screen
           name="workout"
           options={{ presentation: "fullScreenModal", gestureEnabled: false }}
-          redirect={settings === null}
+          redirect={!ready}
         />
       </Stack>
     </>
@@ -41,6 +51,10 @@ export default function RootLayout() {
     "PlusJakartaSans_700Bold": require("../assets/fonts/PlusJakartaSans_700Bold.ttf"),
   });
 
+  useEffect(() => {
+    initAuth();
+  }, []);
+
   if (!fontsLoaded) {
     return (
       <View style={splashStyles.container}>
@@ -49,11 +63,7 @@ export default function RootLayout() {
     );
   }
 
-  return (
-    <AppProvider>
-      <RootNavigator />
-    </AppProvider>
-  );
+  return <RootNavigator />;
 }
 
 const splashStyles = StyleSheet.create({
