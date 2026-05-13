@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
-import { View, Text, StyleSheet, Alert, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useWorkout, getTargetWeight, getTargetSets } from "../src/hooks/useWorkout";
@@ -37,6 +37,7 @@ export default function WorkoutScreen() {
   const [warmupDismissed, setWarmupDismissed] = useState<Record<number, boolean>>({});
   const [ready, setReady] = useState(false);
   const [showUndoToast, setShowUndoToast] = useState(false);
+  const [elapsedTime, setElapsedTime] = useState("");
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undoIndexRef = useRef<{ exerciseIndex: number; setIndex: number } | null>(null);
 
@@ -67,6 +68,26 @@ export default function WorkoutScreen() {
       if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
     };
   }, []);
+
+  // Elapsed workout time
+  useEffect(() => {
+    if (!currentSession?.started_at) return;
+    const update = () => {
+      const ms = Date.now() - new Date(currentSession.started_at).getTime();
+      const totalSec = Math.floor(ms / 1000);
+      const h = Math.floor(totalSec / 3600);
+      const m = Math.floor((totalSec % 3600) / 60);
+      const s = totalSec % 60;
+      setElapsedTime(
+        h > 0
+          ? `${h}:${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`
+          : `${m}:${String(s).padStart(2, "0")}`
+      );
+    };
+    update();
+    const interval = setInterval(update, 1000);
+    return () => clearInterval(interval);
+  }, [currentSession?.started_at]);
 
   const resumeSession = (exercises: ExerciseLog[]) => {
     if (!cycleState) return;
@@ -192,24 +213,12 @@ export default function WorkoutScreen() {
         }
       }
 
-      // If not last set of exercise and the set was a PR failure mid-exercise,
-      // prompt the user
       if (
         !isLastSetOfExercise &&
         isPrAttempt &&
         set.reps < currentExercise.reps
       ) {
-        Alert.alert(
-          "PR Attempt",
-          `Failed to hit ${currentExercise.reps} reps. Drop to working weight for rest of cycle?`,
-          [
-            { text: "Keep PR Weight", style: "cancel" },
-            {
-              text: "Drop Weight",
-              onPress: () => failPr(currentExercise.key),
-            },
-          ]
-        );
+        failPr(currentExercise.key);
       }
 
       // Start rest timer
@@ -333,6 +342,9 @@ export default function WorkoutScreen() {
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {elapsedTime ? (
+        <Text style={styles.elapsedTime}>{elapsedTime}</Text>
+      ) : null}
       {showWarmup && warmupSets.length > 0 && (
         <WarmupSuggestion
           warmupSets={warmupSets}
@@ -397,6 +409,13 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     ...typography.body,
     marginTop: spacing.md,
+  },
+  elapsedTime: {
+    color: colors.textTertiary,
+    ...typography.caption,
+    textAlign: "right",
+    paddingHorizontal: spacing.md,
+    paddingBottom: spacing.xs,
   },
   undoToast: {
     position: "absolute",

@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet, Pressable } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 import { ExerciseType } from "../types";
 import { colors, typography, spacing, radius } from "../theme";
 
@@ -40,14 +40,14 @@ export function ExerciseCard({
 
   if (isResting) {
     return (
-      <Pressable style={({ pressed }) => [styles.card, styles.restingCard, pressed && styles.cardPressed]}>
+      <View style={[styles.card, styles.restingCard]}>
         <View style={styles.header}>
           <View style={styles.nameCol}>
             <Text style={styles.restingName}>{name}</Text>
           </View>
           <Text style={styles.restingLabel}>Rest this week</Text>
         </View>
-      </Pressable>
+      </View>
     );
   }
 
@@ -59,7 +59,7 @@ export function ExerciseCard({
   const weightColor = getWeightColor(type);
 
   return (
-    <Pressable style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}>
+    <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.nameCol}>
           <Text style={styles.name}>{name}</Text>
@@ -75,7 +75,7 @@ export function ExerciseCard({
           <Text style={[isCompound ? styles.weight : styles.weightSmall, { color: weightColor }]}>{weightLabel}</Text>
         </View>
       </View>
-    </Pressable>
+    </View>
   );
 }
 
@@ -87,9 +87,6 @@ const styles = StyleSheet.create({
     borderColor: colors.cardBorder,
     padding: spacing.lg,
     marginBottom: 12,
-  },
-  cardPressed: {
-    backgroundColor: colors.surfaceElevated,
   },
   restingCard: {
     opacity: 0.35,
