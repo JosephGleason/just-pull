@@ -13,14 +13,12 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useAppContext } from "../src/context";
-import { setOnboardingComplete } from "../src/storage";
 import { createInitialCycleState } from "../src/hooks/useCycleState";
 import { ALL_EXERCISE_KEYS, COMPOUND_KEYS } from "../src/program";
+import { profile$, cycle_state$, weights$, increments$, nutrition$ } from "../src/lib/store";
 import {
-  Settings,
-  ExerciseWeight,
-  NutritionSettings,
+  ExerciseWeightInput,
+  NutritionInput,
   Units,
   ActivityLevel,
   Goal,
@@ -279,7 +277,7 @@ function StepNutrition({
   nutrition,
   onChange,
 }: {
-  nutrition: Partial<NutritionSettings>;
+  nutrition: Partial<NutritionInput>;
   onChange: (field: string, value: any) => void;
 }) {
   return (
@@ -373,15 +371,15 @@ function StepNutrition({
                 key={a.value}
                 style={[
                   styles.pill,
-                  nutrition.activityLevel === a.value && styles.pillActive,
+                  nutrition.activity_level === a.value && styles.pillActive,
                 ]}
-                onPress={() => onChange("activityLevel", a.value)}
+                onPress={() => onChange("activity_level", a.value)}
                 activeOpacity={0.7}
               >
                 <Text
                   style={[
                     styles.pillText,
-                    nutrition.activityLevel === a.value &&
+                    nutrition.activity_level === a.value &&
                       styles.pillTextActive,
                   ]}
                 >
@@ -429,7 +427,6 @@ function StepNutrition({
 export default function OnboardingScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { setSettings, setCycleState, setWeights } = useAppContext();
 
   const TOTAL_STEPS = 4;
   const [step, setStep] = useState(0);
@@ -446,7 +443,7 @@ export default function OnboardingScreen() {
   const [accessoryTimer, setAccessoryTimer] = useState("90");
 
   // Step 4 state
-  const [nutrition, setNutrition] = useState<Partial<NutritionSettings>>({});
+  const [nutrition, setNutrition] = useState<Partial<NutritionInput>>({});
 
   // --- Navigation helpers ----------------------------------------------------
   const animateTransition = (nextStep: number) => {
@@ -498,73 +495,61 @@ export default function OnboardingScreen() {
   };
 
   // --- Completion ------------------------------------------------------------
-  const handleComplete = async (skipNutrition: boolean) => {
+  const handleComplete = (skipNutrition: boolean) => {
     const selectedUnits = units!;
 
-    // Build increments
-    const increments: Record<string, number> = {};
-    for (const ex of COMPOUND_EXERCISES) {
-      for (const key of ex.keys) {
-        increments[key] = ex.increment;
-      }
+    // 1. Update profile
+    const currentProfile = profile$.get();
+    if (currentProfile) {
+      profile$.set({
+        ...currentProfile,
+        units: selectedUnits,
+        rest_timer_compound: parseInt(compoundTimer, 10) || 180,
+        rest_timer_accessory: parseInt(accessoryTimer, 10) || 90,
+      });
     }
 
-    // Build nutrition settings
-    let nutritionSettings: NutritionSettings | null = null;
-    if (
-      !skipNutrition &&
-      nutrition.age &&
-      nutrition.weight &&
-      nutrition.height &&
-      nutrition.sex &&
-      nutrition.activityLevel &&
-      nutrition.goal
-    ) {
-      nutritionSettings = nutrition as NutritionSettings;
-    }
+    // 2. Create cycle state
+    cycle_state$.set(createInitialCycleState() as any);
 
-    // Build settings
-    const settings: Settings = {
-      units: selectedUnits,
-      restTimerCompound: parseInt(compoundTimer, 10) || 180,
-      restTimerAccessory: parseInt(accessoryTimer, 10) || 90,
-      increments,
-      nutrition: nutritionSettings,
-    };
-
-    // Build weights map
-    const weightsMap: Record<string, ExerciseWeight> = {};
-
-    // Compound exercises from user input
+    // 3. Exercise weights (compound from user input)
     for (const ex of COMPOUND_EXERCISES) {
       const raw = startingWeights[ex.label];
       const defaultVal = selectedUnits === "lb" ? ex.defaultLb : ex.defaultKg;
       const weight = raw && raw.trim() !== "" ? parseFloat(raw) : defaultVal;
 
       for (const key of ex.keys) {
-        weightsMap[key] = {
-          working: weight,
-          pr: null,
-          prStatus: null,
-        };
+        weights$[key].set({ exercise_key: key, working: weight, pr: null, pr_status: null } as any);
       }
     }
 
     // Accessory exercises initialize to 0
     for (const key of ACCESSORY_KEYS) {
-      weightsMap[key] = {
-        working: 0,
-        pr: null,
-        prStatus: null,
-      };
+      weights$[key].set({ exercise_key: key, working: 0, pr: null, pr_status: null } as any);
     }
 
-    // Save everything -- setSettings last because the root layout
-    // gates on settings being non-null to switch away from onboarding
-    await setWeights(weightsMap);
-    await setCycleState(createInitialCycleState());
-    await setOnboardingComplete();
-    await setSettings(settings);
+    // 4. Increments (compound only)
+    for (const ex of COMPOUND_EXERCISES) {
+      for (const key of ex.keys) {
+        increments$[key].set({ exercise_key: key, increment: ex.increment } as any);
+      }
+    }
+
+    // 5. Optional nutrition
+    const allNutritionFieldsFilled =
+      nutrition.age &&
+      nutrition.weight &&
+      nutrition.height &&
+      nutrition.sex &&
+      nutrition.activity_level &&
+      nutrition.goal;
+
+    if (!skipNutrition && allNutritionFieldsFilled) {
+      nutrition$.set(nutrition as NutritionInput as any);
+    }
+
+    // 6. Mark complete LAST -- _layout.tsx handles routing based on this
+    profile$.onboarding_complete.set(true);
   };
 
   // --- Weight change handler -------------------------------------------------

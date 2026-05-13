@@ -1,9 +1,9 @@
 import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, ScrollView } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppContext } from "../../src/context";
+import { workouts$ } from "../../src/lib/store";
 import { CalendarGrid } from "../../src/components/CalendarGrid";
-import { WorkoutLog, ExerciseType } from "../../src/types";
+import { WorkoutLogRow, ExerciseType } from "../../src/types";
 import { colors, typography, spacing, radius } from "../../src/theme";
 
 // Weight color indicates exercise type — matching ExerciseCard
@@ -20,7 +20,8 @@ function getWeightColor(type: ExerciseType): string {
 
 export default function HistoryScreen() {
   const insets = useSafeAreaInsets();
-  const { history } = useAppContext();
+  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
+  const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
 
   const now = new Date();
   const [currentMonth, setCurrentMonth] = useState(now.getMonth());
@@ -37,7 +38,7 @@ export default function HistoryScreen() {
   }, [history]);
 
   // Find the workout for the selected date (latest one if multiple on same day)
-  const selectedWorkout = useMemo<WorkoutLog | null>(() => {
+  const selectedWorkout = useMemo<WorkoutLogRow | null>(() => {
     if (!selectedDate) return null;
     const matches = history.filter((w) => w.date === selectedDate);
     if (matches.length === 0) return null;
@@ -124,8 +125,8 @@ export default function HistoryScreen() {
                 {ex.sets.map((s, si) => (
                   <Text key={si} style={[styles.setText, { color: getWeightColor(ex.type) }]}>
                     {s.weight} x {s.reps}
-                    {s.isAmrap ? "*" : ""}
-                    {s.isPr ? " PR" : ""}
+                    {s.is_amrap ? "*" : ""}
+                    {s.is_pr ? " PR" : ""}
                     {si < ex.sets.length - 1 ? "  " : ""}
                   </Text>
                 ))}

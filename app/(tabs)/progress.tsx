@@ -9,11 +9,12 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppContext } from "../../src/context";
+import { profile$, cycle_state$, weights$, workouts$ } from "../../src/lib/store";
 import { COMPOUND_KEYS } from "../../src/program";
 import { ProgressChart } from "../../src/components/ProgressChart";
 import { MuscleHeatmap } from "../../src/components/MuscleHeatmap";
 import { getBest1RM } from "../../src/hooks/useOneRepMax";
+import { WorkoutLogRow, ExerciseWeightInput, CycleStateInput } from "../../src/types";
 import { colors, typography, spacing, radius, fonts } from "../../src/theme";
 
 /** Convert a key like "bench_4" -> "Bench (4 rep)" */
@@ -29,11 +30,15 @@ function keyToDisplayName(key: string): string {
 }
 
 export default function ProgressScreen() {
-  const { history, weights, settings, cycleState } = useAppContext();
+  const profile = profile$.get() as { units: string } | undefined;
+  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
+  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
+  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
+  const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
   const insets = useSafeAreaInsets();
   const [selectedKey, setSelectedKey] = useState<string>(COMPOUND_KEYS[0]);
 
-  const units = settings?.units ?? "lb";
+  const units = profile?.units ?? "lb";
   const hasHistory = history.length > 0;
 
   if (!hasHistory) {
@@ -102,7 +107,7 @@ export default function ProgressScreen() {
         {(COMPOUND_KEYS as unknown as string[]).map((key) => {
           const ew = weights[key];
           const weight = ew?.working ?? null;
-          const best1RM = getBest1RM(history, key);
+          const best1RM = getBest1RM(workoutsRecord, key);
           return (
             <View key={key} style={styles.weightCard}>
               <Text style={styles.weightCardName} numberOfLines={1}>

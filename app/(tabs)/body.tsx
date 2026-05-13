@@ -2,10 +2,11 @@ import React, { useState, useMemo } from "react";
 import { View, Text, StyleSheet, Dimensions } from "react-native";
 import Slider from "@react-native-community/slider";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppContext } from "../../src/context";
+import { workouts$, body_log$ } from "../../src/lib/store";
 import { computeMuscleStates } from "../../src/hooks/useBodyModel";
 import { BodyFigure } from "../../src/components/BodyFigure";
 import { EXERCISE_MUSCLE_MAP } from "../../src/components/body/muscles";
+import { WorkoutLogRow, BodyLogRow } from "../../src/types";
 import { colors, typography, spacing } from "../../src/theme";
 
 const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = Dimensions.get("window");
@@ -27,20 +28,23 @@ function formatDate(date: Date): string {
 
 export default function BodyScreen() {
   const insets = useSafeAreaInsets();
-  const { history, bodyLog } = useAppContext();
+  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
+  const bodyLogRecord = (body_log$.get() ?? {}) as Record<string, BodyLogRow>;
   const [side, setSide] = useState<"front" | "back">("front");
   const [sliderValue, setSliderValue] = useState(1);
 
-  const hasHistory = history.length > 0;
-  const hasBodyLog = bodyLog.length > 0;
+  const historyValues = Object.values(workoutsRecord);
+  const bodyLogValues = Object.values(bodyLogRecord);
+  const hasHistory = historyValues.length > 0;
+  const hasBodyLog = bodyLogValues.length > 0;
 
   // Sort history by date ascending to find first workout
   const sortedHistory = useMemo(
     () =>
-      [...history].sort(
+      [...historyValues].sort(
         (a, b) => toDate(a.date).getTime() - toDate(b.date).getTime()
       ),
-    [history]
+    [historyValues]
   );
 
   const firstWorkoutDate = useMemo(
@@ -77,8 +81,8 @@ export default function BodyScreen() {
   }, [firstWorkoutDate, sliderValue, totalDays, today]);
 
   const modelState = useMemo(
-    () => computeMuscleStates(history, bodyLog, asOfDate),
-    [history, bodyLog, asOfDate]
+    () => computeMuscleStates(workoutsRecord, bodyLogRecord, asOfDate),
+    [workoutsRecord, bodyLogRecord, asOfDate]
   );
 
   // Muscles trained in the last 7 days (only shown when slider is near today)
@@ -86,7 +90,7 @@ export default function BodyScreen() {
     if (sliderValue < 0.95) return [];
     const sevenDaysAgo = new Date(today.getTime() - 7 * MS_PER_DAY);
     const recentMuscles = new Set<string>();
-    for (const w of history) {
+    for (const w of historyValues) {
       const wDate = toDate(w.date);
       if (wDate >= sevenDaysAgo && wDate <= today) {
         for (const ex of w.exercises) {
@@ -100,7 +104,7 @@ export default function BodyScreen() {
       }
     }
     return Array.from(recentMuscles);
-  }, [history, sliderValue, today]);
+  }, [historyValues, sliderValue, today]);
 
   const figureWidth = SCREEN_WIDTH * 0.7;
   const figureHeight = SCREEN_HEIGHT * 0.55;
@@ -119,7 +123,7 @@ export default function BodyScreen() {
       <View style={styles.figureContainer}>
         <BodyFigure
           muscles={modelState.muscles}
-          bodyFatPercent={modelState.bodyFatPercent}
+          body_fat_percent={modelState.body_fat_percent}
           highlightedMuscles={thisWeekMuscles}
           side={side}
           onToggleSide={() => setSide((s) => (s === "front" ? "back" : "front"))}
@@ -144,19 +148,19 @@ export default function BodyScreen() {
       <View style={styles.statsRow}>
         <View style={styles.statColumn}>
           <Text style={styles.statValue}>
-            {formatStatValue(modelState.bodyWeight)}
+            {formatStatValue(modelState.body_weight)}
           </Text>
           <Text style={styles.statLabel}>WEIGHT</Text>
         </View>
         <View style={styles.statColumn}>
           <Text style={styles.statValue}>
-            {formatStatValue(modelState.bodyFatPercent, 1)}
+            {formatStatValue(modelState.body_fat_percent, 1)}
           </Text>
           <Text style={styles.statLabel}>BODY FAT %</Text>
         </View>
         <View style={styles.statColumn}>
           <Text style={styles.statValue}>
-            {formatStatValue(modelState.monthsTrained)}
+            {formatStatValue(modelState.months_trained)}
           </Text>
           <Text style={styles.statLabel}>MONTHS TRAINED</Text>
         </View>

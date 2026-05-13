@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from "react";
+import * as Crypto from "expo-crypto";
 import {
   View,
   Text,
@@ -14,21 +15,22 @@ import {
   Platform,
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useAppContext } from "../../src/context";
+import { profile$, cycle_state$, weights$, increments$, nutrition$, body_log$, workouts$, current_session$ } from "../../src/lib/store";
+import { signOut } from "../../src/lib/auth";
 import { COMPOUND_KEYS } from "../../src/program";
 import { calculateNutrition } from "../../src/hooks/useNutrition";
-import { exportAllData, importAllData, clearAllData } from "../../src/storage";
 import {
-  Settings,
-  CycleState,
-  ExerciseWeight,
-  NutritionSettings,
+  ProfileRow,
+  CycleStateInput,
+  ExerciseWeightInput,
+  NutritionInput,
+  IncrementRow,
+  BodyLogRow,
   ActivityLevel,
   Goal,
   Units,
   WeekNumber,
   TrainingDay,
-  BodyLog,
 } from "../../src/types";
 import { colors, typography, spacing, radius } from "../../src/theme";
 
@@ -235,8 +237,8 @@ function PickerModal<T extends string>({
 interface BodyLogModalProps {
   visible: boolean;
   units: Units;
-  lastEntry: BodyLog | null;
-  onSave: (weight: number, bodyFatPercent: number) => void;
+  lastEntry: BodyLogRow | null;
+  onSave: (weight: number, body_fat_percent: number) => void;
   onCancel: () => void;
 }
 
@@ -253,7 +255,7 @@ function BodyLogModal({
   React.useEffect(() => {
     if (visible) {
       setWeightVal(lastEntry ? String(lastEntry.weight) : "");
-      setBfVal(lastEntry ? String(lastEntry.bodyFatPercent) : "");
+      setBfVal(lastEntry ? String(lastEntry.body_fat_percent) : "");
     }
   }, [visible, lastEntry]);
 
@@ -392,8 +394,13 @@ const bodyLogStyles = StyleSheet.create({
 
 export default function SettingsScreen() {
   const insets = useSafeAreaInsets();
-  const context = useAppContext();
-  const { settings, cycleState, weights, isLoading } = context;
+  const profile = profile$.get() as ProfileRow | undefined;
+  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
+  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
+  const incrementsRecord = (increments$.get() ?? {}) as Record<string, IncrementRow>;
+  const nutritionData = (nutrition$.get() ?? null) as NutritionInput | null;
+  const bodyLogRecord = (body_log$.get() ?? {}) as Record<string, BodyLogRow>;
+  const isLoading = !profile;
 
   // -- modal state --
   const [editModal, setEditModal] = useState<{
@@ -419,28 +426,28 @@ export default function SettingsScreen() {
 
   // -- body log modal state --
   const [bodyLogModalVisible, setBodyLogModalVisible] = useState(false);
-  const bodyLog: BodyLog[] = context.bodyLog ?? [];
+  const bodyLog: BodyLogRow[] = Object.values(bodyLogRecord).sort((a, b) => a.date.localeCompare(b.date));
 
   // -- nutrition local state (for the form) --
-  const defaultNutrition: NutritionSettings = {
+  const defaultNutrition: NutritionInput = {
     age: 30,
     weight: 180,
     height: 70,
     sex: "male",
-    activityLevel: "moderate",
+    activity_level: "moderate",
     goal: "maintain",
   };
 
-  const [nutritionForm, setNutritionForm] = useState<NutritionSettings>(
-    settings?.nutrition ?? defaultNutrition
+  const [nutritionForm, setNutritionForm] = useState<NutritionInput>(
+    nutritionData ?? defaultNutrition
   );
 
-  // Keep form in sync when context loads
+  // Keep form in sync when data loads
   React.useEffect(() => {
-    if (settings?.nutrition) {
-      setNutritionForm(settings.nutrition);
+    if (nutritionData) {
+      setNutritionForm(nutritionData);
     }
-  }, [settings?.nutrition]);
+  }, [nutritionData]);
 
   // -- helpers to open modals --
   const openEdit = useCallback(
@@ -476,7 +483,7 @@ export default function SettingsScreen() {
   );
 
   // -- guard --
-  if (isLoading || !settings || !cycleState) {
+  if (isLoading || !profile || !cycleState) {
     return (
       <View style={styles.centered}>
         {isLoading ? (
@@ -491,8 +498,8 @@ export default function SettingsScreen() {
   }
 
   // After the guard, these are guaranteed non-null; capture for closure safety.
-  const safeSettings: Settings = settings;
-  const safeCycleState: CycleState = cycleState;
+  const safeProfile: ProfileRow = profile;
+  const safeCycleState: CycleStateInput = cycleState;
 
   // -- section handlers --
 
@@ -508,14 +515,11 @@ export default function SettingsScreen() {
           Alert.alert("Invalid", "Please enter a positive number.");
           return;
         }
-        const updated: Record<string, ExerciseWeight> = {
-          ...weights,
-          [key]: {
-            ...(weights[key] ?? { pr: null, prStatus: null }),
-            working: num,
-          },
-        };
-        context.setWeights(updated);
+        const existing = weights[key];
+        weights$[key].set({
+          ...(existing ?? { exercise_key: key, pr: null, pr_status: null }),
+          working: num,
+        } as any);
         closeEdit();
       }
     );
@@ -523,7 +527,7 @@ export default function SettingsScreen() {
 
   // Increments
   function handleEditIncrement(key: string) {
-    const current = safeSettings.increments[key] ?? 5;
+    const current = incrementsRecord[key]?.increment ?? 5;
     openEdit(
       `Increment — ${keyToDisplayName(key)}`,
       String(current),
@@ -533,44 +537,44 @@ export default function SettingsScreen() {
           Alert.alert("Invalid", "Please enter a positive number.");
           return;
         }
-        const updated: Settings = {
-          ...safeSettings,
-          increments: { ...safeSettings.increments, [key]: num },
-        };
-        context.setSettings(updated);
+        const existing = incrementsRecord[key];
+        increments$[key].set({
+          ...(existing ?? { exercise_key: key }),
+          increment: num,
+        } as any);
         closeEdit();
       }
     );
   }
 
   // Rest timers
-  function handleEditRestTimer(field: "restTimerCompound" | "restTimerAccessory") {
-    const label = field === "restTimerCompound" ? "Compound Rest" : "Accessory Rest";
-    const current = safeSettings[field];
+  function handleEditRestTimer(field: "rest_timer_compound" | "rest_timer_accessory") {
+    const label = field === "rest_timer_compound" ? "Compound Rest" : "Accessory Rest";
+    const current = safeProfile[field];
     openEdit(`${label} (seconds)`, String(current), (val) => {
       const num = parseInt(val, 10);
       if (isNaN(num) || num < 0) {
         Alert.alert("Invalid", "Please enter a non-negative number.");
         return;
       }
-      context.setSettings({ ...safeSettings, [field]: num });
+      profile$[field].set(num);
       closeEdit();
     });
   }
 
   // Units
   function handleUnitsChange(units: Units) {
-    context.setSettings({ ...safeSettings, units });
+    profile$.units.set(units);
   }
 
   // Cycle state
   function handleEditCycleField(
-    field: "cycleNumber" | "weekNumber" | "nextDay"
+    field: "cycle_number" | "week_number" | "next_day"
   ) {
     const labels: Record<string, string> = {
-      cycleNumber: "Cycle Number",
-      weekNumber: "Week (1-3)",
-      nextDay: "Next Day (1, 2, 3, 5, or 6)",
+      cycle_number: "Cycle Number",
+      week_number: "Week (1-3)",
+      next_day: "Next Day (1, 2, 3, 5, or 6)",
     };
     const current = safeCycleState[field];
     openEdit(labels[field], String(current), (val) => {
@@ -579,27 +583,25 @@ export default function SettingsScreen() {
         Alert.alert("Invalid", "Please enter a valid number.");
         return;
       }
-      let updated: CycleState = { ...safeCycleState };
-      if (field === "cycleNumber") updated.cycleNumber = Math.max(1, num);
-      if (field === "weekNumber")
-        updated.weekNumber = (Math.max(1, Math.min(3, num)) as WeekNumber);
-      if (field === "nextDay") {
+      if (field === "cycle_number") cycle_state$.cycle_number.set(Math.max(1, num));
+      if (field === "week_number")
+        cycle_state$.week_number.set(Math.max(1, Math.min(3, num)) as WeekNumber);
+      if (field === "next_day") {
         const valid: TrainingDay[] = [1, 2, 3, 5, 6];
         if (!valid.includes(num as TrainingDay)) {
           Alert.alert("Invalid", "Day must be 1, 2, 3, 5, or 6.");
           return;
         }
-        updated.nextDay = num as TrainingDay;
+        cycle_state$.next_day.set(num as TrainingDay);
       }
-      context.setCycleState(updated);
       closeEdit();
     });
   }
 
   // Nutrition form helpers
-  function updateNutritionField<K extends keyof NutritionSettings>(
+  function updateNutritionField<K extends keyof NutritionInput>(
     field: K,
-    value: NutritionSettings[K]
+    value: NutritionInput[K]
   ) {
     setNutritionForm((prev) => ({ ...prev, [field]: value }));
   }
@@ -613,7 +615,7 @@ export default function SettingsScreen() {
       Alert.alert("Incomplete", "Please fill in age, weight, and height.");
       return;
     }
-    context.setSettings({ ...safeSettings, nutrition: nutritionForm });
+    nutrition$.set(nutritionForm as any);
     Alert.alert("Saved", "Nutrition settings updated.");
   }
 
@@ -624,7 +626,7 @@ export default function SettingsScreen() {
         text: "Clear",
         style: "destructive",
         onPress: () => {
-          context.setSettings({ ...safeSettings, nutrition: null });
+          nutrition$.set(null as any);
           setNutritionForm(defaultNutrition);
         },
       },
@@ -634,7 +636,16 @@ export default function SettingsScreen() {
   // Data export/import
   async function handleExport() {
     try {
-      const json = await exportAllData();
+      const data = {
+        profile: profile$.get(),
+        nutrition: nutrition$.get(),
+        cycle_state: cycle_state$.get(),
+        weights: weights$.get(),
+        increments: increments$.get(),
+        workouts: workouts$.get(),
+        body_log: body_log$.get(),
+      };
+      const json = JSON.stringify(data, null, 2);
       await Share.share({ message: json });
     } catch (e: any) {
       Alert.alert("Export failed", e.message ?? String(e));
@@ -651,11 +662,11 @@ export default function SettingsScreen() {
 
   // -- computed --
   const nutritionTargets =
-    safeSettings.nutrition
-      ? calculateNutrition(safeSettings.nutrition, safeSettings.units)
+    nutritionData
+      ? calculateNutrition(nutritionData, safeProfile.units)
       : null;
 
-  const formTargets = calculateNutrition(nutritionForm, safeSettings.units);
+  const formTargets = calculateNutrition(nutritionForm, safeProfile.units);
 
   // -- render -----------------------------------------------------------------
 
@@ -675,7 +686,7 @@ export default function SettingsScreen() {
               {i > 0 && <View style={styles.divider} />}
               <SettingsRow
                 label={keyToDisplayName(key)}
-                value={`${weights[key]?.working ?? "—"} ${safeSettings.units}`}
+                value={`${weights[key]?.working ?? "—"} ${safeProfile.units}`}
                 onPress={() => handleEditWeight(key)}
               />
             </View>
@@ -690,7 +701,7 @@ export default function SettingsScreen() {
               {i > 0 && <View style={styles.divider} />}
               <SettingsRow
                 label={keyToDisplayName(key)}
-                value={`${safeSettings.increments[key] ?? 5} ${safeSettings.units}`}
+                value={`${incrementsRecord[key]?.increment ?? 5} ${safeProfile.units}`}
                 onPress={() => handleEditIncrement(key)}
               />
             </View>
@@ -702,14 +713,14 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SettingsRow
             label="Compound"
-            value={formatSeconds(safeSettings.restTimerCompound)}
-            onPress={() => handleEditRestTimer("restTimerCompound")}
+            value={formatSeconds(safeProfile.rest_timer_compound)}
+            onPress={() => handleEditRestTimer("rest_timer_compound")}
           />
           <View style={styles.divider} />
           <SettingsRow
             label="Accessory"
-            value={formatSeconds(safeSettings.restTimerAccessory)}
-            onPress={() => handleEditRestTimer("restTimerAccessory")}
+            value={formatSeconds(safeProfile.rest_timer_accessory)}
+            onPress={() => handleEditRestTimer("rest_timer_accessory")}
           />
         </View>
 
@@ -722,7 +733,7 @@ export default function SettingsScreen() {
                 key={u}
                 style={[
                   styles.segmentBtn,
-                  safeSettings.units === u && styles.segmentBtnActive,
+                  safeProfile.units === u && styles.segmentBtnActive,
                 ]}
                 onPress={() => handleUnitsChange(u)}
                 activeOpacity={0.8}
@@ -730,7 +741,7 @@ export default function SettingsScreen() {
                 <Text
                   style={[
                     styles.segmentText,
-                    safeSettings.units === u && styles.segmentTextActive,
+                    safeProfile.units === u && styles.segmentTextActive,
                   ]}
                 >
                   {u}
@@ -748,20 +759,20 @@ export default function SettingsScreen() {
         <View style={styles.card}>
           <SettingsRow
             label="Cycle"
-            value={String(safeCycleState.cycleNumber)}
-            onPress={() => handleEditCycleField("cycleNumber")}
+            value={String(safeCycleState.cycle_number)}
+            onPress={() => handleEditCycleField("cycle_number")}
           />
           <View style={styles.divider} />
           <SettingsRow
             label="Week"
-            value={String(safeCycleState.weekNumber)}
-            onPress={() => handleEditCycleField("weekNumber")}
+            value={String(safeCycleState.week_number)}
+            onPress={() => handleEditCycleField("week_number")}
           />
           <View style={styles.divider} />
           <SettingsRow
             label="Next Day"
-            value={String(safeCycleState.nextDay)}
-            onPress={() => handleEditCycleField("nextDay")}
+            value={String(safeCycleState.next_day)}
+            onPress={() => handleEditCycleField("next_day")}
           />
           <View style={styles.divider} />
           <View style={styles.row}>
@@ -769,22 +780,19 @@ export default function SettingsScreen() {
             <TouchableOpacity
               style={[
                 styles.deloadToggle,
-                safeCycleState.isDeload && styles.deloadToggleActive,
+                safeCycleState.is_deload && styles.deloadToggleActive,
               ]}
               onPress={() =>
-                context.setCycleState({
-                  ...safeCycleState,
-                  isDeload: !safeCycleState.isDeload,
-                })
+                cycle_state$.is_deload.set(!safeCycleState.is_deload)
               }
             >
               <Text
                 style={[
                   styles.deloadToggleText,
-                  safeCycleState.isDeload && styles.deloadToggleTextActive,
+                  safeCycleState.is_deload && styles.deloadToggleTextActive,
                 ]}
               >
-                {safeCycleState.isDeload ? "On" : "Off"}
+                {safeCycleState.is_deload ? "On" : "Off"}
               </Text>
             </TouchableOpacity>
           </View>
@@ -794,7 +802,7 @@ export default function SettingsScreen() {
         <SectionHeader title="Nutrition Calculator" />
         <View style={styles.card}>
           {/* Current saved targets */}
-          {safeSettings.nutrition && nutritionTargets && (
+          {nutritionData && nutritionTargets && (
             <View style={styles.nutritionTargetsRow}>
               <NutritionBadge label="kcal" value={nutritionTargets.calories} color={colors.accent} />
               <NutritionBadge label="protein" value={nutritionTargets.protein} color={colors.green} />
@@ -824,13 +832,13 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           <View style={styles.nutritionField}>
             <Text style={styles.nutritionLabel}>
-              Weight ({safeSettings.units})
+              Weight ({safeProfile.units})
             </Text>
             <TouchableOpacity
               style={styles.nutritionValueBtn}
               onPress={() =>
                 openEdit(
-                  `Body Weight (${safeSettings.units})`,
+                  `Body Weight (${safeProfile.units})`,
                   String(nutritionForm.weight),
                   (v) => {
                     const n = parseFloat(v);
@@ -850,13 +858,13 @@ export default function SettingsScreen() {
           <View style={styles.divider} />
           <View style={styles.nutritionField}>
             <Text style={styles.nutritionLabel}>
-              Height ({safeSettings.units === "lb" ? "in" : "cm"})
+              Height ({safeProfile.units === "lb" ? "in" : "cm"})
             </Text>
             <TouchableOpacity
               style={styles.nutritionValueBtn}
               onPress={() =>
                 openEdit(
-                  `Height (${safeSettings.units === "lb" ? "inches" : "cm"})`,
+                  `Height (${safeProfile.units === "lb" ? "inches" : "cm"})`,
                   String(nutritionForm.height),
                   (v) => {
                     const n = parseFloat(v);
@@ -915,16 +923,16 @@ export default function SettingsScreen() {
                     { label: "Very Active", value: "active" },
                     { label: "Extremely Active", value: "very_active" },
                   ],
-                  nutritionForm.activityLevel,
+                  nutritionForm.activity_level,
                   (v) => {
-                    updateNutritionField("activityLevel", v as ActivityLevel);
+                    updateNutritionField("activity_level", v as ActivityLevel);
                     closePicker();
                   }
                 )
               }
             >
               <Text style={styles.nutritionValueText}>
-                {activityLabel(nutritionForm.activityLevel)}
+                {activityLabel(nutritionForm.activity_level)}
               </Text>
             </TouchableOpacity>
           </View>
@@ -1019,10 +1027,7 @@ export default function SettingsScreen() {
                         text: "Delete",
                         style: "destructive",
                         onPress: () => {
-                          const filtered = bodyLog.filter(
-                            (e) => !(e.date === entry.date && e.weight === entry.weight)
-                          );
-                          context.setBodyLog(filtered);
+                          body_log$[entry.id].delete();
                         },
                       },
                     ]
@@ -1031,8 +1036,8 @@ export default function SettingsScreen() {
               >
                 <Text style={styles.bodyLogDate}>{formatBodyDate(entry.date)}</Text>
                 <Text style={styles.bodyLogValues}>
-                  {entry.weight} {safeSettings.units}
-                  {entry.bodyFatPercent > 0 ? `  ·  ${entry.bodyFatPercent}% BF` : ""}
+                  {entry.weight} {safeProfile.units}
+                  {entry.body_fat_percent > 0 ? `  ·  ${entry.body_fat_percent}% BF` : ""}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -1072,8 +1077,15 @@ export default function SettingsScreen() {
                     text: "Clear Everything",
                     style: "destructive",
                     onPress: async () => {
-                      await clearAllData();
-                      context.reload();
+                      profile$.set(null as any);
+                      nutrition$.set(null as any);
+                      cycle_state$.set(null as any);
+                      weights$.set({} as any);
+                      increments$.set({} as any);
+                      workouts$.set({} as any);
+                      body_log$.set({} as any);
+                      current_session$.set(null as any);
+                      await signOut();
                     },
                   },
                 ]
@@ -1084,6 +1096,28 @@ export default function SettingsScreen() {
             <Text style={[styles.dataBtnText, { color: colors.red }]}>
               Clear All Data
             </Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* -- 9. Account -- */}
+        <SectionHeader title="Account" />
+        <View style={styles.card}>
+          <TouchableOpacity
+            style={styles.dataBtn}
+            onPress={() => {
+              Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+                { text: "Cancel", style: "cancel" },
+                {
+                  text: "Sign Out",
+                  onPress: async () => {
+                    await signOut();
+                  },
+                },
+              ]);
+            }}
+            activeOpacity={0.7}
+          >
+            <Text style={styles.dataBtnText}>Sign Out</Text>
           </TouchableOpacity>
         </View>
 
@@ -1112,14 +1146,15 @@ export default function SettingsScreen() {
       {/* Body Log Modal */}
       <BodyLogModal
         visible={bodyLogModalVisible}
-        units={safeSettings.units}
+        units={safeProfile.units}
         lastEntry={bodyLog.length > 0 ? bodyLog[bodyLog.length - 1] : null}
         onSave={(weight, bf) => {
-          context.addBodyLog({
+          const id = Crypto.randomUUID();
+          body_log$[id].set({
             date: new Date().toISOString().split("T")[0],
             weight,
-            bodyFatPercent: bf,
-          });
+            body_fat_percent: bf,
+          } as any);
           setBodyLogModalVisible(false);
         }}
         onCancel={() => setBodyLogModalVisible(false)}

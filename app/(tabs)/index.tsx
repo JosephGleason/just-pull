@@ -10,19 +10,25 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
-import { useAppContext } from "../../src/context";
+import { profile$, cycle_state$, weights$, current_session$, nutrition$ } from "../../src/lib/store";
 import { getProgramDay, getSetsForWeek } from "../../src/program";
 import { getTargetWeight } from "../../src/hooks/useWorkout";
 import { calculateNutrition } from "../../src/hooks/useNutrition";
 import { ExerciseCard } from "../../src/components/ExerciseCard";
 import { NutritionCard } from "../../src/components/NutritionCard";
+import { ProfileRow, CycleStateInput, ExerciseWeightInput, NutritionInput, CurrentSessionData, CurrentSessionRow } from "../../src/types";
 import { colors, typography, spacing, radius } from "../../src/theme";
 
 export default function TodayScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { settings, cycleState, weights, currentSession, isLoading } =
-    useAppContext();
+  const profile = profile$.get() as ProfileRow | undefined;
+  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
+  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
+  const sessionRow = current_session$.get() as CurrentSessionRow | null;
+  const currentSession: CurrentSessionData | null = sessionRow?.data ?? null;
+  const nutritionData = (nutrition$.get() ?? null) as NutritionInput | null;
+  const isLoading = !profile;
 
   if (isLoading) {
     return (
@@ -32,7 +38,7 @@ export default function TodayScreen() {
     );
   }
 
-  if (!cycleState || !settings) {
+  if (!cycleState || !profile) {
     return (
       <View style={styles.centered}>
         <Text style={styles.emptyText}>
@@ -42,10 +48,10 @@ export default function TodayScreen() {
     );
   }
 
-  const programDay = getProgramDay(cycleState.nextDay);
+  const programDay = getProgramDay(cycleState.next_day);
   const nutritionTargets =
-    settings.nutrition
-      ? calculateNutrition(settings.nutrition, settings.units)
+    nutritionData
+      ? calculateNutrition(nutritionData, profile.units)
       : null;
 
   const isChinupsKey = (key: string) => key.startsWith("chinups");
@@ -69,12 +75,12 @@ export default function TodayScreen() {
         )}
 
         {/* Header */}
-        <Text style={styles.dayNumber}>DAY {cycleState.nextDay}</Text>
+        <Text style={styles.dayNumber}>DAY {cycleState.next_day}</Text>
         <View style={styles.headerRow}>
           <Text style={styles.headerSubtitle}>
-            Week {cycleState.weekNumber}, Cycle {cycleState.cycleNumber}
+            Week {cycleState.week_number}, Cycle {cycleState.cycle_number}
           </Text>
-          {cycleState.isDeload && (
+          {cycleState.is_deload && (
             <View style={styles.deloadBadge}>
               <Text style={styles.deloadText}>DELOAD</Text>
             </View>
@@ -88,8 +94,8 @@ export default function TodayScreen() {
         {programDay.exercises.map((exercise) => {
           const sets = getSetsForWeek(
             exercise,
-            cycleState.weekNumber,
-            cycleState.isDeload
+            cycleState.week_number,
+            cycleState.is_deload
           );
           const weight = getTargetWeight(exercise.key, weights, cycleState);
           const isResting = sets === 0;
@@ -103,7 +109,7 @@ export default function TodayScreen() {
               weight={weight}
               type={exercise.type}
               isResting={isResting}
-              units={settings.units}
+              units={profile.units}
               isChinups={isChinupsKey(exercise.key)}
             />
           );
@@ -118,7 +124,7 @@ export default function TodayScreen() {
         >
           <Text style={styles.startButtonText}>
             Begin{" "}
-            <Text style={styles.startButtonDay}>Day {cycleState.nextDay}</Text>
+            <Text style={styles.startButtonDay}>Day {cycleState.next_day}</Text>
           </Text>
         </Pressable>
       )}

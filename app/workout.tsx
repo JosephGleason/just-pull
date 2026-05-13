@@ -4,12 +4,12 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useWorkout, getTargetWeight, getTargetSets } from "../src/hooks/useWorkout";
 import { useTimer } from "../src/hooks/useTimer";
-import { useAppContext } from "../src/context";
+import { profile$, cycle_state$, weights$, current_session$, workouts$ } from "../src/lib/store";
 import { getProgramDay, getSetsForWeek } from "../src/program";
 import { SetLogger } from "../src/components/SetLogger";
 import { RestTimer } from "../src/components/RestTimer";
 import { WorkoutSummary } from "../src/components/WorkoutSummary";
-import { SetLog, ExerciseLog } from "../src/types";
+import { SetLog, ExerciseLog, WorkoutLogRow, ExerciseWeightInput, CurrentSessionData, CurrentSessionRow, CycleStateInput, ProfileRow } from "../src/types";
 import { generateWarmupSets } from "../src/hooks/useWarmup";
 import { WarmupSuggestion } from "../src/components/WarmupSuggestion";
 import { colors, typography, spacing } from "../src/theme";
@@ -17,14 +17,14 @@ import { colors, typography, spacing } from "../src/theme";
 export default function WorkoutScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const {
-    currentSession,
-    cycleState,
-    weights,
-    settings,
-    history,
-    isLoading,
-  } = useAppContext();
+  const sessionRow = current_session$.get() as CurrentSessionRow | null;
+  const currentSession: CurrentSessionData | null = sessionRow?.data ?? null;
+  const cycleState = (cycle_state$.get() ?? null) as CycleStateInput | null;
+  const weights = (weights$.get() ?? {}) as Record<string, ExerciseWeightInput>;
+  const profile = profile$.get() as ProfileRow | undefined;
+  const workoutsRecord = (workouts$.get() ?? {}) as Record<string, WorkoutLogRow>;
+  const history = Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date));
+  const isLoading = !profile;
   const { startWorkout, logSet, failPr, finishWorkout, discardWorkout } =
     useWorkout();
   const timer = useTimer();
@@ -51,7 +51,7 @@ export default function WorkoutScreen() {
 
   const resumeSession = (exercises: ExerciseLog[]) => {
     if (!cycleState) return;
-    const programDay = getProgramDay(cycleState.nextDay);
+    const programDay = getProgramDay(cycleState.next_day);
 
     for (let i = 0; i < exercises.length; i++) {
       const ex = exercises[i];
@@ -59,8 +59,8 @@ export default function WorkoutScreen() {
       if (!programEx) continue;
       const totalSets = getSetsForWeek(
         programEx,
-        cycleState.weekNumber,
-        cycleState.isDeload
+        cycleState.week_number,
+        cycleState.is_deload
       );
 
       if (ex.sets.length < totalSets) {
@@ -81,15 +81,15 @@ export default function WorkoutScreen() {
 
   // Get program info for current exercise
   const programDay =
-    cycleState ? getProgramDay(session?.day ?? cycleState.nextDay) : null;
+    cycleState ? getProgramDay(session?.day ?? cycleState.next_day) : null;
   const programExercise = programDay?.exercises.find(
     (pe) => pe.key === currentExercise?.key
   );
   const totalSets = programExercise && cycleState
     ? getSetsForWeek(
         programExercise,
-        cycleState.weekNumber,
-        cycleState.isDeload
+        cycleState.week_number,
+        cycleState.is_deload
       )
     : 0;
 
@@ -102,9 +102,9 @@ export default function WorkoutScreen() {
   // Is this a PR attempt?
   const isPrAttempt =
     cycleState !== null &&
-    cycleState.cycleNumber > 1 &&
+    cycleState.cycle_number > 1 &&
     currentExercise?.type !== "black" &&
-    weights[currentExercise?.key]?.prStatus === "pending";
+    weights[currentExercise?.key]?.pr_status === "pending";
 
   // Previous performance
   const getPreviousPerformance = (): string | null => {
@@ -114,7 +114,7 @@ export default function WorkoutScreen() {
       const exLog = log.exercises.find((e) => e.key === currentExercise.key);
       if (exLog && exLog.sets.length > currentSetIndex) {
         const prevSet = exLog.sets[currentSetIndex];
-        return `Last: ${prevSet.weight}${settings?.units ?? "lb"} x ${prevSet.reps}`;
+        return `Last: ${prevSet.weight}${profile?.units ?? "lb"} x ${prevSet.reps}`;
       }
     }
     return null;
@@ -128,7 +128,7 @@ export default function WorkoutScreen() {
     currentExercise?.type !== "black" &&
     !warmupDismissed[currentExerciseIndex];
 
-  const barWeight = (settings?.units ?? "lb") === "kg" ? 20 : 45;
+  const barWeight = (profile?.units ?? "lb") === "kg" ? 20 : 45;
   const warmupSets = showWarmup
     ? generateWarmupSets(targetWeight, barWeight)
     : [];
@@ -156,7 +156,7 @@ export default function WorkoutScreen() {
           set,
         ];
         const prSetsFailedTarget = allSets.some(
-          (s) => s.isPr && s.reps < targetReps
+          (s) => s.is_pr && s.reps < targetReps
         );
         if (prSetsFailedTarget) {
           // PR failed -- mark it
@@ -188,8 +188,8 @@ export default function WorkoutScreen() {
       const isCompound =
         currentExercise.type === "red" || currentExercise.type === "blue";
       const restSeconds = isCompound
-        ? settings?.restTimerCompound ?? 180
-        : settings?.restTimerAccessory ?? 90;
+        ? profile?.rest_timer_compound ?? 180
+        : profile?.rest_timer_accessory ?? 90;
       timer.start(restSeconds);
 
       // Advance to next set or next exercise
@@ -214,9 +214,9 @@ export default function WorkoutScreen() {
       currentExercise,
       isPrAttempt,
       exercises.length,
-      settings,
+      profile,
       timer,
-      currentSession,
+      session,
     ]
   );
 
@@ -243,10 +243,10 @@ export default function WorkoutScreen() {
     .filter((ex) => {
       if (ex.type === "black") return false;
       const w = weights[ex.key];
-      if (!w || w.prStatus !== "pending") return false;
-      return ex.sets.filter((s) => s.isPr).every((s) => s.reps >= ex.reps);
+      if (!w || w.pr_status !== "pending") return false;
+      return ex.sets.filter((s) => s.is_pr).every((s) => s.reps >= ex.reps);
     })
-    .filter((ex) => ex.sets.some((s) => s.isPr))
+    .filter((ex) => ex.sets.some((s) => s.is_pr))
     .map((ex) => ex.name);
 
   // Loading state
@@ -287,7 +287,7 @@ export default function WorkoutScreen() {
       {showWarmup && warmupSets.length > 0 && (
         <WarmupSuggestion
           warmupSets={warmupSets}
-          units={settings?.units ?? "lb"}
+          units={profile?.units ?? "lb"}
           onDismiss={() =>
             setWarmupDismissed((prev) => ({
               ...prev,
@@ -307,7 +307,7 @@ export default function WorkoutScreen() {
         weight={targetWeight}
         isPrAttempt={isPrAttempt}
         previousPerformance={getPreviousPerformance()}
-        units={settings?.units ?? "lb"}
+        units={profile?.units ?? "lb"}
         isChinups={isChinups}
         onComplete={handleCompleteSet}
         onWeightChange={() => {}}
