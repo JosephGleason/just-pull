@@ -74,7 +74,7 @@ export function useWorkout() {
       cycle: cycleState.cycle_number,
       exercises,
     };
-    current_session$.set({ data: sessionData } as any);
+    current_session$.set({ id: (cycleState as any).id, data: sessionData } as any);
   };
 
   const logSet = (exerciseIndex: number, set: SetLog) => {
@@ -146,7 +146,8 @@ export function useWorkout() {
       }
     }
 
-    cycle_state$.set(newCycleState as any);
+    const existing = cycle_state$.get();
+    cycle_state$.set({ ...existing, ...newCycleState } as any);
     current_session$.set(null as any);
   };
 

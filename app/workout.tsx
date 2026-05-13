@@ -35,10 +35,18 @@ export default function WorkoutScreen() {
   const [isComplete, setIsComplete] = useState(false);
   const hasStartedRef = useRef(false);
   const [warmupDismissed, setWarmupDismissed] = useState<Record<number, boolean>>({});
+  const [ready, setReady] = useState(false);
+
+  // Allow time for current_session$ to sync from Supabase before deciding
+  // whether to resume or start fresh
+  useEffect(() => {
+    const timer = setTimeout(() => setReady(true), 500);
+    return () => clearTimeout(timer);
+  }, []);
 
   // Start or resume workout on mount
   useEffect(() => {
-    if (isLoading || hasStartedRef.current) return;
+    if (!ready || isLoading || hasStartedRef.current) return;
 
     if (currentSession) {
       // Resume: find where we left off
@@ -48,7 +56,7 @@ export default function WorkoutScreen() {
       hasStartedRef.current = true;
       startWorkout();
     }
-  }, [isLoading, currentSession, cycleState]);
+  }, [ready, isLoading, currentSession, cycleState]);
 
   const resumeSession = (exercises: ExerciseLog[]) => {
     if (!cycleState) return;

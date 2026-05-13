@@ -1093,6 +1093,11 @@ export default function SettingsScreen() {
                   "ls_workouts", "ls_workouts__m",
                   "ls_body_log", "ls_body_log__m",
                 ]);
+                // Reset in-memory state so components don't render stale data
+                profile$.set(undefined as any);
+                cycle_state$.set(undefined as any);
+                nutrition$.set(undefined as any);
+                current_session$.set(undefined as any);
                 await signOut();
               };
               if (Platform.OS === "web") {

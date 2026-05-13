@@ -16,6 +16,7 @@ import { useRouter } from "expo-router";
 import { createInitialCycleState } from "../src/hooks/useCycleState";
 import { ALL_EXERCISE_KEYS, COMPOUND_KEYS } from "../src/program";
 import { profile$, cycle_state$, weights$, increments$, nutrition$ } from "../src/lib/store";
+import { auth$ } from "../src/lib/auth";
 import {
   ExerciseWeightInput,
   NutritionInput,
@@ -510,7 +511,7 @@ export default function OnboardingScreen() {
     }
 
     // 2. Create cycle state
-    cycle_state$.set(createInitialCycleState() as any);
+    cycle_state$.set({ id: auth$.uid.get()!, ...createInitialCycleState() } as any);
 
     // 3. Exercise weights (compound from user input)
     for (const ex of COMPOUND_EXERCISES) {
@@ -550,6 +551,9 @@ export default function OnboardingScreen() {
 
     // 6. Mark complete LAST -- _layout.tsx handles routing based on this
     profile$.onboarding_complete.set(true);
+
+    // Navigate explicitly so we don't rely solely on reactive redirect
+    router.replace("/(tabs)");
   };
 
   // --- Weight change handler -------------------------------------------------
