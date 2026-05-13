@@ -38,7 +38,9 @@ export default function TodayScreen() {
     );
   }
 
-  if (!cycleState || !profile) {
+  const programDay = cycleState ? getProgramDay(cycleState.next_day) : null;
+
+  if (!cycleState || !profile || !programDay) {
     return (
       <View style={styles.centered}>
         <Text style={styles.emptyText}>
@@ -47,8 +49,6 @@ export default function TodayScreen() {
       </View>
     );
   }
-
-  const programDay = getProgramDay(cycleState.next_day);
   const nutritionTargets =
     nutritionData
       ? calculateNutrition(nutritionData, profile.units)

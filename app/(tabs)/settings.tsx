@@ -1080,10 +1080,7 @@ export default function SettingsScreen() {
                     style: "destructive",
                     onPress: async () => {
                       const uid = auth$.uid.get();
-                      // Sign out first — this routes to auth screen and unmounts tabs,
-                      // preventing components from reading stale observable data
-                      await signOut();
-                      // Then clean up server and local data in the background
+                      // Clean server data FIRST while auth token is still valid
                       if (uid) {
                         await supabase.from("exercise_weights").delete().eq("user_id", uid);
                         await supabase.from("increments").delete().eq("user_id", uid);
@@ -1094,6 +1091,7 @@ export default function SettingsScreen() {
                         await supabase.from("cycle_state").delete().eq("id", uid);
                         await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
                       }
+                      // Clear local cache
                       await AsyncStorage.multiRemove([
                         "ls_profiles", "ls_profiles__m",
                         "ls_nutrition", "ls_nutrition__m",
@@ -1104,6 +1102,8 @@ export default function SettingsScreen() {
                         "ls_workouts", "ls_workouts__m",
                         "ls_body_log", "ls_body_log__m",
                       ]);
+                      // Sign out LAST — unmounts tabs after cleanup is done
+                      await signOut();
                     },
                   },
                 ]
