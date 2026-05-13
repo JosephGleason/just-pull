@@ -14,6 +14,13 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signIn, signUp } from "../src/lib/auth";
 import { colors, typography, spacing, radius } from "../src/theme";
 
+const friendlyError = (msg: string) => {
+  if (msg.includes("Invalid login")) return "Incorrect email or password.";
+  if (msg.includes("already registered")) return "An account with this email already exists. Try signing in.";
+  if (msg.includes("Password")) return "Password must be at least 6 characters.";
+  return "Something went wrong. Please try again.";
+};
+
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
@@ -25,7 +32,7 @@ export default function AuthScreen() {
     setLoading(true);
     const { error } = await signIn(email.trim(), password);
     setLoading(false);
-    if (error) Alert.alert(error.message);
+    if (error) Alert.alert("Error", friendlyError(error.message));
   };
 
   const handleSignUp = async () => {
@@ -33,7 +40,7 @@ export default function AuthScreen() {
     setLoading(true);
     const { error } = await signUp(email.trim(), password);
     setLoading(false);
-    if (error) Alert.alert(error.message);
+    if (error) Alert.alert("Error", friendlyError(error.message));
   };
 
   return (
@@ -57,28 +64,34 @@ export default function AuthScreen() {
 
         {/* Form */}
         <View style={styles.form}>
-          <TextInput
-            style={styles.input}
-            placeholder="email@address.com"
-            placeholderTextColor={colors.textTertiary}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            autoCorrect={false}
-            editable={!loading}
-          />
-          <TextInput
-            style={styles.input}
-            placeholder="Password"
-            placeholderTextColor={colors.textTertiary}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            autoCapitalize="none"
-            autoCorrect={false}
-            editable={!loading}
-          />
+          <View>
+            <Text style={styles.inputLabel}>Email</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="email@address.com"
+              placeholderTextColor={colors.textTertiary}
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+              autoCorrect={false}
+              editable={!loading}
+            />
+          </View>
+          <View>
+            <Text style={styles.inputLabel}>Password</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Password"
+              placeholderTextColor={colors.textTertiary}
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+              autoCapitalize="none"
+              autoCorrect={false}
+              editable={!loading}
+            />
+          </View>
         </View>
 
         {/* Buttons */}
@@ -145,6 +158,11 @@ const styles = StyleSheet.create({
   form: {
     gap: spacing.md,
     marginBottom: spacing.xl,
+  },
+  inputLabel: {
+    color: colors.textSecondary,
+    ...typography.bodyBold,
+    marginBottom: spacing.xs,
   },
   input: {
     backgroundColor: colors.surfaceElevated,

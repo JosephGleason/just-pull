@@ -65,6 +65,15 @@ const ACCESSORY_KEYS = [
   "lat_raise_12",
 ];
 
+const ACCESSORY_DEFAULTS: Record<string, number> = {
+  curls_12: 25,
+  flies_12: 15,
+  tricep_ext_12: 20,
+  calf_raise_12: 50,
+  rear_delt_fly_12: 10,
+  lat_raise_12: 10,
+};
+
 const ACTIVITY_LEVELS: { value: ActivityLevel; label: string }[] = [
   { value: "sedentary", label: "Sedentary" },
   { value: "light", label: "Light" },
@@ -525,9 +534,11 @@ export default function OnboardingScreen() {
       }
     }
 
-    // Accessory exercises initialize to 0
+    // Accessory exercises initialize with sensible defaults
     for (const key of ACCESSORY_KEYS) {
-      weights$[key].set({ exercise_key: key, working: 0, pr: null, pr_status: null } as any);
+      const defaultLb = ACCESSORY_DEFAULTS[key] ?? 0;
+      const defaultWeight = selectedUnits === "lb" ? defaultLb : Math.round(defaultLb / 2.2 / 2.5) * 2.5;
+      weights$[key].set({ exercise_key: key, working: defaultWeight, pr: null, pr_status: null } as any);
     }
 
     // 4. Increments (compound only) — insert directly via Supabase

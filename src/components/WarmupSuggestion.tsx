@@ -103,8 +103,9 @@ const styles = StyleSheet.create({
   skipButton: {
     alignSelf: "center",
     marginTop: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
+    minHeight: 44,
   },
   skipText: {
     color: colors.textTertiary,

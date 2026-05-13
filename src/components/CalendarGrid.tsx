@@ -12,7 +12,7 @@ interface CalendarGridProps {
   onNextMonth: () => void;
 }
 
-const DAY_LABELS = ["S", "M", "T", "W", "T", "F", "S"];
+const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
 
 const MONTH_NAMES = [
   "January", "February", "March", "April", "May", "June",

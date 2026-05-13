@@ -1,5 +1,5 @@
 import React, { useMemo } from "react";
-import { View, Text, StyleSheet, TouchableWithoutFeedback, Image } from "react-native";
+import { View, Text, StyleSheet, TouchableOpacity, Image } from "react-native";
 import { colors as themeColors, typography } from "../theme";
 
 interface BodyFigureProps {
@@ -61,7 +61,7 @@ export function BodyFigure({
   const imageWidth = imageHeight * (158 / 491);
 
   return (
-    <TouchableWithoutFeedback onPress={onToggleSide}>
+    <TouchableOpacity activeOpacity={0.7} onPress={onToggleSide}>
       <View style={[styles.container, { width, height }]}>
         {/* Lower BF image (base) */}
         <Image
@@ -98,7 +98,7 @@ export function BodyFigure({
           {side === "front" ? "FRONT" : "BACK"}
         </Text>
       </View>
-    </TouchableWithoutFeedback>
+    </TouchableOpacity>
   );
 }
 
