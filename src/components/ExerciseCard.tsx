@@ -43,7 +43,7 @@ export function ExerciseCard({
       <View style={[styles.card, styles.restingCard]}>
         <View style={styles.header}>
           <View style={styles.nameCol}>
-            <Text style={styles.restingName}>{name}</Text>
+            <Text style={styles.restingName} numberOfLines={1}>{name}</Text>
           </View>
           <Text style={styles.restingLabel}>Rest this week</Text>
         </View>
@@ -62,7 +62,7 @@ export function ExerciseCard({
     <View style={styles.card}>
       <View style={styles.header}>
         <View style={styles.nameCol}>
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name} numberOfLines={1}>{name}</Text>
           <Text style={styles.details}>
             {sets} sets x {isAmrap ? `~${reps}` : reps}
             {isChinups ? "  added weight" : ""}

@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useSelector } from "@legendapp/state/react";
 import { profile$, cycle_state$, weights$, workouts$ } from "../../src/lib/store";
 import { COMPOUND_KEYS } from "../../src/program";
@@ -32,6 +33,7 @@ function keyToDisplayName(key: string): string {
 }
 
 export default function ProgressScreen() {
+  const router = useRouter();
   const profile = useSelector(profile$) as { units: string } | undefined;
   const cycleState = (useSelector(cycle_state$) ?? null) as CycleStateInput | null;
   const weights = (useSelector(weights$) ?? {}) as Record<string, ExerciseWeightInput>;
@@ -54,6 +56,13 @@ export default function ProgressScreen() {
         <Text style={styles.emptyMessage}>
           Complete your first workout to see progress
         </Text>
+        <TouchableOpacity
+          style={styles.emptyCta}
+          onPress={() => router.navigate("/(tabs)")}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.emptyCtaText}>Go to Today</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -161,6 +170,18 @@ const styles = StyleSheet.create({
     ...typography.body,
     textAlign: "center",
     marginTop: spacing.md,
+  },
+  emptyCta: {
+    backgroundColor: colors.accent,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  emptyCtaText: {
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 15,
   },
   screenTitle: {
     color: colors.text,

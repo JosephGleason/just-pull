@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, ScrollView } from "react-native";
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
 import { useSelector } from "@legendapp/state/react";
 import { workouts$ } from "../../src/lib/store";
 import { CalendarGrid } from "../../src/components/CalendarGrid";
@@ -20,6 +21,7 @@ function getWeightColor(type: ExerciseType): string {
 }
 
 export default function HistoryScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
   const history = useMemo(() =>
@@ -85,6 +87,13 @@ export default function HistoryScreen() {
         <Text style={styles.emptyHistoryText}>
           Your workout history will appear here
         </Text>
+        <TouchableOpacity
+          style={styles.emptyCta}
+          onPress={() => router.navigate("/(tabs)")}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.emptyCtaText}>Start Training</Text>
+        </TouchableOpacity>
       </View>
     );
   }
@@ -168,6 +177,18 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     ...typography.body,
     textAlign: "center",
+  },
+  emptyCta: {
+    backgroundColor: colors.accent,
+    paddingVertical: 12,
+    paddingHorizontal: 32,
+    borderRadius: 12,
+    marginTop: 20,
+  },
+  emptyCtaText: {
+    color: colors.bg,
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 15,
   },
   emptyPanel: {
     alignItems: "center",

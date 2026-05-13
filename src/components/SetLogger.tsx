@@ -45,6 +45,7 @@ export function SetLogger({
   const [currentWeight, setCurrentWeight] = useState(weight);
   const [reps, setReps] = useState(String(targetReps));
   const [showPlateCalc, setShowPlateCalc] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const isAmrap = exerciseType === "black";
   const increment = exerciseType === "black" ? 5 : 2.5;
@@ -56,13 +57,17 @@ export function SetLogger({
   };
 
   const handleComplete = () => {
-    const parsedReps = parseInt(reps, 10) || 0;
+    const parsedReps = parseInt(reps, 10);
+    if (isNaN(parsedReps) || parsedReps <= 0) return;
+    if (submitting) return;
+    setSubmitting(true);
     onComplete({
       weight: currentWeight,
       reps: parsedReps,
       is_amrap: isAmrap,
       is_pr: isPrAttempt,
     });
+    setTimeout(() => setSubmitting(false), 500);
   };
 
   const weightLabel = isChinups ? "ADDED WEIGHT" : "WEIGHT";
@@ -185,8 +190,9 @@ export function SetLogger({
 
       {/* Complete Set button */}
       <TouchableOpacity
-        style={styles.completeButton}
+        style={[styles.completeButton, submitting && { opacity: 0.5 }]}
         onPress={handleComplete}
+        disabled={submitting}
         activeOpacity={0.8}
         accessibilityLabel="Log set"
         accessibilityRole="button"

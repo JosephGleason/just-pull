@@ -224,13 +224,17 @@ export default function WorkoutScreen() {
         failPr(currentExercise.key);
       }
 
-      // Start rest timer
-      const isCompound =
-        currentExercise.type === "red" || currentExercise.type === "blue";
-      const restSeconds = isCompound
-        ? profile?.rest_timer_compound ?? 180
-        : profile?.rest_timer_accessory ?? 90;
-      timer.start(restSeconds);
+      // Start rest timer (skip after last set of last exercise)
+      const isLastWorkoutSet =
+        isLastSetOfExercise && currentExerciseIndex >= exercises.length - 1;
+      if (!isLastWorkoutSet) {
+        const isCompound =
+          currentExercise.type === "red" || currentExercise.type === "blue";
+        const restSeconds = isCompound
+          ? profile?.rest_timer_compound ?? 180
+          : profile?.rest_timer_accessory ?? 90;
+        timer.start(restSeconds);
+      }
 
       // Advance to next set or next exercise
       if (isLastSetOfExercise) {
