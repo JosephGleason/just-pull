@@ -19,41 +19,76 @@ export interface ProgramDay {
   exercises: ProgramExercise[];
 }
 
-export interface Settings {
-  restTimerCompound: number;
-  restTimerAccessory: number;
-  units: Units;
-  increments: Record<string, number>;
-  nutrition: NutritionSettings | null;
+export interface NutritionTargets {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
 }
 
-export interface NutritionSettings {
+export interface BodyModelState {
+  muscles: Record<string, number>;
+  body_fat_percent: number;
+  body_weight: number;
+  months_trained: number;
+  peak_muscles: Record<string, number>;
+}
+
+export interface DbRow {
+  id: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface OwnedDbRow extends DbRow {
+  user_id: string;
+}
+
+export interface ProfileInput {
+  units: Units;
+  rest_timer_compound: number;
+  rest_timer_accessory: number;
+  onboarding_complete: boolean;
+}
+export interface ProfileRow extends ProfileInput, DbRow {}
+
+export interface NutritionInput {
   age: number;
   weight: number;
   height: number;
   sex: "male" | "female";
-  activityLevel: ActivityLevel;
+  activity_level: ActivityLevel;
   goal: Goal;
 }
+export interface NutritionRow extends NutritionInput, DbRow {}
 
-export interface CycleState {
-  cycleNumber: number;
-  weekNumber: WeekNumber;
-  nextDay: TrainingDay;
-  isDeload: boolean;
+export interface IncrementInput {
+  exercise_key: string;
+  increment: number;
 }
+export interface IncrementRow extends IncrementInput, OwnedDbRow {}
 
-export interface ExerciseWeight {
+export interface CycleStateInput {
+  cycle_number: number;
+  week_number: WeekNumber;
+  next_day: TrainingDay;
+  is_deload: boolean;
+}
+export interface CycleStateRow extends CycleStateInput, DbRow {}
+
+export interface ExerciseWeightInput {
+  exercise_key: string;
   working: number;
   pr: number | null;
-  prStatus: PrStatus | null;
+  pr_status: PrStatus | null;
 }
+export interface ExerciseWeightRow extends ExerciseWeightInput, OwnedDbRow {}
 
 export interface SetLog {
   weight: number;
   reps: number;
-  isAmrap: boolean;
-  isPr: boolean;
+  is_amrap: boolean;
+  is_pr: boolean;
 }
 
 export interface ExerciseLog {
@@ -64,41 +99,31 @@ export interface ExerciseLog {
   sets: SetLog[];
 }
 
-export interface WorkoutLog {
+export interface CurrentSessionData {
+  started_at: string;
+  day: TrainingDay;
+  week: WeekNumber;
+  cycle: number;
+  exercises: ExerciseLog[];
+}
+export interface CurrentSessionRow extends DbRow {
+  data: CurrentSessionData;
+}
+
+export interface WorkoutLogInput {
   id: string;
   date: string;
   day: TrainingDay;
   week: WeekNumber;
   cycle: number;
   exercises: ExerciseLog[];
-  completedAt: string | null;
+  completed_at: string | null;
 }
+export interface WorkoutLogRow extends WorkoutLogInput, OwnedDbRow {}
 
-export interface CurrentSession {
-  startedAt: string;
-  day: TrainingDay;
-  week: WeekNumber;
-  cycle: number;
-  exercises: ExerciseLog[];
-}
-
-export interface NutritionTargets {
-  calories: number;
-  protein: number;
-  fat: number;
-  carbs: number;
-}
-
-export interface BodyLog {
+export interface BodyLogInput {
   date: string;
   weight: number;
-  bodyFatPercent: number;
+  body_fat_percent: number;
 }
-
-export interface BodyModelState {
-  muscles: Record<string, number>;
-  bodyFatPercent: number;
-  bodyWeight: number;
-  monthsTrained: number;
-  peakMuscles: Record<string, number>;
-}
+export interface BodyLogRow extends BodyLogInput, OwnedDbRow {}
