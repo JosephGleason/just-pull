@@ -12,7 +12,7 @@ import { auth$ } from "./auth";
 const persistPlugin = observablePersistAsyncStorage({ AsyncStorage });
 
 configureSyncedSupabase({
-  changesSince: "last-sync",
+  changesSince: "all",
   fieldCreatedAt: "created_at",
   fieldUpdatedAt: "updated_at",
   fieldDeleted: "deleted",
