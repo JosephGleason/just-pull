@@ -22,18 +22,24 @@ configureSyncedSupabase({
 // generateId returns auth uid so Legend-State can track the row locally
 const authId = () => auth$.uid.get()!;
 
+// Single-row config: override global changesSince to 'all' (diff sync not useful for single rows)
+const singleRowBase = {
+  as: "value" as const,
+  generateId: authId,
+  changesSince: "all" as const,
+  retry: { infinite: true },
+  waitFor: auth$.uid,
+};
+
 // Profile row is created by DB trigger on signup — read + update only
 export const profile$ = observable(
   syncedSupabase({
     supabase,
     collection: "profiles",
-    as: "value",
+    ...singleRowBase,
     actions: ["read", "update"],
-    generateId: authId,
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: { name: "ls_profiles", plugin: persistPlugin, retrySync: true },
-    retry: { infinite: true },
-    waitFor: auth$.uid,
   })
 );
 
@@ -41,12 +47,9 @@ export const nutrition$ = observable(
   syncedSupabase({
     supabase,
     collection: "nutrition_settings",
-    as: "value",
-    generateId: authId,
+    ...singleRowBase,
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: { name: "ls_nutrition", plugin: persistPlugin, retrySync: true },
-    retry: { infinite: true },
-    waitFor: auth$.uid,
   })
 );
 
@@ -54,17 +57,14 @@ export const cycle_state$ = observable(
   syncedSupabase({
     supabase,
     collection: "cycle_state",
-    as: "value",
-    generateId: authId,
-    filter: (select: any) => select.eq("id", auth$.uid.get()!),
+    ...singleRowBase,
     realtime: true,
+    filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: {
       name: "ls_cycle_state",
       plugin: persistPlugin,
       retrySync: true,
     },
-    retry: { infinite: true },
-    waitFor: auth$.uid,
   })
 );
 
@@ -72,17 +72,14 @@ export const current_session$ = observable(
   syncedSupabase({
     supabase,
     collection: "current_session",
-    as: "value",
-    generateId: authId,
-    filter: (select: any) => select.eq("id", auth$.uid.get()!),
+    ...singleRowBase,
     realtime: true,
+    filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: {
       name: "ls_current_session",
       plugin: persistPlugin,
       retrySync: true,
     },
-    retry: { infinite: true },
-    waitFor: auth$.uid,
   })
 );
 
