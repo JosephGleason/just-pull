@@ -130,8 +130,10 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xs,
   },
   navButton: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
   },
   navArrow: {
     color: colors.accent,

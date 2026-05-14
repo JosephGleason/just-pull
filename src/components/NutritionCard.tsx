@@ -17,19 +17,19 @@ export function NutritionCard({ targets }: NutritionCardProps) {
       </View>
       <View style={styles.separator} />
       <View style={styles.macros}>
-        <View style={[styles.macroPill, { backgroundColor: "rgba(91, 212, 136, 0.08)" }]}>
+        <View style={[styles.macroPill, { backgroundColor: colors.greenGlow }]}>
           <Text style={[styles.macroValue, { color: colors.green }]}>
             {targets.protein}g
           </Text>
           <Text style={styles.macroLabel}>PROTEIN</Text>
         </View>
-        <View style={[styles.macroPill, { backgroundColor: "rgba(232, 168, 56, 0.08)" }]}>
+        <View style={[styles.macroPill, { backgroundColor: colors.accentGlow }]}>
           <Text style={[styles.macroValue, { color: colors.accent }]}>
             {targets.carbs}g
           </Text>
           <Text style={styles.macroLabel}>CARBS</Text>
         </View>
-        <View style={[styles.macroPill, { backgroundColor: "rgba(199, 121, 47, 0.08)" }]}>
+        <View style={[styles.macroPill, { backgroundColor: colors.accentDimGlow }]}>
           <Text style={[styles.macroValue, { color: colors.accentDim }]}>
             {targets.fat}g
           </Text>

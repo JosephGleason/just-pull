@@ -12,11 +12,14 @@ export const colors = {
   accent: "#E8A838",               // Warm amber
   accentDim: "#C7792F",           // Deeper amber for pressed states
   accentGlow: "rgba(232, 168, 56, 0.12)", // Subtle amber glow
+  accentHot: "rgba(232, 168, 56, 0.25)", // Intense amber glow (heatmap)
 
   // Semantic
   green: "#5BD488",                // Soft mint — set completion
+  greenGlow: "rgba(91, 212, 136, 0.08)", // Subtle green glow
   red: "#E85454",                  // Warm red — danger
   pr: "#E8A838",                   // PRs are golden (same as accent)
+  accentDimGlow: "rgba(199, 121, 47, 0.08)", // Dim accent glow
 
   // Text
   text: "#F2F0EB",                 // Warm white — NOT pure white
@@ -28,6 +31,9 @@ export const colors = {
 
   // Separators
   separator: "#1E1E22",
+
+  // Overlays
+  overlay: "rgba(0, 0, 0, 0.8)",  // Modal/sheet backdrop
 };
 
 // Font families — must match exact names from expo-google-fonts

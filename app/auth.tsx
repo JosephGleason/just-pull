@@ -148,8 +148,7 @@ const styles = StyleSheet.create({
     marginBottom: spacing.xl,
   },
   brand: {
-    fontFamily: "BebasNeue_400Regular",
-    fontSize: 18,
+    ...typography.displayLarge,
     color: colors.accent,
     letterSpacing: 6,
     marginBottom: spacing.md,

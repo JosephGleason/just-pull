@@ -1,5 +1,5 @@
 import React from "react";
-import { View, Text, StyleSheet } from "react-native";
+import { View, Text, StyleSheet, DimensionValue } from "react-native";
 import { WorkoutLogRow, CycleStateInput } from "../types";
 import { colors, typography, spacing, radius, fonts } from "../theme";
 
@@ -83,6 +83,8 @@ function getHeatStyles(level: HeatLevel): {
   backgroundColor: string;
   textColor: string;
   countColor: string;
+  barWidth: DimensionValue;
+  barColor: string;
 } {
   switch (level) {
     case "cold":
@@ -90,24 +92,32 @@ function getHeatStyles(level: HeatLevel): {
         backgroundColor: colors.surface,
         textColor: colors.textTertiary,
         countColor: colors.textTertiary,
+        barWidth: "0%",
+        barColor: colors.separator,
       };
     case "warm":
       return {
         backgroundColor: colors.accentGlow,
         textColor: colors.textSecondary,
         countColor: colors.textSecondary,
+        barWidth: "33%",
+        barColor: colors.accentDim,
       };
     case "hot":
       return {
-        backgroundColor: "rgba(232, 168, 56, 0.25)",
+        backgroundColor: colors.accentHot,
         textColor: colors.accent,
         countColor: colors.accent,
+        barWidth: "66%",
+        barColor: colors.accent,
       };
     case "fire":
       return {
         backgroundColor: colors.accent,
         textColor: colors.bg,
         countColor: colors.bg,
+        barWidth: "100%",
+        barColor: colors.bg,
       };
   }
 }
@@ -162,6 +172,7 @@ function MuscleCard({
   return (
     <View
       style={[styles.muscleCard, { backgroundColor: heatStyles.backgroundColor }]}
+      accessibilityLabel={`${MUSCLE_LABELS[muscle]}: ${sets} sets, ${level}`}
     >
       <Text style={[styles.muscleName, { color: heatStyles.textColor }]}>
         {MUSCLE_LABELS[muscle]}
@@ -169,6 +180,9 @@ function MuscleCard({
       <Text style={[styles.muscleCount, { color: heatStyles.countColor }]}>
         {sets}
       </Text>
+      <View style={styles.intensityTrack}>
+        <View style={[styles.intensityFill, { width: heatStyles.barWidth, backgroundColor: heatStyles.barColor }]} />
+      </View>
     </View>
   );
 }
@@ -221,17 +235,30 @@ const styles = StyleSheet.create({
   muscleCard: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    flexWrap: "wrap",
     borderRadius: radius.md,
     paddingHorizontal: 12,
-    paddingVertical: 10,
+    paddingTop: 10,
+    paddingBottom: 6,
   },
   muscleName: {
     ...typography.bodyBold,
     fontSize: 13,
+    flex: 1,
   },
   muscleCount: {
     fontFamily: fonts.display,
     fontSize: 22,
+  },
+  intensityTrack: {
+    width: "100%",
+    height: 3,
+    backgroundColor: colors.separator,
+    borderRadius: 1.5,
+    marginTop: 4,
+  },
+  intensityFill: {
+    height: 3,
+    borderRadius: 1.5,
   },
 });

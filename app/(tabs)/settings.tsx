@@ -350,7 +350,7 @@ function BodyLogModal({
 const bodyLogStyles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
     padding: spacing.xl,
@@ -1482,7 +1482,7 @@ const styles = StyleSheet.create({
   // edit modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: "rgba(0,0,0,0.75)",
+    backgroundColor: colors.overlay,
     justifyContent: "center",
     alignItems: "center",
     padding: spacing.xl,
