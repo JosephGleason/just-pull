@@ -9,6 +9,7 @@ import { profile$, cycle_state$, weights$, current_session$, workouts$ } from ".
 import { getProgramDay, getSetsForWeek } from "../src/program";
 import { SetLogger } from "../src/components/SetLogger";
 import { RestTimer } from "../src/components/RestTimer";
+import { ExerciseProgressStrip } from "../src/components/ExerciseProgressStrip";
 import { WorkoutSummary } from "../src/components/WorkoutSummary";
 import { SetLog, ExerciseLog, WorkoutLogRow, ExerciseWeightInput, CurrentSessionData, CurrentSessionRow, CycleStateInput, ProfileRow } from "../src/types";
 import { generateWarmupSets } from "../src/hooks/useWarmup";
@@ -39,10 +40,10 @@ export default function WorkoutScreen() {
   const hasStartedRef = useRef(false);
   const [warmupDismissed, setWarmupDismissed] = useState<Record<number, boolean>>({});
   const [ready, setReady] = useState(false);
-  const [showUndoToast, setShowUndoToast] = useState(false);
+  const [undoMessage, setUndoMessage] = useState<string | null>(null);
   const [elapsedTime, setElapsedTime] = useState("");
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const undoIndexRef = useRef<{ exerciseIndex: number; setIndex: number } | null>(null);
+  const undoCallbackRef = useRef<(() => void) | null>(null);
 
   // Allow time for current_session$ to sync from Supabase before deciding
   // whether to resume or start fresh
@@ -176,6 +177,31 @@ export default function WorkoutScreen() {
     ? generateWarmupSets(targetWeight, barWeight)
     : [];
 
+  const showUndo = useCallback((message: string, callback: () => void) => {
+    undoCallbackRef.current = callback;
+    setUndoMessage(message);
+    if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
+    undoTimerRef.current = setTimeout(() => {
+      setUndoMessage(null);
+      undoCallbackRef.current = null;
+    }, 5000);
+  }, []);
+
+  const handleSkipTo = useCallback((targetIndex: number) => {
+    if (targetIndex <= currentExerciseIndex) return;
+    const prevExIndex = currentExerciseIndex;
+    const prevSetIndex = currentSetIndex;
+
+    showUndo(`Skipped to ${exercises[targetIndex].name}`, () => {
+      setCurrentExerciseIndex(prevExIndex);
+      setCurrentSetIndex(prevSetIndex);
+    });
+
+    timer.dismiss();
+    setCurrentExerciseIndex(targetIndex);
+    setCurrentSetIndex(0);
+  }, [currentExerciseIndex, currentSetIndex, exercises, showUndo, timer]);
+
   const handleCompleteSet = useCallback(
     async (set: SetLog) => {
       if (!cycleState || !programExercise || !currentExercise) return;
@@ -183,13 +209,16 @@ export default function WorkoutScreen() {
       await logSet(currentExerciseIndex, set);
 
       // Show undo toast
-      undoIndexRef.current = { exerciseIndex: currentExerciseIndex, setIndex: currentSetIndex };
-      setShowUndoToast(true);
-      if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-      undoTimerRef.current = setTimeout(() => {
-        setShowUndoToast(false);
-        undoIndexRef.current = null;
-      }, 5000);
+      const prevExIdx = currentExerciseIndex;
+      const prevSetIdx = currentSetIndex;
+      showUndo("Set logged", () => {
+        const success = undoLastSet();
+        if (success) {
+          setCurrentExerciseIndex(prevExIdx);
+          setCurrentSetIndex(prevSetIdx);
+          setIsComplete(false);
+        }
+      });
 
       // Dismiss warmup after first working set is logged
       if (currentSetIndex === 0) {
@@ -261,21 +290,17 @@ export default function WorkoutScreen() {
       profile,
       timer,
       session,
+      showUndo,
+      undoLastSet,
     ]
   );
 
   const handleUndo = useCallback(() => {
-    if (!undoIndexRef.current) return;
-    const success = undoLastSet();
-    if (success) {
-      setCurrentExerciseIndex(undoIndexRef.current.exerciseIndex);
-      setCurrentSetIndex(undoIndexRef.current.setIndex);
-      setIsComplete(false);
-    }
-    setShowUndoToast(false);
-    undoIndexRef.current = null;
+    undoCallbackRef.current?.();
+    setUndoMessage(null);
+    undoCallbackRef.current = null;
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-  }, [undoLastSet]);
+  }, []);
 
   const handleFinish = useCallback(async () => {
     await finishWorkout();
@@ -327,14 +352,14 @@ export default function WorkoutScreen() {
           onDiscard={handleDiscard}
           isFirstWorkout={history.length === 0}
         />
-        {showUndoToast && (
+        {undoMessage ? (
           <View style={styles.undoToast}>
-            <Text style={styles.undoText}>Set logged</Text>
-            <TouchableOpacity onPress={handleUndo} style={styles.undoButton} accessibilityLabel="Undo last set" accessibilityRole="button">
+            <Text style={styles.undoText}>{undoMessage}</Text>
+            <TouchableOpacity onPress={handleUndo} style={styles.undoButton} accessibilityLabel="Undo" accessibilityRole="button">
               <Text style={styles.undoButtonText}>Undo</Text>
             </TouchableOpacity>
           </View>
-        )}
+        ) : null}
       </View>
     );
   }
@@ -353,6 +378,13 @@ export default function WorkoutScreen() {
       {elapsedTime ? (
         <Text style={styles.elapsedTime}>{elapsedTime}</Text>
       ) : null}
+
+      <ExerciseProgressStrip
+        exercises={exercises}
+        currentIndex={currentExerciseIndex}
+        onSkipTo={handleSkipTo}
+      />
+
       {showWarmup && warmupSets.length > 0 && (
         <WarmupSuggestion
           warmupSets={warmupSets}
@@ -372,9 +404,20 @@ export default function WorkoutScreen() {
         progress={timer.progress}
         onDismiss={handleTimerDismiss}
         onExtend={handleTimerExtend}
+        nextExerciseName={
+          timer.isRunning && currentSetIndex === 0
+            ? currentExercise?.name
+            : undefined
+        }
+        exerciseProgress={
+          timer.isRunning
+            ? `Exercise ${currentExerciseIndex + 1} of ${exercises.length}`
+            : undefined
+        }
       />
 
       <SetLogger
+        key={currentExercise.key}
         exerciseName={currentExercise.name}
         exerciseKey={currentExercise.key}
         exerciseType={currentExercise.type}
@@ -388,16 +431,21 @@ export default function WorkoutScreen() {
         isChinups={isChinups}
         onComplete={handleCompleteSet}
         onWeightChange={() => {}}
+        lastSet={
+          currentExercise.sets.length > 0
+            ? currentExercise.sets[currentExercise.sets.length - 1]
+            : null
+        }
       />
 
-      {showUndoToast && (
+      {undoMessage ? (
         <View style={styles.undoToast}>
-          <Text style={styles.undoText}>Set logged</Text>
-          <TouchableOpacity onPress={handleUndo} style={styles.undoButton}>
+          <Text style={styles.undoText}>{undoMessage}</Text>
+          <TouchableOpacity onPress={handleUndo} style={styles.undoButton} accessibilityLabel="Undo" accessibilityRole="button">
             <Text style={styles.undoButtonText}>Undo</Text>
           </TouchableOpacity>
         </View>
-      )}
+      ) : null}
     </View>
   );
 }

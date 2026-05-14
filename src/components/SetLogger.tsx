@@ -25,6 +25,7 @@ interface SetLoggerProps {
   isChinups: boolean;
   onComplete: (set: SetLog) => void;
   onWeightChange: (newWeight: number) => void;
+  lastSet: SetLog | null;
 }
 
 export function SetLogger({
@@ -41,6 +42,7 @@ export function SetLogger({
   isChinups,
   onComplete,
   onWeightChange,
+  lastSet,
 }: SetLoggerProps) {
   const [currentWeight, setCurrentWeight] = useState(weight);
   const [reps, setReps] = useState(String(targetReps));
@@ -64,6 +66,18 @@ export function SetLogger({
     onComplete({
       weight: currentWeight,
       reps: parsedReps,
+      is_amrap: isAmrap,
+      is_pr: isPrAttempt,
+    });
+    setTimeout(() => setSubmitting(false), 500);
+  };
+
+  const handleRepeatLast = () => {
+    if (!lastSet || submitting) return;
+    setSubmitting(true);
+    onComplete({
+      weight: lastSet.weight,
+      reps: lastSet.reps,
       is_amrap: isAmrap,
       is_pr: isPrAttempt,
     });
@@ -199,6 +213,21 @@ export function SetLogger({
       >
         <Text style={styles.completeButtonText}>LOG SET</Text>
       </TouchableOpacity>
+
+      {lastSet ? (
+        <TouchableOpacity
+          style={[styles.repeatButton, submitting && { opacity: 0.5 }]}
+          onPress={handleRepeatLast}
+          disabled={submitting}
+          activeOpacity={0.8}
+          accessibilityLabel={`Repeat last set: ${lastSet.weight} ${units} times ${lastSet.reps} reps`}
+          accessibilityRole="button"
+        >
+          <Text style={styles.repeatButtonText}>
+            REPEAT LAST ({lastSet.weight}{units} x {lastSet.reps})
+          </Text>
+        </TouchableOpacity>
+      ) : null}
     </View>
   );
 }
@@ -364,5 +393,21 @@ const styles = StyleSheet.create({
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 16,
     letterSpacing: 1,
+  },
+  repeatButton: {
+    backgroundColor: colors.surfaceElevated,
+    borderRadius: 14,
+    height: 48,
+    alignSelf: "stretch",
+    alignItems: "center",
+    justifyContent: "center",
+    marginTop: spacing.sm,
+  },
+  repeatButtonText: {
+    color: colors.textSecondary,
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 13,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
 });

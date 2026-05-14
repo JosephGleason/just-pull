@@ -9,6 +9,8 @@ interface RestTimerProps {
   progress: number;
   onDismiss: () => void;
   onExtend: () => void;
+  nextExerciseName?: string;
+  exerciseProgress?: string;
 }
 
 function formatTime(seconds: number): string {
@@ -23,6 +25,8 @@ export function RestTimer({
   progress,
   onDismiss,
   onExtend,
+  nextExerciseName,
+  exerciseProgress,
 }: RestTimerProps) {
   const insets = useSafeAreaInsets();
   const pulseAnim = useRef(new Animated.Value(1)).current;
@@ -68,6 +72,13 @@ export function RestTimer({
         {formatTime(secondsLeft)}
       </Animated.Text>
 
+      {nextExerciseName ? (
+        <Text style={styles.nextUpText}>Up next: {nextExerciseName}</Text>
+      ) : null}
+      {exerciseProgress ? (
+        <Text style={styles.progressText}>{exerciseProgress}</Text>
+      ) : null}
+
       {/* Dismiss / extend row */}
       <View style={styles.row}>
         <TouchableOpacity onPress={onDismiss} activeOpacity={0.7} accessibilityLabel="Dismiss rest timer" accessibilityRole="button">
@@ -111,5 +122,17 @@ const styles = StyleSheet.create({
   actionText: {
     color: colors.textSecondary,
     ...typography.body,
+  },
+  nextUpText: {
+    color: colors.textSecondary,
+    ...typography.body,
+    textAlign: "center",
+    marginTop: spacing.xs,
+  },
+  progressText: {
+    color: colors.textTertiary,
+    ...typography.micro,
+    textAlign: "center",
+    marginTop: 2,
   },
 });
