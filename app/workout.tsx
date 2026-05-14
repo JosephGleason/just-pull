@@ -325,6 +325,7 @@ export default function WorkoutScreen() {
           prsHit={prsHit}
           onFinish={handleFinish}
           onDiscard={handleDiscard}
+          isFirstWorkout={history.length === 0}
         />
         {showUndoToast && (
           <View style={styles.undoToast}>

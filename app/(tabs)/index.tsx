@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,9 @@ import {
   TouchableOpacity,
   Pressable,
   ActivityIndicator,
+  Modal,
 } from "react-native";
+import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSelector } from "@legendapp/state/react";
@@ -29,6 +31,7 @@ export default function TodayScreen() {
   const sessionRow = useSelector(current_session$) as CurrentSessionRow | null;
   const currentSession: CurrentSessionData | null = sessionRow?.data ?? null;
   const nutritionData = (useSelector(nutrition$) ?? null) as NutritionInput | null;
+  const [showProgramInfo, setShowProgramInfo] = useState(false);
   const isLoading = !profile;
 
   if (isLoading) {
@@ -86,7 +89,83 @@ export default function TodayScreen() {
               <Text style={styles.deloadText}>DELOAD</Text>
             </View>
           )}
+          <Pressable
+            onPress={() => setShowProgramInfo(true)}
+            hitSlop={12}
+            accessibilityLabel="Program information"
+            accessibilityRole="button"
+            style={styles.infoButton}
+          >
+            <Ionicons
+              name="information-circle-outline"
+              size={20}
+              color={colors.textSecondary}
+            />
+          </Pressable>
         </View>
+
+        {/* Program Info Modal */}
+        <Modal
+          visible={showProgramInfo}
+          transparent
+          animationType="fade"
+          onRequestClose={() => setShowProgramInfo(false)}
+        >
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+              <ScrollView
+                style={styles.modalScroll}
+                contentContainerStyle={styles.modalScrollContent}
+                showsVerticalScrollIndicator={false}
+              >
+                <Text style={styles.modalTitle}>The Program</Text>
+
+                <Text style={styles.sectionHeader}>Schedule</Text>
+                <Text style={styles.sectionBody}>
+                  5 training days per week: Days 1, 2, 3, 5, and 6. Days 4 and
+                  7 are rest days.
+                </Text>
+
+                <Text style={styles.sectionHeader}>3-Week Cycles</Text>
+                <Text style={styles.sectionBody}>
+                  Sets taper each week to manage fatigue. Week 1 is full volume,
+                  Week 2 is reduced, and Week 3 is minimal. After each cycle,
+                  weights increase and the cycle resets.
+                </Text>
+
+                <Text style={styles.sectionHeader}>Exercise Types</Text>
+                <Text style={styles.sectionBody}>
+                  Compounds (red) are the main lifts and increase each cycle.
+                  Heavy compounds (blue) like squat and deadlift follow the same
+                  progression with fewer sets. Accessories (black) are AMRAP
+                  sets where you hit the target reps or more.
+                </Text>
+
+                <Text style={styles.sectionHeader}>Deload</Text>
+                <Text style={styles.sectionBody}>
+                  Every 3rd cycle is a deload that reduces set counts further,
+                  giving your body time to recover before pushing heavier.
+                </Text>
+
+                <Text style={styles.sectionHeader}>PR Progression</Text>
+                <Text style={styles.sectionBody}>
+                  After each cycle, compound weights increase by your set
+                  increment. If you fail reps on a PR attempt, the weight stays
+                  the same next cycle until you hit the target.
+                </Text>
+              </ScrollView>
+
+              <Pressable
+                onPress={() => setShowProgramInfo(false)}
+                style={styles.modalCloseButton}
+                accessibilityLabel="Close program info"
+                accessibilityRole="button"
+              >
+                <Text style={styles.modalCloseText}>Got it</Text>
+              </Pressable>
+            </View>
+          </View>
+        </Modal>
 
         {/* Nutrition Card */}
         {nutritionTargets && <NutritionCard targets={nutritionTargets} />}
@@ -199,6 +278,62 @@ const styles = StyleSheet.create({
   deloadText: {
     color: colors.accent,
     ...typography.caption,
+  },
+  infoButton: {
+    padding: spacing.sm,
+    minWidth: 44,
+    minHeight: 44,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0, 0, 0, 0.85)",
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  modalContent: {
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    width: "100%",
+    maxHeight: "80%",
+    overflow: "hidden",
+  },
+  modalScroll: {
+    flexGrow: 0,
+  },
+  modalScrollContent: {
+    padding: spacing.lg,
+    paddingBottom: spacing.sm,
+  },
+  modalTitle: {
+    color: colors.text,
+    ...typography.title,
+    marginBottom: spacing.lg,
+  },
+  sectionHeader: {
+    color: colors.textSecondary,
+    ...typography.caption,
+    marginTop: spacing.md,
+    marginBottom: spacing.xs,
+  },
+  sectionBody: {
+    color: colors.text,
+    ...typography.body,
+    lineHeight: 22,
+  },
+  modalCloseButton: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 44,
+    paddingVertical: spacing.md,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.separator,
+  },
+  modalCloseText: {
+    color: colors.accent,
+    ...typography.bodyBold,
   },
   startButton: {
     position: "absolute",

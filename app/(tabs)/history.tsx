@@ -132,7 +132,13 @@ export default function HistoryScreen() {
 
           {/* Exercise list */}
           {selectedWorkout.exercises.map((ex, ei) => (
-            <View key={ei} style={styles.exerciseCard}>
+            <View
+              key={ei}
+              style={[
+                styles.exerciseRow,
+                ei < selectedWorkout.exercises.length - 1 && styles.exerciseRowBorder,
+              ]}
+            >
               <Text style={styles.exerciseName}>{ex.name}</Text>
               <View style={styles.setsRow}>
                 {ex.sets.map((s, si) => (
@@ -208,11 +214,12 @@ const styles = StyleSheet.create({
     ...typography.subtitle,
     marginBottom: spacing.md,
   },
-  exerciseCard: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.md,
-    padding: spacing.md,
-    marginBottom: spacing.sm,
+  exerciseRow: {
+    paddingVertical: spacing.sm,
+  },
+  exerciseRowBorder: {
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.separator,
   },
   exerciseName: {
     color: colors.text,

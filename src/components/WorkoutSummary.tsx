@@ -15,6 +15,7 @@ interface WorkoutSummaryProps {
   prsHit: string[];
   onFinish: () => void;
   onDiscard: () => void;
+  isFirstWorkout?: boolean;
 }
 
 export function WorkoutSummary({
@@ -22,6 +23,7 @@ export function WorkoutSummary({
   prsHit,
   onFinish,
   onDiscard,
+  isFirstWorkout,
 }: WorkoutSummaryProps) {
   const totalSets = exercises.reduce((acc, ex) => acc + ex.sets.length, 0);
 
@@ -44,7 +46,12 @@ export function WorkoutSummary({
       {/* Checkmark */}
       <Text style={styles.checkmark}>✓</Text>
 
-      <Text style={styles.header}>Workout Complete</Text>
+      <Text style={styles.header}>
+        {isFirstWorkout ? "First Workout Complete" : "Workout Complete"}
+      </Text>
+      {isFirstWorkout && (
+        <Text style={styles.firstWorkoutSubtitle}>You're on your way.</Text>
+      )}
 
       {/* PR celebration */}
       {prsHit.length > 0 && (
@@ -113,6 +120,13 @@ const styles = StyleSheet.create({
   header: {
     color: colors.text,
     ...typography.title,
+    marginBottom: spacing.xl,
+    textAlign: "center",
+  },
+  firstWorkoutSubtitle: {
+    color: colors.textSecondary,
+    ...typography.body,
+    marginTop: -spacing.xl + spacing.sm,
     marginBottom: spacing.xl,
     textAlign: "center",
   },
