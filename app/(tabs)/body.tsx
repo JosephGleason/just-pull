@@ -11,13 +11,8 @@ import { useSelector } from "@legendapp/state/react";
 import { workouts$ } from "../../src/lib/store";
 import { EXERCISE_MUSCLE_MAP, MUSCLE_GROUPS } from "../../src/components/body/muscles";
 import { WorkoutLogRow } from "../../src/types";
-import { colors, fonts } from "../../src/theme";
-
-const MS_PER_DAY = 86_400_000;
-
-function toDate(s: string): Date {
-  return new Date(s.slice(0, 10) + "T00:00:00Z");
-}
+import { colors, fonts, forgeStyles } from "../../src/theme";
+import { MS_PER_DAY, toDate } from "../../src/utils/date";
 
 const PERIODS = ["7D", "14D", "30D"] as const;
 type Period = (typeof PERIODS)[number];
@@ -151,15 +146,15 @@ export default function BodyScreen() {
         contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 40 }}
       >
         {/* ── HEADER SLAB ── */}
-        <View style={styles.headerSlab}>
-          <Text style={styles.fLabel}>VOLUME · BY MUSCLE</Text>
-          <Text style={styles.fDisplay}>
-            {period} HEAT<Text style={styles.accentDot}>.</Text>
+        <View style={forgeStyles.headerSlab}>
+          <Text style={forgeStyles.fLabel}>VOLUME · BY MUSCLE</Text>
+          <Text style={forgeStyles.fDisplay}>
+            {period} HEAT<Text style={forgeStyles.accentDot}>.</Text>
           </Text>
         </View>
 
         {/* ── PERIOD SELECTOR ── */}
-        <View style={styles.selectorRow}>
+        <View style={forgeStyles.selectorRow}>
           {PERIODS.map((pp, idx) => {
             const isActive = pp === period;
             const isLast = idx === PERIODS.length - 1;
@@ -167,17 +162,17 @@ export default function BodyScreen() {
               <TouchableOpacity
                 key={pp}
                 style={[
-                  styles.selectorTab,
-                  isActive && styles.selectorTabActive,
-                  !isLast && styles.selectorTabBorder,
+                  forgeStyles.selectorTab,
+                  isActive && forgeStyles.selectorTabActive,
+                  !isLast && forgeStyles.selectorTabBorder,
                 ]}
                 onPress={() => setPeriod(pp)}
                 activeOpacity={0.7}
               >
                 <Text
                   style={[
-                    styles.selectorText,
-                    isActive && styles.selectorTextActive,
+                    forgeStyles.selectorText,
+                    isActive && forgeStyles.selectorTextActive,
                   ]}
                 >
                   {pp}
@@ -213,7 +208,7 @@ export default function BodyScreen() {
             <Text style={styles.glanceNum}>{sessionCount}</Text>
           </View>
         </View>
-        <View style={styles.hairline} />
+        <View style={forgeStyles.hairline} />
 
         {/* ── MUSCLE BARS ── */}
         <View style={styles.barsContainer}>
@@ -299,59 +294,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
 
-  // ── Header ──
-  headerSlab: {
-    paddingTop: 18,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  fLabel: {
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    letterSpacing: 1.6,
-    textTransform: "uppercase",
-    color: colors.textSecondary,
-    marginBottom: 4,
-  },
-  fDisplay: {
-    fontFamily: fonts.display,
-    fontSize: 38,
-    lineHeight: 46,
-    color: colors.text,
-  },
-  accentDot: {
-    color: colors.accent,
-  },
-
-  // ── Period selector (breadcrumb) ──
-  selectorRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.hairline,
-  },
-  selectorTab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-  },
-  selectorTabActive: {
-    backgroundColor: colors.text,
-  },
-  selectorTabBorder: {
-    borderRightWidth: 1,
-    borderRightColor: colors.hairlineSoft,
-  },
-  selectorText: {
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-    color: colors.textTertiary,
-  },
-  selectorTextActive: {
-    color: colors.textInverse,
-  },
-
   // ── Glance stats ──
   glanceRow: {
     flexDirection: "row",
@@ -378,11 +320,6 @@ const styles = StyleSheet.create({
     lineHeight: 48,
     color: colors.text,
   },
-  hairline: {
-    height: 1,
-    backgroundColor: colors.hairline,
-  },
-
   // ── Muscle bars ──
   barsContainer: {
     paddingTop: 4,

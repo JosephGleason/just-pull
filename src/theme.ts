@@ -135,3 +135,61 @@ export const radius = {
   lg: 0,
   xl: 0,
 };
+
+import { StyleSheet } from "react-native";
+
+export const forgeStyles = StyleSheet.create({
+  headerSlab: {
+    paddingTop: 18,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  fLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  fDisplay: {
+    fontFamily: fonts.display,
+    fontSize: 38,
+    lineHeight: 46,
+    color: colors.text,
+  },
+  accentDot: {
+    color: colors.accent,
+  },
+  hairline: {
+    height: 1,
+    backgroundColor: colors.hairline,
+  },
+  selectorRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+  },
+  selectorTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  selectorTabActive: {
+    backgroundColor: colors.text,
+  },
+  selectorTabBorder: {
+    borderRightWidth: 1,
+    borderRightColor: colors.hairlineSoft,
+  },
+  selectorText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: colors.textTertiary,
+  },
+  selectorTextActive: {
+    color: colors.textInverse,
+  },
+});

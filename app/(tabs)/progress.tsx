@@ -18,7 +18,7 @@ import {
 } from "../../src/components/ProgressChart";
 import { MuscleHeatmap } from "../../src/components/MuscleHeatmap";
 import { WorkoutLogRow, CycleStateInput } from "../../src/types";
-import { colors, fonts } from "../../src/theme";
+import { colors, fonts, forgeStyles } from "../../src/theme";
 
 // Grouped lift definitions for the selector
 const LIFT_GROUPS = [
@@ -54,40 +54,43 @@ export default function ProgressScreen() {
     return Math.max(1, Math.round((last.getTime() - first.getTime()) / (7 * 24 * 60 * 60 * 1000)));
   }, [history]);
 
-  // Hero 1RM for selected lift group
-  const heroData = useMemo(() => {
-    const points = getGroupedChartDataPoints(selectedGroup.keys as unknown as string[], history);
-    if (points.length === 0) return { current: 0, delta: 0 };
-    const current = points[points.length - 1].est1RM;
-    const first = points[0].est1RM;
-    return { current, delta: current - first };
-  }, [selectedGroup, history]);
-
-  // All lifts at a glance
-  const allLiftsGlance = useMemo(() => {
+  // Compute all lift group data once
+  const allGroupData = useMemo(() => {
     return LIFT_GROUPS.map((group) => {
       const points = getGroupedChartDataPoints(group.keys as unknown as string[], history);
       const current = points.length > 0 ? points[points.length - 1].est1RM : 0;
       const first = points.length > 0 ? points[0].est1RM : 0;
-      const delta = current - first;
-      const sparkData = points.map((p) => p.est1RM);
-      return { label: group.label, current, delta, sparkData };
+      return { ...group, points, current, delta: current - first };
     });
   }, [history]);
+
+  // Hero 1RM for selected lift group
+  const heroData = useMemo(() => {
+    const group = allGroupData[selectedGroupIdx];
+    if (!group || group.points.length === 0) return { current: 0, delta: 0 };
+    return { current: group.current, delta: group.delta };
+  }, [allGroupData, selectedGroupIdx]);
+
+  // All lifts at a glance
+  const allLiftsGlance = useMemo(() => {
+    return allGroupData.map((g) => ({
+      label: g.label,
+      current: g.current,
+      delta: g.delta,
+      sparkData: g.points.map((p) => p.est1RM),
+    }));
+  }, [allGroupData]);
 
   // Next PR projection
   const prProjection = useMemo(() => {
     let bestProjection: { lift: string; value: number; weight: number; reps: number } | null = null;
-    for (const group of LIFT_GROUPS) {
-      const points = getGroupedChartDataPoints(group.keys as unknown as string[], history);
-      if (points.length < 2) continue;
-      const last = points[points.length - 1];
-      const prev = points[points.length - 2];
+    for (const group of allGroupData) {
+      if (group.points.length < 2) continue;
+      const last = group.points[group.points.length - 1];
+      const prev = group.points[group.points.length - 2];
       const trend = last.est1RM - prev.est1RM;
       if (trend > 0) {
         const projected = last.est1RM + trend;
-        // Suggest the weight x 8 AMRAP to beat it
-        // Reverse Epley: weight = 1RM / (1 + 8/30)
         const suggestedWeight = Math.round(projected / (1 + 8 / 30));
         if (!bestProjection || projected > bestProjection.value) {
           bestProjection = {
@@ -100,7 +103,7 @@ export default function ProgressScreen() {
       }
     }
     return bestProjection;
-  }, [history]);
+  }, [allGroupData]);
 
   if (!hasHistory) {
     return (
@@ -126,17 +129,17 @@ export default function ProgressScreen() {
       contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 40 }}
     >
       {/* Header slab */}
-      <View style={styles.headerSlab}>
-        <Text style={styles.fLabel}>
+      <View style={forgeStyles.headerSlab}>
+        <Text style={forgeStyles.fLabel}>
           PROGRESS {"·"} {weeksOfData} WK
         </Text>
-        <Text style={styles.fDisplay}>
-          1RM TREND<Text style={styles.accentDot}>.</Text>
+        <Text style={forgeStyles.fDisplay}>
+          1RM TREND<Text style={forgeStyles.accentDot}>.</Text>
         </Text>
       </View>
 
       {/* Lift selector breadcrumb row */}
-      <View style={styles.selectorRow}>
+      <View style={forgeStyles.selectorRow}>
         {LIFT_GROUPS.map((group, idx) => {
           const isActive = idx === selectedGroupIdx;
           const isLast = idx === LIFT_GROUPS.length - 1;
@@ -144,17 +147,17 @@ export default function ProgressScreen() {
             <TouchableOpacity
               key={group.label}
               style={[
-                styles.selectorTab,
-                isActive && styles.selectorTabActive,
-                !isLast && styles.selectorTabBorder,
+                forgeStyles.selectorTab,
+                isActive && forgeStyles.selectorTabActive,
+                !isLast && forgeStyles.selectorTabBorder,
               ]}
               onPress={() => setSelectedGroupIdx(idx)}
               activeOpacity={0.7}
             >
               <Text
                 style={[
-                  styles.selectorText,
-                  isActive && styles.selectorTextActive,
+                  forgeStyles.selectorText,
+                  isActive && forgeStyles.selectorTextActive,
                 ]}
               >
                 {group.label}
@@ -228,7 +231,7 @@ export default function ProgressScreen() {
       {/* Next PR projection slab */}
       {prProjection && (
         <View style={styles.projectionSlab}>
-          <Text style={styles.fLabel}>
+          <Text style={forgeStyles.fLabel}>
             PROJECTED {"·"} NEXT PR WINDOW
           </Text>
           <View style={styles.projectionRow}>
@@ -291,60 +294,6 @@ const styles = StyleSheet.create({
     fontFamily: fonts.monoBold,
     fontSize: 10,
     letterSpacing: 1.4,
-  },
-
-  // Header slab
-  headerSlab: {
-    paddingTop: 18,
-    paddingHorizontal: 16,
-    paddingBottom: 12,
-  },
-  fLabel: {
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    color: colors.textTertiary,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-  },
-  fDisplay: {
-    fontFamily: fonts.display,
-    fontSize: 38,
-    lineHeight: 46,
-    color: colors.text,
-    marginTop: 2,
-  },
-  accentDot: {
-    color: colors.accent,
-  },
-
-  // Lift selector
-  selectorRow: {
-    flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: colors.hairline,
-  },
-  selectorTab: {
-    flex: 1,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  selectorTabActive: {
-    backgroundColor: colors.text,
-  },
-  selectorTabBorder: {
-    borderRightWidth: 1,
-    borderRightColor: colors.hairlineSoft,
-  },
-  selectorText: {
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    color: colors.textTertiary,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-  },
-  selectorTextActive: {
-    color: colors.textInverse,
   },
 
   // Hero slab

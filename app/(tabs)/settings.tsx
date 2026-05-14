@@ -36,6 +36,7 @@ import {
   TrainingDay,
 } from "../../src/types";
 import { colors, fonts, typography, spacing } from "../../src/theme";
+import { formatTime } from "../../src/utils/date";
 
 // --- helpers ----------------------------------------------------------------
 
@@ -48,12 +49,6 @@ function keyToDisplayName(key: string): string {
     .map((w) => w[0].toUpperCase() + w.slice(1))
     .join(" ");
   return `${displayName} (${repsPart} rep)`;
-}
-
-function formatSeconds(s: number): string {
-  const m = Math.floor(s / 60);
-  const sec = s % 60;
-  return `${m}:${sec.toString().padStart(2, "0")}`;
 }
 
 function formatBodyDate(iso: string): string {
@@ -684,6 +679,21 @@ export default function SettingsScreen() {
   const daysUntilDeload = cyclesUntilDeload * 15;
   const latestBodyLog = lastSavedBodyLog ?? (bodyLog.length > 0 ? bodyLog[bodyLog.length - 1] : null);
 
+  // Cache auth uid
+  const uid = auth$.uid.get();
+
+  // Nutrition preview (replaces IIFE in modal)
+  const nutritionPreview = useMemo(
+    () => calculateNutrition(nutritionForm, safeProfile.units),
+    [nutritionForm, safeProfile.units]
+  );
+
+  // Helper: close nutrition modal then run callback after animation
+  function closeNutritionThen(fn: () => void) {
+    setShowNutritionModal(false);
+    setTimeout(fn, 300);
+  }
+
   // -- render -----------------------------------------------------------------
 
   return (
@@ -700,8 +710,8 @@ export default function SettingsScreen() {
           <Text style={styles.headerDisplay}>
             LIFTER<Text style={styles.accentDot}>.</Text>
           </Text>
-          {auth$.uid.get() ? (
-            <Text style={styles.headerEmail}>{(auth$.uid.get() ?? "").substring(0, 8).toUpperCase()}</Text>
+          {uid ? (
+            <Text style={styles.headerEmail}>{uid.substring(0, 8).toUpperCase()}</Text>
           ) : null}
           <View style={styles.hairline} />
         </View>
@@ -763,12 +773,12 @@ export default function SettingsScreen() {
         <View>
           <SettingsRow
             label="REST · COMPOUND"
-            value={formatSeconds(safeProfile.rest_timer_compound)}
+            value={formatTime(safeProfile.rest_timer_compound)}
             onPress={() => handleEditRestTimer("rest_timer_compound")}
           />
           <SettingsRow
             label="REST · ACCESSORY"
-            value={formatSeconds(safeProfile.rest_timer_accessory)}
+            value={formatTime(safeProfile.rest_timer_accessory)}
             onPress={() => handleEditRestTimer("rest_timer_accessory")}
           />
         </View>
@@ -971,53 +981,49 @@ export default function SettingsScreen() {
                 label="AGE"
                 value={String(nutritionForm.age)}
                 onPress={() => {
-                  setShowNutritionModal(false);
-                  setTimeout(() => openEdit("Age (years)", String(nutritionForm.age), (v) => {
+                  closeNutritionThen(() => openEdit("Age (years)", String(nutritionForm.age), (v) => {
                     const n = parseInt(v, 10);
                     if (!isNaN(n) && n > 0) {
                       updateNutritionField("age", n);
                       nutrition$.age.set(n);
                     }
                     closeEdit();
-                  }), 300);
+                  }));
                 }}
               />
               <SettingsRow
                 label={`WEIGHT (${safeProfile.units.toUpperCase()})`}
                 value={String(nutritionForm.weight)}
                 onPress={() => {
-                  setShowNutritionModal(false);
-                  setTimeout(() => openEdit(`Body Weight (${safeProfile.units})`, String(nutritionForm.weight), (v) => {
+                  closeNutritionThen(() => openEdit(`Body Weight (${safeProfile.units})`, String(nutritionForm.weight), (v) => {
                     const n = parseFloat(v);
                     if (!isNaN(n) && n > 0) {
                       updateNutritionField("weight", n);
                       nutrition$.weight.set(n);
                     }
                     closeEdit();
-                  }), 300);
+                  }));
                 }}
               />
               <SettingsRow
                 label={`HEIGHT (${safeProfile.units === "lb" ? "IN" : "CM"})`}
                 value={String(nutritionForm.height)}
                 onPress={() => {
-                  setShowNutritionModal(false);
-                  setTimeout(() => openEdit(`Height (${safeProfile.units === "lb" ? "inches" : "cm"})`, String(nutritionForm.height), (v) => {
+                  closeNutritionThen(() => openEdit(`Height (${safeProfile.units === "lb" ? "inches" : "cm"})`, String(nutritionForm.height), (v) => {
                     const n = parseFloat(v);
                     if (!isNaN(n) && n > 0) {
                       updateNutritionField("height", n);
                       nutrition$.height.set(n);
                     }
                     closeEdit();
-                  }), 300);
+                  }));
                 }}
               />
               <SettingsRow
                 label="SEX"
                 value={nutritionForm.sex === "male" ? "MALE" : "FEMALE"}
                 onPress={() => {
-                  setShowNutritionModal(false);
-                  setTimeout(() => openPicker(
+                  closeNutritionThen(() => openPicker(
                     "Sex",
                     [
                       { label: "Male", value: "male" },
@@ -1029,37 +1035,30 @@ export default function SettingsScreen() {
                       nutrition$.sex.set(v as "male" | "female");
                       closePicker();
                     }
-                  ), 300);
+                  ));
                 }}
               />
 
               {/* Preview */}
-              <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+              <View style={styles.nutritionPreviewContainer}>
                 <Text style={styles.modalInputLabel}>DAILY TARGETS</Text>
-                <View style={{ flexDirection: "row", justifyContent: "space-around", marginTop: 12 }}>
-                  {(() => {
-                    const t = calculateNutrition(nutritionForm, safeProfile.units);
-                    return (
-                      <>
-                        <View style={{ alignItems: "center" }}>
-                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.accent }}>{t.calories}</Text>
-                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>KCAL</Text>
-                        </View>
-                        <View style={{ alignItems: "center" }}>
-                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.green }}>{t.protein}</Text>
-                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>PROTEIN</Text>
-                        </View>
-                        <View style={{ alignItems: "center" }}>
-                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.text }}>{t.carbs}</Text>
-                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>CARBS</Text>
-                        </View>
-                        <View style={{ alignItems: "center" }}>
-                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.red }}>{t.fat}</Text>
-                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>FAT</Text>
-                        </View>
-                      </>
-                    );
-                  })()}
+                <View style={styles.nutritionPreviewRow}>
+                  <View style={styles.nutritionPreviewCell}>
+                    <Text style={[styles.nutritionPreviewNum, { color: colors.accent }]}>{nutritionPreview.calories}</Text>
+                    <Text style={styles.nutritionPreviewLabel}>KCAL</Text>
+                  </View>
+                  <View style={styles.nutritionPreviewCell}>
+                    <Text style={[styles.nutritionPreviewNum, { color: colors.green }]}>{nutritionPreview.protein}</Text>
+                    <Text style={styles.nutritionPreviewLabel}>PROTEIN</Text>
+                  </View>
+                  <View style={styles.nutritionPreviewCell}>
+                    <Text style={[styles.nutritionPreviewNum, { color: colors.text }]}>{nutritionPreview.carbs}</Text>
+                    <Text style={styles.nutritionPreviewLabel}>CARBS</Text>
+                  </View>
+                  <View style={styles.nutritionPreviewCell}>
+                    <Text style={[styles.nutritionPreviewNum, { color: colors.red }]}>{nutritionPreview.fat}</Text>
+                    <Text style={styles.nutritionPreviewLabel}>FAT</Text>
+                  </View>
                 </View>
               </View>
             </ScrollView>
@@ -1309,5 +1308,32 @@ const styles = StyleSheet.create({
     color: colors.accent,
     fontFamily: fonts.mono,
     fontSize: 14,
+  },
+
+  // ── Nutrition preview ──
+  nutritionPreviewContainer: {
+    padding: 16,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+  },
+  nutritionPreviewRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    marginTop: 12,
+  },
+  nutritionPreviewCell: {
+    alignItems: "center",
+  },
+  nutritionPreviewNum: {
+    fontFamily: fonts.display,
+    fontSize: 24,
+    lineHeight: 30,
+  },
+  nutritionPreviewLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 1.4,
+    color: colors.textSecondary,
+    marginTop: 2,
   },
 });

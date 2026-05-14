@@ -19,6 +19,11 @@ import { ExerciseCard } from "../../src/components/ExerciseCard";
 import { NutritionCard } from "../../src/components/NutritionCard";
 import { ProfileRow, CycleStateInput, ExerciseWeightInput, NutritionInput, CurrentSessionData, CurrentSessionRow, WorkoutLogRow } from "../../src/types";
 import { colors, fonts, spacing } from "../../src/theme";
+import { MS_PER_DAY } from "../../src/utils/date";
+
+function isChinupsKey(key: string) {
+  return key.startsWith("chinups");
+}
 
 export default function TodayScreen() {
   const router = useRouter();
@@ -59,22 +64,20 @@ export default function TodayScreen() {
       ? calculateNutrition(nutritionData, profile.units)
       : null;
 
-  const isChinupsKey = (key: string) => key.startsWith("chinups");
-
   const totalWeeks = 3;
   const exerciseCount = programDay.exercises.length;
   const dayPadded = String(cycleState.next_day).padStart(2, "0");
   const todayLabel = cycleState.is_deload ? "DELOAD" : `DAY ${cycleState.next_day}`;
-  const dateStr = new Date().toLocaleDateString("en-US", {
+  const dateStr = useMemo(() => new Date().toLocaleDateString("en-US", {
     month: "short",
     day: "numeric",
-  }).toUpperCase();
+  }).toUpperCase(), []);
 
   const inactivity = useMemo(() => {
     const workouts = Object.values(workoutsRecord);
     if (workouts.length === 0) return { daysSince: 0, shouldPrompt: false };
     const latest = workouts.reduce((max, w) => w.date > max ? w.date : max, workouts[0].date);
-    const daysSince = Math.floor((Date.now() - new Date(latest).getTime()) / 86_400_000);
+    const daysSince = Math.floor((Date.now() - new Date(latest).getTime()) / MS_PER_DAY);
     return { daysSince, shouldPrompt: daysSince >= 14 && !cycleState.is_deload };
   }, [workoutsRecord, cycleState.is_deload]);
 
@@ -85,8 +88,8 @@ export default function TodayScreen() {
 
   const weekVolume = useMemo(() => {
     const now = new Date();
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 86_400_000);
-    const fourteenDaysAgo = new Date(now.getTime() - 14 * 86_400_000);
+    const sevenDaysAgo = new Date(now.getTime() - 7 * MS_PER_DAY);
+    const fourteenDaysAgo = new Date(now.getTime() - 14 * MS_PER_DAY);
     let thisWeek = 0;
     let lastWeek = 0;
     for (const w of Object.values(workoutsRecord)) {

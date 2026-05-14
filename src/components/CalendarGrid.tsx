@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
 import { colors, fonts } from "../theme";
 
@@ -37,7 +37,7 @@ export function CalendarGrid({
   onNextMonth,
   prDates,
 }: CalendarGridProps) {
-  const today = getTodayISO();
+  const today = useMemo(() => getTodayISO(), []);
 
   // First day of month — adjust for Monday start (0=Mon, 6=Sun)
   const firstDayJS = new Date(year, month, 1).getDay(); // 0=Sun

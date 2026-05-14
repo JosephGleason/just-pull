@@ -6,7 +6,7 @@ import { useSelector } from "@legendapp/state/react";
 import { workouts$ } from "../../src/lib/store";
 import { CalendarGrid } from "../../src/components/CalendarGrid";
 import { WorkoutLogRow } from "../../src/types";
-import { colors, fonts } from "../../src/theme";
+import { colors, fonts, forgeStyles } from "../../src/theme";
 
 const MONTH_NAMES_SHORT = [
   "JAN", "FEB", "MAR", "APR", "MAY", "JUN",
@@ -39,8 +39,7 @@ function formatDuration(startedAt: string, completedAt: string | null): string {
 
 function formatDateLabel(dateStr: string): string {
   const d = new Date(dateStr + "T00:00:00");
-  const months = ["JAN", "FEB", "MAR", "APR", "MAY", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  return `${months[d.getMonth()]} ${String(d.getDate()).padStart(2, "0")}`;
+  return `${MONTH_NAMES_SHORT[d.getMonth()]} ${String(d.getDate()).padStart(2, "0")}`;
 }
 
 export default function HistoryScreen() {
@@ -175,10 +174,10 @@ export default function HistoryScreen() {
       {/* Header slab */}
       <View style={styles.headerSlab}>
         <View style={styles.headerLeft}>
-          <Text style={styles.fLabel}>HISTORY</Text>
-          <Text style={styles.fDisplay}>
+          <Text style={forgeStyles.fLabel}>HISTORY</Text>
+          <Text style={forgeStyles.fDisplay}>
             {MONTH_NAMES_FULL[currentMonth].slice(0, 3)} {currentYear}
-            <Text style={styles.accentDot}>.</Text>
+            <Text style={forgeStyles.accentDot}>.</Text>
           </Text>
         </View>
         <View style={styles.headerRight}>
@@ -379,23 +378,6 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     paddingBottom: 6,
-  },
-  fLabel: {
-    fontFamily: fonts.mono,
-    fontSize: 10,
-    color: colors.textTertiary,
-    letterSpacing: 1.4,
-    textTransform: "uppercase",
-  },
-  fDisplay: {
-    fontFamily: fonts.display,
-    fontSize: 38,
-    lineHeight: 46,
-    color: colors.text,
-    marginTop: 2,
-  },
-  accentDot: {
-    color: colors.accent,
   },
   monthNav: {
     fontFamily: fonts.mono,

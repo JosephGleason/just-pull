@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { colors, fonts } from "../theme";
+import { formatTime } from "../utils/date";
 
 interface RestTimerProps {
   secondsLeft: number;
@@ -17,12 +18,6 @@ interface RestTimerProps {
   onExtend: () => void;
   nextExerciseName?: string;
   exerciseProgress?: string;
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60);
-  const s = seconds % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
 export function RestTimer({
