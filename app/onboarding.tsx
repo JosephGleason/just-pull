@@ -24,7 +24,7 @@ import {
   ActivityLevel,
   Goal,
 } from "../src/types";
-import { colors, typography, spacing, radius } from "../src/theme";
+import { colors, fonts } from "../src/theme";
 
 // --- Compound exercise config ------------------------------------------------
 interface CompoundConfig {
@@ -85,20 +85,71 @@ const GOALS: { value: Goal; label: string }[] = [
   { value: "cut", label: "Cut" },
 ];
 
-// --- Step indicator ----------------------------------------------------------
-function StepIndicator({ current, total }: { current: number; total: number }) {
+// --- Step config (labels + prompts) ------------------------------------------
+const STEP_CONFIG = [
+  { label: "UNITS", prompt: "How do you\ntrack?." },
+  { label: "STARTING WEIGHTS", prompt: "What do\nyou lift?." },
+  { label: "REST TIMER", prompt: "How long\ndo you rest?." },
+  { label: "NUTRITION", prompt: "Tell us\nabout you?." },
+];
+
+// --- Step header slab --------------------------------------------------------
+function StepHeader({
+  current,
+  total,
+  onSkip,
+}: {
+  current: number;
+  total: number;
+  onSkip?: () => void;
+}) {
+  const stepNum = String(current + 1).padStart(2, "0");
+  const totalNum = String(total).padStart(2, "0");
+
   return (
-    <View style={styles.stepRow}>
-      {Array.from({ length: total }, (_, i) => (
-        <View
-          key={i}
-          style={[
-            styles.stepDot,
-            i === current && styles.stepDotActive,
-            i < current && styles.stepDotDone,
-          ]}
-        />
-      ))}
+    <View style={s.headerSlab}>
+      <View style={s.headerTopRow}>
+        <Text style={s.headerStepLabel}>
+          STEP {stepNum} / {totalNum}
+        </Text>
+        {onSkip ? (
+          <TouchableOpacity onPress={onSkip} activeOpacity={0.7} hitSlop={12}>
+            <Text style={s.headerSkip}>{"SKIP →"}</Text>
+          </TouchableOpacity>
+        ) : (
+          <View />
+        )}
+      </View>
+      <View style={s.headerBarRow}>
+        {Array.from({ length: total }, (_, i) => (
+          <View
+            key={i}
+            style={[
+              s.headerBar,
+              { backgroundColor: i <= current ? colors.accent : colors.hairlineStrong },
+            ]}
+          />
+        ))}
+      </View>
+      <View style={s.hairlineDivider} />
+    </View>
+  );
+}
+
+// --- Prompt slab -------------------------------------------------------------
+function PromptSlab({ label, prompt }: { label: string; prompt: string }) {
+  // Split the prompt to render the trailing period in accent
+  const endsWithDot = prompt.endsWith("?.");
+  const mainText = endsWithDot ? prompt.slice(0, -1) : prompt;
+  const trailingChar = endsWithDot ? "." : "";
+
+  return (
+    <View style={s.promptSlab}>
+      <Text style={s.promptLabel}>{label}</Text>
+      <Text style={s.promptDisplay}>
+        {mainText}
+        {trailingChar ? <Text style={{ color: colors.accent }}>{trailingChar}</Text> : null}
+      </Text>
     </View>
   );
 }
@@ -112,51 +163,30 @@ function StepUnits({
   onSelect: (u: Units) => void;
 }) {
   return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Choose Your Units</Text>
-      <Text style={styles.stepSubtitle}>
-        How do you prefer to track weight?
-      </Text>
+    <View style={s.inputSlab}>
+      <TouchableOpacity
+        style={[
+          s.optionCard,
+          units === "lb" && s.optionCardActive,
+        ]}
+        onPress={() => onSelect("lb")}
+        activeOpacity={0.7}
+      >
+        <Text style={[s.optionCardUnit, units === "lb" && s.optionCardTextActive]}>lb</Text>
+        <Text style={[s.optionCardLabel, units === "lb" && s.optionCardTextActive]}>Pounds</Text>
+      </TouchableOpacity>
 
-      <View style={styles.unitButtons}>
-        <TouchableOpacity
-          style={[
-            styles.unitButton,
-            units === "lb" && styles.unitButtonActive,
-          ]}
-          onPress={() => onSelect("lb")}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.unitEmoji}>lb</Text>
-          <Text
-            style={[
-              styles.unitLabel,
-              units === "lb" && styles.unitLabelActive,
-            ]}
-          >
-            Pounds
-          </Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[
-            styles.unitButton,
-            units === "kg" && styles.unitButtonActive,
-          ]}
-          onPress={() => onSelect("kg")}
-          activeOpacity={0.7}
-        >
-          <Text style={styles.unitEmoji}>kg</Text>
-          <Text
-            style={[
-              styles.unitLabel,
-              units === "kg" && styles.unitLabelActive,
-            ]}
-          >
-            Kilograms
-          </Text>
-        </TouchableOpacity>
-      </View>
+      <TouchableOpacity
+        style={[
+          s.optionCard,
+          units === "kg" && s.optionCardActive,
+        ]}
+        onPress={() => onSelect("kg")}
+        activeOpacity={0.7}
+      >
+        <Text style={[s.optionCardUnit, units === "kg" && s.optionCardTextActive]}>kg</Text>
+        <Text style={[s.optionCardLabel, units === "kg" && s.optionCardTextActive]}>Kilograms</Text>
+      </TouchableOpacity>
     </View>
   );
 }
@@ -172,46 +202,35 @@ function StepWeights({
   onChange: (label: string, value: string) => void;
 }) {
   return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Starting Weights</Text>
-      <Text style={styles.stepSubtitle}>
-        Enter your current working weight for each lift ({units})
-      </Text>
-
-      <ScrollView
-        style={styles.weightScroll}
-        contentContainerStyle={styles.weightScrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {COMPOUND_EXERCISES.map((ex) => (
-          <View key={ex.label} style={styles.weightRow}>
-            <View style={styles.weightLabelCol}>
-              <Text style={styles.weightLabel}>{ex.label}</Text>
-              {ex.hint && (
-                <Text style={styles.weightHint}>{ex.hint}</Text>
-              )}
-            </View>
-            <View style={styles.weightInputWrapper}>
-              <TextInput
-                style={styles.weightInput}
-                keyboardType="numeric"
-                placeholder={
-                  units === "lb"
-                    ? String(ex.defaultLb)
-                    : String(ex.defaultKg)
-                }
-                placeholderTextColor={colors.textTertiary}
-                value={weights[ex.label] ?? ""}
-                onChangeText={(v) => onChange(ex.label, v)}
-                selectTextOnFocus
-              />
-              <Text style={styles.weightUnit}>{units}</Text>
-            </View>
+    <ScrollView
+      style={s.scrollFill}
+      contentContainerStyle={s.scrollContent}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {COMPOUND_EXERCISES.map((ex) => (
+        <View key={ex.label} style={s.weightRow}>
+          <View style={s.weightLabelCol}>
+            <Text style={s.weightLabel}>{ex.label}</Text>
+            {ex.hint && <Text style={s.weightHint}>{ex.hint}</Text>}
           </View>
-        ))}
-      </ScrollView>
-    </View>
+          <View style={s.weightInputWrapper}>
+            <TextInput
+              style={s.weightInput}
+              keyboardType="numeric"
+              placeholder={
+                units === "lb" ? String(ex.defaultLb) : String(ex.defaultKg)
+              }
+              placeholderTextColor={colors.textTertiary}
+              value={weights[ex.label] ?? ""}
+              onChangeText={(v) => onChange(ex.label, v)}
+              selectTextOnFocus
+            />
+            <Text style={s.weightUnit}>{units}</Text>
+          </View>
+        </View>
+      ))}
+    </ScrollView>
   );
 }
 
@@ -230,50 +249,41 @@ function StepTimer({
   const formatDisplay = (sec: string) => {
     const n = parseInt(sec, 10) || 0;
     const m = Math.floor(n / 60);
-    const s = n % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
+    const ss = n % 60;
+    return `${m}:${ss.toString().padStart(2, "0")}`;
   };
 
   return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Rest Timers</Text>
-      <Text style={styles.stepSubtitle}>
-        Set your rest duration between sets (in seconds)
-      </Text>
-
-      <View style={styles.timerCard}>
-        <Text style={styles.timerLabel}>Compound Exercises</Text>
-        <Text style={styles.timerHint}>Squat, Bench, Deadlift, etc.</Text>
-        <View style={styles.timerInputRow}>
+    <View style={s.inputSlab}>
+      <View style={s.timerCard}>
+        <Text style={s.timerLabel}>Compound Exercises</Text>
+        <Text style={s.timerHint}>SQUAT, BENCH, DEADLIFT, ETcolors.</Text>
+        <View style={s.timerInputRow}>
           <TextInput
-            style={styles.timerInput}
+            style={s.timerInput}
             keyboardType="numeric"
             value={compoundSec}
             onChangeText={onChangeCompound}
             selectTextOnFocus
           />
-          <Text style={styles.timerSec}>sec</Text>
-          <Text style={styles.timerFormatted}>
-            {formatDisplay(compoundSec)}
-          </Text>
+          <Text style={s.timerSec}>sec</Text>
+          <Text style={s.timerFormatted}>{formatDisplay(compoundSec)}</Text>
         </View>
       </View>
 
-      <View style={styles.timerCard}>
-        <Text style={styles.timerLabel}>Accessory Exercises</Text>
-        <Text style={styles.timerHint}>Curls, Flies, Calf Raises, etc.</Text>
-        <View style={styles.timerInputRow}>
+      <View style={s.timerCard}>
+        <Text style={s.timerLabel}>Accessory Exercises</Text>
+        <Text style={s.timerHint}>CURLS, FLIES, CALF RAISES, ETcolors.</Text>
+        <View style={s.timerInputRow}>
           <TextInput
-            style={styles.timerInput}
+            style={s.timerInput}
             keyboardType="numeric"
             value={accessorySec}
             onChangeText={onChangeAccessory}
             selectTextOnFocus
           />
-          <Text style={styles.timerSec}>sec</Text>
-          <Text style={styles.timerFormatted}>
-            {formatDisplay(accessorySec)}
-          </Text>
+          <Text style={s.timerSec}>sec</Text>
+          <Text style={s.timerFormatted}>{formatDisplay(accessorySec)}</Text>
         </View>
       </View>
     </View>
@@ -289,143 +299,118 @@ function StepNutrition({
   onChange: (field: string, value: any) => void;
 }) {
   return (
-    <View style={styles.stepContainer}>
-      <Text style={styles.stepTitle}>Nutrition Setup</Text>
-      <Text style={styles.stepSubtitle}>
-        Optional -- helps calculate calorie & macro targets
-      </Text>
+    <ScrollView
+      style={s.scrollFill}
+      contentContainerStyle={s.scrollContent}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+    >
+      {/* Age */}
+      <View style={s.nutritionField}>
+        <Text style={s.nutritionLabel}>AGE</Text>
+        <TextInput
+          style={s.nutritionInput}
+          keyboardType="numeric"
+          placeholder="25"
+          placeholderTextColor={colors.textTertiary}
+          value={nutrition.age ? String(nutrition.age) : ""}
+          onChangeText={(v) => onChange("age", parseInt(v, 10) || 0)}
+          selectTextOnFocus
+        />
+      </View>
 
-      <ScrollView
-        style={styles.weightScroll}
-        contentContainerStyle={styles.weightScrollContent}
-        showsVerticalScrollIndicator={false}
-        keyboardShouldPersistTaps="handled"
-      >
-        {/* Age */}
-        <View style={styles.nutritionField}>
-          <Text style={styles.nutritionLabel}>Age</Text>
-          <TextInput
-            style={styles.nutritionInput}
-            keyboardType="numeric"
-            placeholder="25"
-            placeholderTextColor={colors.textTertiary}
-            value={nutrition.age ? String(nutrition.age) : ""}
-            onChangeText={(v) => onChange("age", parseInt(v, 10) || 0)}
-            selectTextOnFocus
-          />
+      {/* Body weight */}
+      <View style={s.nutritionField}>
+        <Text style={s.nutritionLabel}>BODY WEIGHT</Text>
+        <TextInput
+          style={s.nutritionInput}
+          keyboardType="numeric"
+          placeholder="170"
+          placeholderTextColor={colors.textTertiary}
+          value={nutrition.weight ? String(nutrition.weight) : ""}
+          onChangeText={(v) => onChange("weight", parseInt(v, 10) || 0)}
+          selectTextOnFocus
+        />
+      </View>
+
+      {/* Height */}
+      <View style={s.nutritionField}>
+        <Text style={s.nutritionLabel}>HEIGHT (INCHES)</Text>
+        <TextInput
+          style={s.nutritionInput}
+          keyboardType="numeric"
+          placeholder="70"
+          placeholderTextColor={colors.textTertiary}
+          value={nutrition.height ? String(nutrition.height) : ""}
+          onChangeText={(v) => onChange("height", parseInt(v, 10) || 0)}
+          selectTextOnFocus
+        />
+      </View>
+
+      {/* Sex */}
+      <View style={s.nutritionField}>
+        <Text style={s.nutritionLabel}>SEX</Text>
+        <View style={s.chipRow}>
+          {(["male", "female"] as const).map((val) => (
+            <TouchableOpacity
+              key={val}
+              style={[s.chip, nutrition.sex === val && s.chipActive]}
+              onPress={() => onChange("sex", val)}
+              activeOpacity={0.7}
+            >
+              <Text style={[s.chipText, nutrition.sex === val && s.chipTextActive]}>
+                {val.charAt(0).toUpperCase() + val.slice(1)}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
 
-        {/* Body weight */}
-        <View style={styles.nutritionField}>
-          <Text style={styles.nutritionLabel}>Body Weight</Text>
-          <TextInput
-            style={styles.nutritionInput}
-            keyboardType="numeric"
-            placeholder="170"
-            placeholderTextColor={colors.textTertiary}
-            value={nutrition.weight ? String(nutrition.weight) : ""}
-            onChangeText={(v) => onChange("weight", parseInt(v, 10) || 0)}
-            selectTextOnFocus
-          />
-        </View>
-
-        {/* Height */}
-        <View style={styles.nutritionField}>
-          <Text style={styles.nutritionLabel}>Height (inches)</Text>
-          <TextInput
-            style={styles.nutritionInput}
-            keyboardType="numeric"
-            placeholder="70"
-            placeholderTextColor={colors.textTertiary}
-            value={nutrition.height ? String(nutrition.height) : ""}
-            onChangeText={(v) => onChange("height", parseInt(v, 10) || 0)}
-            selectTextOnFocus
-          />
-        </View>
-
-        {/* Sex */}
-        <View style={styles.nutritionField}>
-          <Text style={styles.nutritionLabel}>Sex</Text>
-          <View style={styles.pillRow}>
-            {(["male", "female"] as const).map((s) => (
-              <TouchableOpacity
-                key={s}
+      {/* Activity Level */}
+      <View style={s.nutritionField}>
+        <Text style={s.nutritionLabel}>ACTIVITY LEVEL</Text>
+        <View style={s.chipRow}>
+          {ACTIVITY_LEVELS.map((a) => (
+            <TouchableOpacity
+              key={a.value}
+              style={[s.chip, nutrition.activity_level === a.value && s.chipActive]}
+              onPress={() => onChange("activity_level", a.value)}
+              activeOpacity={0.7}
+            >
+              <Text
                 style={[
-                  styles.pill,
-                  nutrition.sex === s && styles.pillActive,
+                  s.chipText,
+                  nutrition.activity_level === a.value && s.chipTextActive,
                 ]}
-                onPress={() => onChange("sex", s)}
-                activeOpacity={0.7}
               >
-                <Text
-                  style={[
-                    styles.pillText,
-                    nutrition.sex === s && styles.pillTextActive,
-                  ]}
-                >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                {a.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
+      </View>
 
-        {/* Activity Level */}
-        <View style={styles.nutritionField}>
-          <Text style={styles.nutritionLabel}>Activity Level</Text>
-          <View style={styles.pillRow}>
-            {ACTIVITY_LEVELS.map((a) => (
-              <TouchableOpacity
-                key={a.value}
-                style={[
-                  styles.pill,
-                  nutrition.activity_level === a.value && styles.pillActive,
-                ]}
-                onPress={() => onChange("activity_level", a.value)}
-                activeOpacity={0.7}
+      {/* Goal */}
+      <View style={s.nutritionField}>
+        <Text style={s.nutritionLabel}>GOAL</Text>
+        <View style={s.chipRow}>
+          {GOALS.map((g) => (
+            <TouchableOpacity
+              key={g.value}
+              style={[s.chip, nutrition.goal === g.value && s.chipActive]}
+              onPress={() => onChange("goal", g.value)}
+              activeOpacity={0.7}
+            >
+              <Text
+                style={[s.chipText, nutrition.goal === g.value && s.chipTextActive]}
               >
-                <Text
-                  style={[
-                    styles.pillText,
-                    nutrition.activity_level === a.value &&
-                      styles.pillTextActive,
-                  ]}
-                >
-                  {a.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
+                {g.label}
+              </Text>
+            </TouchableOpacity>
+          ))}
         </View>
-
-        {/* Goal */}
-        <View style={styles.nutritionField}>
-          <Text style={styles.nutritionLabel}>Goal</Text>
-          <View style={styles.pillRow}>
-            {GOALS.map((g) => (
-              <TouchableOpacity
-                key={g.value}
-                style={[
-                  styles.pill,
-                  nutrition.goal === g.value && styles.pillActive,
-                ]}
-                onPress={() => onChange("goal", g.value)}
-                activeOpacity={0.7}
-              >
-                <Text
-                  style={[
-                    styles.pillText,
-                    nutrition.goal === g.value && styles.pillTextActive,
-                  ]}
-                >
-                  {g.label}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-        </View>
-      </ScrollView>
-    </View>
+      </View>
+    </ScrollView>
   );
 }
 
@@ -527,7 +512,7 @@ export default function OnboardingScreen() {
       const weight = raw && raw.trim() !== "" ? parseFloat(raw) : defaultVal;
 
       for (const key of ex.keys) {
-        weights$[key].set({ exercise_key: key, working: weight, pr: null, pr_status: null } as any);
+        weights$[key].set({ exercise_key: key, working: weight, pr: null, pr_status: null, fail_count: 0 } as any);
       }
     }
 
@@ -535,7 +520,7 @@ export default function OnboardingScreen() {
     for (const key of ACCESSORY_KEYS) {
       const defaultLb = ACCESSORY_DEFAULTS[key] ?? 0;
       const defaultWeight = selectedUnits === "lb" ? defaultLb : Math.round(defaultLb / 2.2 / 2.5) * 2.5;
-      weights$[key].set({ exercise_key: key, working: defaultWeight, pr: null, pr_status: null } as any);
+      weights$[key].set({ exercise_key: key, working: defaultWeight, pr: null, pr_status: null, fail_count: 0 } as any);
     }
 
     // 4. Increments (compound only) — insert directly via Supabase
@@ -576,8 +561,8 @@ export default function OnboardingScreen() {
     setNutrition((prev) => ({ ...prev, [field]: value }));
   };
 
-  // --- Render current step ---------------------------------------------------
-  const renderStep = () => {
+  // --- Render current step content -------------------------------------------
+  const renderStepContent = () => {
     switch (step) {
       case 0:
         return <StepUnits units={units} onSelect={setUnits} />;
@@ -610,67 +595,57 @@ export default function OnboardingScreen() {
     }
   };
 
+  const isLastStep = step === TOTAL_STEPS - 1;
+  const cfg = STEP_CONFIG[step];
+
   return (
     <KeyboardAvoidingView
-      style={styles.root}
+      style={s.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View style={[styles.container, { paddingTop: Math.max(insets.top + 16, 60) }]}>
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.brand}>JUST PULL</Text>
-          <StepIndicator current={step} total={TOTAL_STEPS} />
-        </View>
+      <View style={[s.container, { paddingTop: insets.top }]}>
+        {/* Step header slab */}
+        <StepHeader
+          current={step}
+          total={TOTAL_STEPS}
+          onSkip={step === 3 ? handleSkipNutrition : undefined}
+        />
 
-        {/* Content */}
-        <Animated.View style={[styles.content, { opacity: fadeAnim }]}>
-          {renderStep()}
+        {/* Prompt slab */}
+        <PromptSlab label={cfg.label} prompt={cfg.prompt} />
+
+        {/* Input slab — animated */}
+        <Animated.View style={[s.contentArea, { opacity: fadeAnim }]}>
+          {renderStepContent()}
         </Animated.View>
 
-        {/* Footer */}
-        <View style={styles.footer}>
+        {/* Spacer — only for non-scrollable steps so CTA stays at bottom */}
+        {step !== 1 && step !== 3 && <View style={s.spacer} />}
+
+        {/* Footer slab */}
+        <View style={[s.footerSlab, { paddingBottom: Math.max(insets.bottom, 8) }]}>
           {step > 0 ? (
             <TouchableOpacity
-              style={styles.backButton}
+              style={s.backBtn}
               onPress={handleBack}
               activeOpacity={0.7}
             >
-              <Text style={styles.backButtonText}>Back</Text>
+              <Text style={s.backBtnText}>{"◂ BACK"}</Text>
             </TouchableOpacity>
           ) : (
-            <View style={styles.backButton} />
+            <View style={s.backBtn} />
           )}
 
-          <View style={styles.footerRight}>
-            {step === 3 && (
-              <TouchableOpacity
-                style={styles.skipButton}
-                onPress={handleSkipNutrition}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.skipButtonText}>Skip</Text>
-              </TouchableOpacity>
-            )}
-
-            <TouchableOpacity
-              style={[
-                styles.nextButton,
-                !canAdvance() && styles.nextButtonDisabled,
-              ]}
-              onPress={handleNext}
-              disabled={!canAdvance()}
-              activeOpacity={0.7}
-            >
-              <Text
-                style={[
-                  styles.nextButtonText,
-                  !canAdvance() && styles.nextButtonTextDisabled,
-                ]}
-              >
-                {step === TOTAL_STEPS - 1 ? "Finish" : "Next"}
-              </Text>
-            </TouchableOpacity>
-          </View>
+          <TouchableOpacity
+            style={[s.nextBtn, !canAdvance() && s.nextBtnDisabled]}
+            onPress={handleNext}
+            disabled={!canAdvance()}
+            activeOpacity={0.7}
+          >
+            <Text style={[s.nextBtnText, !canAdvance() && s.nextBtnTextDisabled]}>
+              {isLastStep ? "OPEN THE PROGRAM ▸" : "NEXT ▸"}
+            </Text>
+          </TouchableOpacity>
         </View>
       </View>
     </KeyboardAvoidingView>
@@ -680,131 +655,156 @@ export default function OnboardingScreen() {
 // =============================================================================
 // Styles
 // =============================================================================
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: colors.bg,
   },
   container: {
     flex: 1,
-    paddingTop: 60,
-    paddingBottom: 36,
-    paddingHorizontal: spacing.xl,
   },
 
-  // Header
-  header: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
+  // --- Step header slab ------------------------------------------------------
+  headerSlab: {
+    paddingHorizontal: 16,
+    paddingTop: 12,
   },
-  brand: {
-    fontFamily: "BebasNeue_400Regular",
-    fontSize: 18,
-    color: colors.accent,
-    letterSpacing: 6,
-    marginBottom: spacing.md,
-  },
-  stepRow: {
+  headerTopRow: {
     flexDirection: "row",
-    gap: spacing.sm,
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 8,
   },
-  stepDot: {
-    width: 32,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: colors.separator,
+  headerStepLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textSecondary,
+    letterSpacing: 0.06 * 10,
+    textTransform: "uppercase",
   },
-  stepDotActive: {
+  headerSkip: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textSecondary,
+    letterSpacing: 0.06 * 10,
+    textTransform: "uppercase",
+  },
+  headerBarRow: {
+    flexDirection: "row",
+    gap: 3,
+    marginBottom: 12,
+  },
+  headerBar: {
+    flex: 1,
+    height: 3,
+    borderRadius: 0,
+  },
+  hairlineDivider: {
+    height: 1,
+    backgroundColor: colors.hairline,
+  },
+
+  // --- Prompt slab -----------------------------------------------------------
+  promptSlab: {
+    paddingHorizontal: 16,
+    paddingTop: 24,
+    paddingBottom: 16,
+  },
+  promptLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textSecondary,
+    letterSpacing: 0.06 * 10,
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
+  promptDisplay: {
+    fontFamily: fonts.display,
+    fontSize: 44,
+    color: colors.text,
+    maxWidth: 280,
+    lineHeight: 54,
+    textTransform: "uppercase",
+  },
+
+  // --- Content area ----------------------------------------------------------
+  contentArea: {
+    flex: 1,
+    paddingHorizontal: 16,
+    paddingTop: 8,
+  },
+
+  // --- Input slab (used by units, timer) ------------------------------------
+  inputSlab: {
+    gap: 8,
+  },
+
+  // --- Option cards (Step 1: Units) ------------------------------------------
+  optionCard: {
+    padding: 18,
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
+    borderRadius: 0,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  optionCardActive: {
     backgroundColor: colors.accent,
+    borderColor: colors.accent,
   },
-  stepDotDone: {
-    backgroundColor: colors.accentDim,
-  },
-
-  // Content
-  content: {
-    flex: 1,
-  },
-
-  // Step container
-  stepContainer: {
-    flex: 1,
-  },
-  stepTitle: {
-    color: colors.text,
-    ...typography.title,
-    marginBottom: spacing.sm,
-  },
-  stepSubtitle: {
-    color: colors.textSecondary,
-    ...typography.body,
-    marginBottom: spacing.xl,
-    lineHeight: 22,
-  },
-
-  // Step 1: Units
-  unitButtons: {
-    gap: spacing.md,
-    marginTop: spacing.md,
-  },
-  unitButton: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.xl,
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  unitButtonActive: {
-    backgroundColor: colors.accentGlow,
-  },
-  unitEmoji: {
-    fontFamily: "BebasNeue_400Regular",
+  optionCardUnit: {
+    fontFamily: fonts.display,
     fontSize: 32,
-    color: colors.accent,
-    width: 60,
-    textAlign: "center",
+    lineHeight: 40,
+    color: colors.text,
+    width: 56,
+    textTransform: "uppercase",
   },
-  unitLabel: {
-    ...typography.title,
-    color: colors.textSecondary,
-  },
-  unitLabelActive: {
+  optionCardLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 20,
     color: colors.text,
   },
+  optionCardTextActive: {
+    color: "#FFFFFF",
+  },
 
-  // Step 2: Weights
-  weightScroll: {
+  // --- Scrollable containers -------------------------------------------------
+  scrollFill: {
     flex: 1,
-    marginHorizontal: -spacing.xl,
-    paddingHorizontal: spacing.xl,
+    marginHorizontal: -16,
   },
-  weightScrollContent: {
-    paddingBottom: spacing.xl,
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 24,
   },
+
+  // --- Weight rows (Step 2) --------------------------------------------------
   weightRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
     paddingVertical: 14,
-    paddingHorizontal: spacing.md,
-    marginBottom: spacing.sm,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
   },
   weightLabelCol: {
     flex: 1,
-    marginRight: spacing.md,
+    marginRight: 12,
   },
   weightLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 15,
     color: colors.text,
-    ...typography.bodyBold,
   },
   weightHint: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
     color: colors.textTertiary,
-    ...typography.micro,
     marginTop: 2,
+    letterSpacing: 0.02 * 9,
   },
   weightInputWrapper: {
     flexDirection: "row",
@@ -813,158 +813,181 @@ const styles = StyleSheet.create({
   },
   weightInput: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.md,
+    borderRadius: 0,
     color: colors.text,
-    fontFamily: "BebasNeue_400Regular",
+    fontFamily: fonts.display,
     fontSize: 22,
     textAlign: "center",
+    textAlignVertical: "center",
     width: 80,
-    height: 48,
-    paddingHorizontal: spacing.sm,
+    height: 56,
+    paddingVertical: 10,
+    includeFontPadding: false,
   },
   weightUnit: {
-    ...typography.caption,
+    fontFamily: fonts.mono,
+    fontSize: 10,
     color: colors.textSecondary,
+    letterSpacing: 0.06 * 10,
+    textTransform: "uppercase",
     width: 24,
   },
 
-  // Step 3: Timer
+  // --- Timer cards (Step 3) --------------------------------------------------
   timerCard: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.lg,
-    marginBottom: spacing.md,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: 0,
+    padding: 20,
   },
   timerLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 16,
     color: colors.text,
-    ...typography.subtitle,
     marginBottom: 2,
   },
   timerHint: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
     color: colors.textTertiary,
-    ...typography.micro,
-    marginBottom: spacing.md,
+    letterSpacing: 0.06 * 9,
+    marginBottom: 16,
   },
   timerInputRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: spacing.sm,
+    gap: 8,
   },
   timerInput: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.md,
+    borderRadius: 0,
     color: colors.text,
-    fontFamily: "BebasNeue_400Regular",
+    fontFamily: fonts.display,
     fontSize: 24,
     textAlign: "center",
+    textAlignVertical: "center",
     width: 80,
-    height: 48,
+    height: 56,
+    paddingVertical: 10,
+    includeFontPadding: false,
   },
   timerSec: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
     color: colors.textSecondary,
-    ...typography.bodyBold,
+    letterSpacing: 0.06 * 10,
   },
   timerFormatted: {
-    fontFamily: "BebasNeue_400Regular",
+    fontFamily: fonts.display,
     fontSize: 22,
+    lineHeight: 30,
     color: colors.accent,
     marginLeft: "auto",
+    includeFontPadding: true,
   },
 
-  // Step 4: Nutrition
+  // --- Nutrition fields (Step 4) ---------------------------------------------
   nutritionField: {
-    marginBottom: spacing.lg,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+    paddingVertical: 14,
   },
   nutritionLabel: {
-    color: colors.text,
-    ...typography.bodyBold,
-    marginBottom: spacing.sm,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textSecondary,
+    letterSpacing: 0.06 * 10,
+    marginBottom: 8,
   },
   nutritionInput: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.md,
+    backgroundColor: "transparent",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+    borderRadius: 0,
     color: colors.text,
-    fontFamily: "BebasNeue_400Regular",
+    fontFamily: fonts.display,
     fontSize: 22,
-    height: 48,
-    paddingHorizontal: spacing.md,
-  },
-  pillRow: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: spacing.sm,
-  },
-  pill: {
-    backgroundColor: colors.surface,
-    borderRadius: 24,
+    height: 56,
+    paddingHorizontal: 0,
     paddingVertical: 10,
-    paddingHorizontal: 18,
-    minWidth: 48,
-    alignItems: "center",
-  },
-  pillActive: {
-    backgroundColor: colors.accentGlow,
-  },
-  pillText: {
-    ...typography.bodyBold,
-    fontSize: 14,
-    color: colors.textSecondary,
-  },
-  pillTextActive: {
-    color: colors.accent,
+    textAlignVertical: "center",
+    includeFontPadding: false,
   },
 
-  // Footer
-  footer: {
+  // --- Chips / pills ---------------------------------------------------------
+  chipRow: {
     flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: spacing.md,
+    flexWrap: "wrap",
+    gap: 8,
   },
-  footerRight: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: spacing.md,
-  },
-  backButton: {
-    minWidth: 64,
-    height: 48,
-    justifyContent: "center",
-  },
-  backButtonText: {
-    color: colors.textSecondary,
-    ...typography.bodyBold,
-  },
-  skipButton: {
-    height: 48,
-    paddingHorizontal: spacing.lg,
+  chip: {
+    height: 28,
+    paddingHorizontal: 12,
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
+    borderRadius: 0,
     justifyContent: "center",
     alignItems: "center",
-    borderRadius: radius.md,
-    backgroundColor: colors.surfaceTertiary,
   },
-  skipButtonText: {
+  chipActive: {
+    backgroundColor: colors.text,
+    borderColor: colors.text,
+  },
+  chipText: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.text,
+    letterSpacing: 0.06 * 11,
+    textTransform: "uppercase",
+  },
+  chipTextActive: {
+    color: colors.textInverse,
+  },
+
+  // --- Spacer ----------------------------------------------------------------
+  spacer: {
+    flex: 1,
+    minHeight: 10,
+  },
+
+  // --- Footer slab -----------------------------------------------------------
+  footerSlab: {
+    flexDirection: "row",
+  },
+  backBtn: {
+    flex: 1,
+    paddingVertical: 18,
+    borderTopWidth: 1,
+    borderTopColor: colors.hairline,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  backBtnText: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
     color: colors.textSecondary,
-    ...typography.bodyBold,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
   },
-  nextButton: {
+  nextBtn: {
+    flex: 2,
     backgroundColor: colors.accent,
-    height: 56,
-    paddingHorizontal: spacing.xl,
-    borderRadius: 14,
+    paddingVertical: 18,
     justifyContent: "center",
     alignItems: "center",
-    minWidth: 100,
+    borderRadius: 0,
   },
-  nextButtonDisabled: {
+  nextBtnDisabled: {
     backgroundColor: colors.surfaceTertiary,
   },
-  nextButtonText: {
-    color: colors.bg,
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 15,
+  nextBtnText: {
+    fontFamily: fonts.display,
+    fontSize: 26,
+    color: "#FFFFFF",
+    textTransform: "uppercase",
   },
-  nextButtonTextDisabled: {
+  nextBtnTextDisabled: {
     color: colors.textTertiary,
   },
 });

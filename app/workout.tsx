@@ -14,7 +14,7 @@ import { WorkoutSummary } from "../src/components/WorkoutSummary";
 import { SetLog, ExerciseLog, WorkoutLogRow, ExerciseWeightInput, CurrentSessionData, CurrentSessionRow, CycleStateInput, ProfileRow } from "../src/types";
 import { generateWarmupSets } from "../src/hooks/useWarmup";
 import { WarmupSuggestion } from "../src/components/WarmupSuggestion";
-import { colors, typography, spacing, radius } from "../src/theme";
+import { colors, typography, spacing, radius, fonts } from "../src/theme";
 
 export default function WorkoutScreen() {
   const router = useRouter();
@@ -376,7 +376,10 @@ export default function WorkoutScreen() {
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       {elapsedTime ? (
-        <Text style={styles.elapsedTime}>{elapsedTime}</Text>
+        <View style={styles.statusStrip}>
+          <Text style={styles.statusLabel}>● SESSION · LIVE</Text>
+          <Text style={styles.elapsedTime}>{elapsedTime}</Text>
+        </View>
       ) : null}
 
       <ExerciseProgressStrip
@@ -466,12 +469,25 @@ const styles = StyleSheet.create({
     ...typography.body,
     marginTop: spacing.md,
   },
-  elapsedTime: {
-    color: colors.textTertiary,
-    ...typography.caption,
-    textAlign: "right",
+  statusStrip: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: spacing.md,
-    paddingBottom: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
+  statusLabel: {
+    color: colors.accent,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+  },
+  elapsedTime: {
+    color: colors.textSecondary,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textAlign: "right",
   },
   undoToast: {
     position: "absolute",
@@ -479,18 +495,20 @@ const styles = StyleSheet.create({
     left: spacing.md,
     right: spacing.md,
     backgroundColor: colors.surface,
-    borderRadius: radius.md,
+    borderRadius: 0,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
     borderWidth: 1,
-    borderColor: colors.cardBorder,
+    borderColor: colors.hairline,
   },
   undoText: {
     color: colors.textSecondary,
-    ...typography.body,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 1,
   },
   undoButton: {
     paddingVertical: spacing.xs,
@@ -500,6 +518,7 @@ const styles = StyleSheet.create({
   },
   undoButtonText: {
     color: colors.accent,
-    ...typography.bodyBold,
+    fontFamily: fonts.display,
+    fontSize: 16,
   },
 });

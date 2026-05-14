@@ -17,10 +17,10 @@ import { CycleStateInput, ExerciseWeightInput } from "../types";
 const baseCycle: CycleStateInput = { cycle_number: 2, week_number: 1, next_day: 1, is_deload: false };
 
 const weights: Record<string, ExerciseWeightInput> = {
-  deadlift_4: { exercise_key: "deadlift_4", working: 225, pr: 235, pr_status: "pending" },
-  chinups_8: { exercise_key: "chinups_8", working: 0, pr: 5, pr_status: "pending" },
-  bb_rows_4: { exercise_key: "bb_rows_4", working: 135, pr: 140, pr_status: "pending" },
-  curls_12: { exercise_key: "curls_12", working: 30, pr: null, pr_status: null },
+  deadlift_4: { exercise_key: "deadlift_4", working: 225, pr: 235, pr_status: "pending", fail_count: 0 },
+  chinups_8: { exercise_key: "chinups_8", working: 0, pr: 5, pr_status: "pending", fail_count: 0 },
+  bb_rows_4: { exercise_key: "bb_rows_4", working: 135, pr: 140, pr_status: "pending", fail_count: 0 },
+  curls_12: { exercise_key: "curls_12", working: 30, pr: null, pr_status: null, fail_count: 0 },
 };
 
 describe("buildSessionExercises", () => {
@@ -60,7 +60,7 @@ describe("getTargetWeight", () => {
   });
 
   test("cycle 2+ with failed PR returns working weight", () => {
-    const failedWeights = { ...weights, deadlift_4: { exercise_key: "deadlift_4", working: 225, pr: 235, pr_status: "failed" as const } };
+    const failedWeights = { ...weights, deadlift_4: { exercise_key: "deadlift_4", working: 225, pr: 235, pr_status: "failed" as const, fail_count: 0 } };
     expect(getTargetWeight("deadlift_4", failedWeights, baseCycle)).toBe(225);
   });
 

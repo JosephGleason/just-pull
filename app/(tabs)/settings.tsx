@@ -35,7 +35,7 @@ import {
   WeekNumber,
   TrainingDay,
 } from "../../src/types";
-import { colors, typography, spacing, radius } from "../../src/theme";
+import { colors, fonts, typography, spacing } from "../../src/theme";
 
 // --- helpers ----------------------------------------------------------------
 
@@ -65,29 +65,12 @@ function formatBodyDate(iso: string): string {
   return `${months[month - 1]} ${day}, ${year}`;
 }
 
-// --- tiny shared components --------------------------------------------------
+// --- FORGE section components ------------------------------------------------
 
-function CollapsibleSection({
-  title,
-  children,
-  defaultOpen = false,
-}: {
-  title: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [isOpen, setIsOpen] = useState(defaultOpen);
+function SectionHeader({ title }: { title: string }) {
   return (
-    <View>
-      <TouchableOpacity
-        style={styles.collapsibleHeader}
-        onPress={() => setIsOpen(!isOpen)}
-        activeOpacity={0.7}
-      >
-        <Text style={styles.sectionHeaderText}>{title}</Text>
-        <Text style={styles.sectionChevron}>{isOpen ? "▾" : "▸"}</Text>
-      </TouchableOpacity>
-      {isOpen && children}
+    <View style={styles.sectionHeader}>
+      <Text style={styles.sectionHeaderText}>{title}</Text>
     </View>
   );
 }
@@ -96,19 +79,35 @@ function SettingsRow({
   label,
   value,
   onPress,
+  danger,
+}: {
+  label: string;
+  value?: string;
+  onPress: () => void;
+  danger?: boolean;
+}) {
+  return (
+    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.6}>
+      <Text style={[styles.rowLabel, danger && styles.dangerText]}>{label}</Text>
+      {value !== undefined && (
+        <Text style={[styles.rowValue, danger && styles.dangerText]}>{value}</Text>
+      )}
+    </TouchableOpacity>
+  );
+}
+
+function StaticRow({
+  label,
+  value,
 }: {
   label: string;
   value: string;
-  onPress: () => void;
 }) {
   return (
-    <TouchableOpacity style={styles.row} onPress={onPress} activeOpacity={0.7}>
+    <View style={styles.row}>
       <Text style={styles.rowLabel}>{label}</Text>
-      <View style={styles.rowValueWrap}>
-        <Text style={styles.rowValue}>{value}</Text>
-        <Text style={styles.rowChevron}>{"›"}</Text>
-      </View>
-    </TouchableOpacity>
+      <Text style={styles.rowValue}>{value}</Text>
+    </View>
   );
 }
 
@@ -133,7 +132,6 @@ function EditModal({
 }: EditModalProps) {
   const [value, setValue] = useState(initialValue);
 
-  // reset when opened
   React.useEffect(() => {
     if (visible) setValue(initialValue);
   }, [visible, initialValue]);
@@ -165,13 +163,13 @@ function EditModal({
               style={[styles.modalBtn, styles.modalCancelBtn]}
               onPress={onCancel}
             >
-              <Text style={styles.modalCancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>CANCEL</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.modalBtn, styles.modalSaveBtn]}
               onPress={() => onSave(value)}
             >
-              <Text style={styles.modalSaveText}>Save</Text>
+              <Text style={styles.modalSaveText}>SAVE</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -236,15 +234,15 @@ function PickerModal<T extends string>({
                 {opt.label}
               </Text>
               {selected === opt.value && (
-                <Text style={styles.pickerCheck}>{"✓"}</Text>
+                <Text style={styles.pickerCheck}>{">"}</Text>
               )}
             </TouchableOpacity>
           ))}
           <TouchableOpacity
-            style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: spacing.sm }]}
+            style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: 16 }]}
             onPress={onCancel}
           >
-            <Text style={styles.modalCancelText}>Cancel</Text>
+            <Text style={styles.modalCancelText}>CANCEL</Text>
           </TouchableOpacity>
         </View>
       </TouchableOpacity>
@@ -299,14 +297,14 @@ function BodyLogModal({
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
-        style={bodyLogStyles.overlay}
+        style={styles.modalOverlay}
       >
-        <View style={bodyLogStyles.box}>
-          <Text style={bodyLogStyles.title}>Log Body Measurement</Text>
+        <View style={styles.modalBox}>
+          <Text style={styles.modalTitle}>LOG BODY MEASUREMENT</Text>
 
-          <Text style={bodyLogStyles.inputLabel}>Body Weight ({units})</Text>
+          <Text style={styles.modalInputLabel}>BODY WEIGHT ({units.toUpperCase()})</Text>
           <TextInput
-            style={bodyLogStyles.input}
+            style={styles.modalInput}
             value={weightVal}
             onChangeText={setWeightVal}
             keyboardType="numeric"
@@ -316,9 +314,9 @@ function BodyLogModal({
             selectTextOnFocus
           />
 
-          <Text style={bodyLogStyles.inputLabel}>Body Fat %</Text>
+          <Text style={styles.modalInputLabel}>BODY FAT %</Text>
           <TextInput
-            style={bodyLogStyles.input}
+            style={styles.modalInput}
             value={bfVal}
             onChangeText={setBfVal}
             keyboardType="numeric"
@@ -327,18 +325,18 @@ function BodyLogModal({
             selectTextOnFocus
           />
 
-          <View style={bodyLogStyles.buttons}>
+          <View style={styles.modalButtons}>
             <TouchableOpacity
-              style={[bodyLogStyles.btn, bodyLogStyles.cancelBtn]}
+              style={[styles.modalBtn, styles.modalCancelBtn]}
               onPress={onCancel}
             >
-              <Text style={bodyLogStyles.cancelText}>Cancel</Text>
+              <Text style={styles.modalCancelText}>CANCEL</Text>
             </TouchableOpacity>
             <TouchableOpacity
-              style={[bodyLogStyles.btn, bodyLogStyles.saveBtn]}
+              style={[styles.modalBtn, styles.modalSaveBtn]}
               onPress={handleSave}
             >
-              <Text style={bodyLogStyles.saveText}>Save</Text>
+              <Text style={styles.modalSaveText}>SAVE</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -346,69 +344,6 @@ function BodyLogModal({
     </Modal>
   );
 }
-
-const bodyLogStyles = StyleSheet.create({
-  overlay: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: "center",
-    alignItems: "center",
-    padding: spacing.xl,
-  },
-  box: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
-    width: "100%",
-    maxWidth: 400,
-  },
-  title: {
-    color: colors.text,
-    ...typography.subtitle,
-    marginBottom: spacing.lg,
-  },
-  inputLabel: {
-    color: colors.textSecondary,
-    ...typography.caption,
-    marginBottom: spacing.xs,
-  },
-  input: {
-    backgroundColor: colors.surfaceTertiary,
-    borderRadius: radius.md,
-    color: colors.text,
-    fontSize: 20,
-    fontFamily: "PlusJakartaSans_400Regular",
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    marginBottom: spacing.md,
-  },
-  buttons: {
-    flexDirection: "row",
-    gap: spacing.md,
-    marginTop: spacing.sm,
-  },
-  btn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    alignItems: "center",
-  },
-  cancelBtn: {
-    backgroundColor: colors.surfaceTertiary,
-  },
-  cancelText: {
-    color: colors.textSecondary,
-    ...typography.bodyBold,
-  },
-  saveBtn: {
-    backgroundColor: colors.accent,
-  },
-  saveText: {
-    color: colors.bg,
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 15,
-  },
-});
 
 // --- main screen -------------------------------------------------------------
 
@@ -446,6 +381,9 @@ export default function SettingsScreen() {
 
   // -- body log modal state --
   const [bodyLogModalVisible, setBodyLogModalVisible] = useState(false);
+  const [showWeightsModal, setShowWeightsModal] = useState(false);
+  const [showNutritionModal, setShowNutritionModal] = useState(false);
+  const [lastSavedBodyLog, setLastSavedBodyLog] = useState<{ weight: number; body_fat_percent: number } | null>(null);
   const bodyLog: BodyLogRow[] = useMemo(() =>
     Object.values(bodyLogRecord).sort((a, b) => a.date.localeCompare(b.date)),
     [bodyLogRecord]
@@ -540,7 +478,7 @@ export default function SettingsScreen() {
         }
         const existing = weights[key];
         weights$[key].set({
-          ...(existing ?? { exercise_key: key, pr: null, pr_status: null }),
+          ...(existing ?? { exercise_key: key, pr: null, pr_status: null, fail_count: 0 }),
           working: num,
         } as any);
         closeEdit();
@@ -656,7 +594,7 @@ export default function SettingsScreen() {
     ]);
   }
 
-  // Data export/import
+  // Data export
   async function handleExport() {
     try {
       const data = {
@@ -675,13 +613,76 @@ export default function SettingsScreen() {
     }
   }
 
-  // -- computed --
-  const nutritionTargets =
-    nutritionData
-      ? calculateNutrition(nutritionData, safeProfile.units)
-      : null;
+  // Clear all data
+  function handleClearAllData() {
+    const doClear = async () => {
+      const uid = auth$.uid.get();
+      if (uid) {
+        await supabase.from("exercise_weights").delete().eq("user_id", uid);
+        await supabase.from("increments").delete().eq("user_id", uid);
+        await supabase.from("workouts").delete().eq("user_id", uid);
+        await supabase.from("body_log").delete().eq("user_id", uid);
+        await supabase.from("current_session").delete().eq("id", uid);
+        await supabase.from("nutrition_settings").delete().eq("id", uid);
+        await supabase.from("cycle_state").delete().eq("id", uid);
+        await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
+      }
+      await AsyncStorage.multiRemove([
+        "ls_profiles", "ls_profiles__m",
+        "ls_nutrition", "ls_nutrition__m",
+        "ls_cycle_state", "ls_cycle_state__m",
+        "ls_current_session", "ls_current_session__m",
+        "ls_exercise_weights", "ls_exercise_weights__m",
+        "ls_increments", "ls_increments__m",
+        "ls_workouts", "ls_workouts__m",
+        "ls_body_log", "ls_body_log__m",
+      ]);
+      profile$.set(undefined as any);
+      cycle_state$.set(undefined as any);
+      nutrition$.set(undefined as any);
+      current_session$.set(undefined as any);
+      await signOut();
+    };
+    if (Platform.OS === "web") {
+      if (window.confirm("This will delete all data. This cannot be undone. Continue?")) {
+        doClear();
+      }
+    } else {
+      Alert.alert(
+        "Clear All Data",
+        "This will delete all workout history, weights, and settings. You'll need to go through onboarding again. This cannot be undone.",
+        [
+          { text: "Cancel", style: "cancel" },
+          { text: "Clear Everything", style: "destructive", onPress: doClear },
+        ]
+      );
+    }
+  }
 
-  const formTargets = calculateNutrition(nutritionForm, safeProfile.units);
+  // Sign out
+  function handleSignOut() {
+    if (Platform.OS === "web") {
+      if (window.confirm("Are you sure you want to sign out?")) {
+        signOut();
+      }
+    } else {
+      Alert.alert("Sign Out", "Are you sure you want to sign out?", [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Sign Out",
+          onPress: async () => {
+            await signOut();
+          },
+        },
+      ]);
+    }
+  }
+
+  // -- computed --
+  const totalWeeks = 3;
+  const cyclesUntilDeload = 3 - (safeCycleState.cycle_number % 3 || 3);
+  const daysUntilDeload = cyclesUntilDeload * 15;
+  const latestBodyLog = lastSavedBodyLog ?? (bodyLog.length > 0 ? bodyLog[bodyLog.length - 1] : null);
 
   // -- render -----------------------------------------------------------------
 
@@ -689,478 +690,188 @@ export default function SettingsScreen() {
     <View style={styles.container}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={[styles.scrollContent, { paddingTop: insets.top + 20 }]}
+        contentContainerStyle={{ paddingTop: insets.top }}
         keyboardShouldPersistTaps="handled"
       >
 
-        {/* -- 1. Working Weights -- */}
-        <CollapsibleSection title="Working Weights">
-          <View style={styles.card}>
-            {COMPOUND_KEYS.map((key, i) => (
-              <View key={key}>
-                {i > 0 && <View style={styles.divider} />}
-                <SettingsRow
-                  label={keyToDisplayName(key)}
-                  value={`${weights[key]?.working ?? "—"} ${safeProfile.units}`}
-                  onPress={() => handleEditWeight(key)}
-                />
-              </View>
-            ))}
-          </View>
-        </CollapsibleSection>
+        {/* ── HEADER SLAB ── */}
+        <View style={styles.headerSlab}>
+          <Text style={styles.headerLabel}>SETTINGS</Text>
+          <Text style={styles.headerDisplay}>
+            LIFTER<Text style={styles.accentDot}>.</Text>
+          </Text>
+          {auth$.uid.get() ? (
+            <Text style={styles.headerEmail}>{(auth$.uid.get() ?? "").substring(0, 8).toUpperCase()}</Text>
+          ) : null}
+          <View style={styles.hairline} />
+        </View>
 
-        {/* -- 2. Increments -- */}
-        <CollapsibleSection title="Weight Increments">
-          <View style={styles.card}>
-            {COMPOUND_KEYS.map((key, i) => (
-              <View key={key}>
-                {i > 0 && <View style={styles.divider} />}
-                <SettingsRow
-                  label={keyToDisplayName(key)}
-                  value={`${incrementsRecord[key]?.increment ?? 5} ${safeProfile.units}`}
-                  onPress={() => handleEditIncrement(key)}
-                />
-              </View>
-            ))}
-          </View>
-        </CollapsibleSection>
+        {/* ── LIFTER ── */}
+        <SectionHeader title="LIFTER" />
+        <View>
+          <SettingsRow
+            label="BODYWEIGHT"
+            value={latestBodyLog ? `${latestBodyLog.weight} ${safeProfile.units.toUpperCase()}` : `— ${safeProfile.units.toUpperCase()}`}
+            onPress={() => setBodyLogModalVisible(true)}
+          />
+          <SettingsRow
+            label="GOAL"
+            value={nutritionForm.goal ? goalLabel(nutritionForm.goal).toUpperCase() : "—"}
+            onPress={() =>
+              openPicker(
+                "Goal",
+                [
+                  { label: "Bulk (+400 kcal)", value: "bulk" },
+                  { label: "Maintain", value: "maintain" },
+                  { label: "Cut (-400 kcal)", value: "cut" },
+                ],
+                nutritionForm.goal,
+                (v) => {
+                  updateNutritionField("goal", v as Goal);
+                  nutrition$.goal.set(v as Goal);
+                  closePicker();
+                }
+              )
+            }
+          />
+          <SettingsRow
+            label="UNITS"
+            value={safeProfile.units === "lb" ? "IMPERIAL" : "METRIC"}
+            onPress={() => handleUnitsChange(safeProfile.units === "lb" ? "kg" : "lb")}
+          />
+        </View>
 
-        {/* -- 3. Rest Timer -- */}
-        <CollapsibleSection title="Rest Timer" defaultOpen>
-          <View style={styles.card}>
-            <SettingsRow
-              label="Compound"
-              value={formatSeconds(safeProfile.rest_timer_compound)}
-              onPress={() => handleEditRestTimer("rest_timer_compound")}
-            />
-            <View style={styles.divider} />
-            <SettingsRow
-              label="Accessory"
-              value={formatSeconds(safeProfile.rest_timer_accessory)}
-              onPress={() => handleEditRestTimer("rest_timer_accessory")}
-            />
-          </View>
-        </CollapsibleSection>
+        {/* ── PROGRAM ── */}
+        <SectionHeader title="PROGRAM" />
+        <View>
+          <SettingsRow
+            label="CURRENT CYCLE"
+            value={`${safeCycleState.cycle_number} · WK ${safeCycleState.week_number}/${totalWeeks}`}
+            onPress={() => handleEditCycleField("cycle_number")}
+          />
+          <StaticRow label="DELOAD EVERY" value="3 CYCLES" />
+          <StaticRow label="NEXT DELOAD" value={safeCycleState.is_deload ? "NOW" : `${daysUntilDeload} DAYS`} />
+          <SettingsRow
+            label="NEXT DAY"
+            value={String(safeCycleState.next_day)}
+            onPress={() => handleEditCycleField("next_day")}
+          />
+        </View>
 
-        {/* -- 4. Units -- */}
-        <CollapsibleSection title="Units">
-          <View style={styles.card}>
-            <View style={styles.segmentRow}>
-              {(["lb", "kg"] as Units[]).map((u) => (
-                <TouchableOpacity
-                  key={u}
-                  style={[
-                    styles.segmentBtn,
-                    safeProfile.units === u && styles.segmentBtnActive,
-                  ]}
-                  onPress={() => handleUnitsChange(u)}
-                  activeOpacity={0.8}
-                >
-                  <Text
-                    style={[
-                      styles.segmentText,
-                      safeProfile.units === u && styles.segmentTextActive,
-                    ]}
-                  >
-                    {u}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-            <Text style={styles.unitsNote}>
-              Changing units does not convert existing weights.
-            </Text>
-          </View>
-        </CollapsibleSection>
+        {/* ── TIMER ── */}
+        <SectionHeader title="TIMER" />
+        <View>
+          <SettingsRow
+            label="REST · COMPOUND"
+            value={formatSeconds(safeProfile.rest_timer_compound)}
+            onPress={() => handleEditRestTimer("rest_timer_compound")}
+          />
+          <SettingsRow
+            label="REST · ACCESSORY"
+            value={formatSeconds(safeProfile.rest_timer_accessory)}
+            onPress={() => handleEditRestTimer("rest_timer_accessory")}
+          />
+        </View>
 
-        {/* -- 5. Cycle Position -- */}
-        <CollapsibleSection title="Cycle Position">
-          <View style={styles.card}>
-            <SettingsRow
-              label="Cycle"
-              value={String(safeCycleState.cycle_number)}
-              onPress={() => handleEditCycleField("cycle_number")}
-            />
-            <View style={styles.divider} />
-            <SettingsRow
-              label="Week"
-              value={String(safeCycleState.week_number)}
-              onPress={() => handleEditCycleField("week_number")}
-            />
-            <View style={styles.divider} />
-            <SettingsRow
-              label="Next Day"
-              value={String(safeCycleState.next_day)}
-              onPress={() => handleEditCycleField("next_day")}
-            />
-            <View style={styles.divider} />
-            <View style={styles.row}>
-              <Text style={styles.rowLabel}>Deload</Text>
-              <TouchableOpacity
-                style={[
-                  styles.deloadToggle,
-                  safeCycleState.is_deload && styles.deloadToggleActive,
-                ]}
+        {/* ── NUTRITION ── */}
+        <SectionHeader title="NUTRITION" />
+        <View>
+          {nutritionData ? (
+            <>
+              <SettingsRow
+                label="CALORIES"
+                value={`${calculateNutrition(nutritionForm, safeProfile.units).calories} KCAL`}
+                onPress={() => setShowNutritionModal(true)}
+              />
+              <SettingsRow
+                label="GOAL"
+                value={goalLabel(nutritionForm.goal).toUpperCase()}
                 onPress={() =>
-                  cycle_state$.is_deload.set(!safeCycleState.is_deload)
+                  openPicker(
+                    "Goal",
+                    [
+                      { label: "Bulk (+400 kcal)", value: "bulk" },
+                      { label: "Maintain", value: "maintain" },
+                      { label: "Cut (-400 kcal)", value: "cut" },
+                    ],
+                    nutritionForm.goal,
+                    (v) => {
+                      updateNutritionField("goal", v as Goal);
+                      nutrition$.goal.set(v as Goal);
+                      closePicker();
+                    }
+                  )
                 }
-              >
-                <Text
-                  style={[
-                    styles.deloadToggleText,
-                    safeCycleState.is_deload && styles.deloadToggleTextActive,
-                  ]}
-                >
-                  {safeCycleState.is_deload ? "On" : "Off"}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        </CollapsibleSection>
-
-        {/* -- 6. Nutrition Calculator -- */}
-        <CollapsibleSection title="Nutrition Calculator">
-        <View style={styles.card}>
-          {/* Current saved targets */}
-          {nutritionData && nutritionTargets && (
-            <View style={styles.nutritionTargetsRow}>
-              <NutritionBadge label="kcal" value={nutritionTargets.calories} color={colors.accent} />
-              <NutritionBadge label="protein" value={nutritionTargets.protein} color={colors.green} />
-              <NutritionBadge label="carbs" value={nutritionTargets.carbs} color={colors.accentDim} />
-              <NutritionBadge label="fat" value={nutritionTargets.fat} color={colors.red} />
-            </View>
+              />
+              <SettingsRow
+                label="ACTIVITY"
+                value={activityLabel(nutritionForm.activity_level).toUpperCase()}
+                onPress={() =>
+                  openPicker(
+                    "Activity Level",
+                    [
+                      { label: "Sedentary", value: "sedentary" },
+                      { label: "Lightly Active", value: "light" },
+                      { label: "Moderately Active", value: "moderate" },
+                      { label: "Very Active", value: "active" },
+                      { label: "Extremely Active", value: "very_active" },
+                    ],
+                    nutritionForm.activity_level,
+                    (v) => {
+                      updateNutritionField("activity_level", v as ActivityLevel);
+                      nutrition$.activity_level.set(v as ActivityLevel);
+                      closePicker();
+                    }
+                  )
+                }
+              />
+            </>
+          ) : (
+            <SettingsRow
+              label="SET UP NUTRITION"
+              value="→"
+              onPress={() => setShowNutritionModal(true)}
+            />
           )}
-
-          {/* Age */}
-          <View style={styles.nutritionField}>
-            <Text style={styles.nutritionLabel}>Age</Text>
-            <TouchableOpacity
-              style={styles.nutritionValueBtn}
-              onPress={() =>
-                openEdit("Age (years)", String(nutritionForm.age), (v) => {
-                  const n = parseInt(v, 10);
-                  if (!isNaN(n) && n > 0) updateNutritionField("age", n);
-                  closeEdit();
-                })
-              }
-            >
-              <Text style={styles.nutritionValueText}>{nutritionForm.age}</Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Weight */}
-          <View style={styles.divider} />
-          <View style={styles.nutritionField}>
-            <Text style={styles.nutritionLabel}>
-              Weight ({safeProfile.units})
-            </Text>
-            <TouchableOpacity
-              style={styles.nutritionValueBtn}
-              onPress={() =>
-                openEdit(
-                  `Body Weight (${safeProfile.units})`,
-                  String(nutritionForm.weight),
-                  (v) => {
-                    const n = parseFloat(v);
-                    if (!isNaN(n) && n > 0) updateNutritionField("weight", n);
-                    closeEdit();
-                  }
-                )
-              }
-            >
-              <Text style={styles.nutritionValueText}>
-                {nutritionForm.weight}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Height */}
-          <View style={styles.divider} />
-          <View style={styles.nutritionField}>
-            <Text style={styles.nutritionLabel}>
-              Height ({safeProfile.units === "lb" ? "in" : "cm"})
-            </Text>
-            <TouchableOpacity
-              style={styles.nutritionValueBtn}
-              onPress={() =>
-                openEdit(
-                  `Height (${safeProfile.units === "lb" ? "inches" : "cm"})`,
-                  String(nutritionForm.height),
-                  (v) => {
-                    const n = parseFloat(v);
-                    if (!isNaN(n) && n > 0) updateNutritionField("height", n);
-                    closeEdit();
-                  }
-                )
-              }
-            >
-              <Text style={styles.nutritionValueText}>
-                {nutritionForm.height}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Sex */}
-          <View style={styles.divider} />
-          <View style={styles.nutritionField}>
-            <Text style={styles.nutritionLabel}>Sex</Text>
-            <TouchableOpacity
-              style={styles.nutritionValueBtn}
-              onPress={() =>
-                openPicker(
-                  "Sex",
-                  [
-                    { label: "Male", value: "male" },
-                    { label: "Female", value: "female" },
-                  ],
-                  nutritionForm.sex,
-                  (v) => {
-                    updateNutritionField("sex", v as "male" | "female");
-                    closePicker();
-                  }
-                )
-              }
-            >
-              <Text style={styles.nutritionValueText}>
-                {nutritionForm.sex === "male" ? "Male" : "Female"}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Activity Level */}
-          <View style={styles.divider} />
-          <View style={styles.nutritionField}>
-            <Text style={styles.nutritionLabel}>Activity</Text>
-            <TouchableOpacity
-              style={styles.nutritionValueBtn}
-              onPress={() =>
-                openPicker(
-                  "Activity Level",
-                  [
-                    { label: "Sedentary", value: "sedentary" },
-                    { label: "Lightly Active", value: "light" },
-                    { label: "Moderately Active", value: "moderate" },
-                    { label: "Very Active", value: "active" },
-                    { label: "Extremely Active", value: "very_active" },
-                  ],
-                  nutritionForm.activity_level,
-                  (v) => {
-                    updateNutritionField("activity_level", v as ActivityLevel);
-                    closePicker();
-                  }
-                )
-              }
-            >
-              <Text style={styles.nutritionValueText}>
-                {activityLabel(nutritionForm.activity_level)}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Goal */}
-          <View style={styles.divider} />
-          <View style={styles.nutritionField}>
-            <Text style={styles.nutritionLabel}>Goal</Text>
-            <TouchableOpacity
-              style={styles.nutritionValueBtn}
-              onPress={() =>
-                openPicker(
-                  "Goal",
-                  [
-                    { label: "Bulk (+400 kcal)", value: "bulk" },
-                    { label: "Maintain", value: "maintain" },
-                    { label: "Cut (-400 kcal)", value: "cut" },
-                  ],
-                  nutritionForm.goal,
-                  (v) => {
-                    updateNutritionField("goal", v as Goal);
-                    closePicker();
-                  }
-                )
-              }
-            >
-              <Text style={styles.nutritionValueText}>
-                {goalLabel(nutritionForm.goal)}
-              </Text>
-            </TouchableOpacity>
-          </View>
-
-          {/* Preview */}
-          <View style={styles.divider} />
-          <View style={styles.nutritionPreview}>
-            <Text style={styles.nutritionPreviewTitle}>PREVIEW</Text>
-            <View style={styles.nutritionTargetsRow}>
-              <NutritionBadge label="kcal" value={formTargets.calories} color={colors.accent} />
-              <NutritionBadge label="protein" value={formTargets.protein} color={colors.green} />
-              <NutritionBadge label="carbs" value={formTargets.carbs} color={colors.accentDim} />
-              <NutritionBadge label="fat" value={formTargets.fat} color={colors.red} />
-            </View>
-          </View>
-
-          {/* Actions */}
-          <View style={styles.nutritionActions}>
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.clearBtn]}
-              onPress={handleClearNutrition}
-            >
-              <Text style={styles.clearBtnText}>Clear</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.actionBtn, styles.saveBtn]}
-              onPress={handleSaveNutrition}
-            >
-              <Text style={styles.saveBtnText}>Save</Text>
-            </TouchableOpacity>
-          </View>
         </View>
-        </CollapsibleSection>
 
-        {/* -- 7. Body Measurements -- */}
-        <CollapsibleSection title="Body Measurements">
-          <View style={styles.card}>
-            {/* Log button */}
-            <TouchableOpacity
-              style={styles.row}
-              onPress={() => setBodyLogModalVisible(true)}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.rowLabel}>Log Measurement</Text>
-              <View style={styles.rowValueWrap}>
-                <Text style={styles.rowChevron}>{"+"}</Text>
-              </View>
-            </TouchableOpacity>
-
-            {/* History entries */}
-            {bodyLog.length > 0 && <View style={styles.divider} />}
-            {[...bodyLog].reverse().map((entry, i) => (
-              <View key={entry.date + i}>
-                {i > 0 && <View style={styles.divider} />}
-                <TouchableOpacity
-                  style={styles.bodyLogRow}
-                  activeOpacity={0.7}
-                  onLongPress={() => {
-                    Alert.alert(
-                      "Delete Entry",
-                      `Remove log for ${formatBodyDate(entry.date)}?`,
-                      [
-                        { text: "Cancel", style: "cancel" },
-                        {
-                          text: "Delete",
-                          style: "destructive",
-                          onPress: () => {
-                            body_log$[entry.id].delete();
-                          },
-                        },
-                      ]
-                    );
-                  }}
-                >
-                  <Text style={styles.bodyLogDate}>{formatBodyDate(entry.date)}</Text>
-                  <Text style={styles.bodyLogValues}>
-                    {entry.weight} {safeProfile.units}
-                    {entry.body_fat_percent > 0 ? `  ·  ${entry.body_fat_percent}% BF` : ""}
-                  </Text>
-                </TouchableOpacity>
-              </View>
-            ))}
-          </View>
-        </CollapsibleSection>
-
-        {/* -- 8. Data -- */}
-        <CollapsibleSection title="Data">
-        <View style={styles.card}>
-          <TouchableOpacity
-            style={styles.dataBtn}
+        {/* ── SYSTEM ── */}
+        <SectionHeader title="SYSTEM" />
+        <View>
+          <StaticRow label="SYNC" value="SUPABASE · ON" />
+          <SettingsRow
+            label="EXPORT DATA"
+            value="→"
             onPress={handleExport}
-            activeOpacity={0.7}
-          >
-            <Text style={styles.dataBtnText}>Export Data</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.dataBtn}
-            onPress={() => {
-              const doClear = async () => {
-                const uid = auth$.uid.get();
-                if (uid) {
-                  await supabase.from("exercise_weights").delete().eq("user_id", uid);
-                  await supabase.from("increments").delete().eq("user_id", uid);
-                  await supabase.from("workouts").delete().eq("user_id", uid);
-                  await supabase.from("body_log").delete().eq("user_id", uid);
-                  await supabase.from("current_session").delete().eq("id", uid);
-                  await supabase.from("nutrition_settings").delete().eq("id", uid);
-                  await supabase.from("cycle_state").delete().eq("id", uid);
-                  await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
-                }
-                await AsyncStorage.multiRemove([
-                  "ls_profiles", "ls_profiles__m",
-                  "ls_nutrition", "ls_nutrition__m",
-                  "ls_cycle_state", "ls_cycle_state__m",
-                  "ls_current_session", "ls_current_session__m",
-                  "ls_exercise_weights", "ls_exercise_weights__m",
-                  "ls_increments", "ls_increments__m",
-                  "ls_workouts", "ls_workouts__m",
-                  "ls_body_log", "ls_body_log__m",
-                ]);
-                // Reset in-memory state so components don't render stale data
-                profile$.set(undefined as any);
-                cycle_state$.set(undefined as any);
-                nutrition$.set(undefined as any);
-                current_session$.set(undefined as any);
-                await signOut();
-              };
-              if (Platform.OS === "web") {
-                if (window.confirm("This will delete all data. This cannot be undone. Continue?")) {
-                  doClear();
-                }
-              } else {
-                Alert.alert(
-                  "Clear All Data",
-                  "This will delete all workout history, weights, and settings. You'll need to go through onboarding again. This cannot be undone.",
-                  [
-                    { text: "Cancel", style: "cancel" },
-                    { text: "Clear Everything", style: "destructive", onPress: doClear },
-                  ]
-                );
-              }
-            }}
-            activeOpacity={0.7}
-          >
-            <Text style={[styles.dataBtnText, { color: colors.red }]}>
-              Clear All Data
-            </Text>
-          </TouchableOpacity>
+          />
+          <SettingsRow
+            label="EDIT WEIGHTS"
+            value="→"
+            onPress={() => setShowWeightsModal(true)}
+          />
         </View>
-        </CollapsibleSection>
 
-        {/* -- 9. Account -- */}
-        <CollapsibleSection title="Account">
-          <View style={styles.card}>
-            <TouchableOpacity
-              style={styles.dataBtn}
-              onPress={async () => {
-                if (Platform.OS === "web") {
-                  if (window.confirm("Are you sure you want to sign out?")) {
-                    await signOut();
-                  }
-                } else {
-                  Alert.alert("Sign Out", "Are you sure you want to sign out?", [
-                    { text: "Cancel", style: "cancel" },
-                    {
-                      text: "Sign Out",
-                      onPress: async () => {
-                        await signOut();
-                      },
-                    },
-                  ]);
-                }
-              }}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.dataBtnText}>Sign Out</Text>
-            </TouchableOpacity>
-          </View>
-        </CollapsibleSection>
+        {/* ── DANGER ── */}
+        <SectionHeader title="DANGER" />
+        <View>
+          <SettingsRow
+            label="RESET PROGRAM"
+            value="→"
+            onPress={handleClearAllData}
+            danger
+          />
+          <SettingsRow
+            label="SIGN OUT"
+            value="→"
+            onPress={handleSignOut}
+            danger
+          />
+        </View>
+
+        {/* ── FOOTER ── */}
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>JUST PULL · V2.1.0 · MMXXVI</Text>
+        </View>
 
         <View style={{ height: 48 }} />
       </ScrollView>
@@ -1192,33 +903,175 @@ export default function SettingsScreen() {
         onSave={(weight, bf) => {
           const id = Crypto.randomUUID();
           body_log$[id].set({
+            id,
             date: new Date().toISOString().split("T")[0],
             weight,
             body_fat_percent: bf,
           } as any);
+          setLastSavedBodyLog({ weight, body_fat_percent: bf });
+          // Sync bodyweight to nutrition so TDEE recalculates
+          const currentNutrition = nutrition$.get();
+          if (currentNutrition) {
+            nutrition$.weight.set(weight);
+            updateNutritionField("weight", weight);
+          }
           setBodyLogModalVisible(false);
         }}
         onCancel={() => setBodyLogModalVisible(false)}
       />
-    </View>
-  );
-}
 
-// --- mini badge component ----------------------------------------------------
+      {/* Weights Modal */}
+      <Modal
+        visible={showWeightsModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowWeightsModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={[styles.modalBox, { maxHeight: "80%" }]}>
+            <Text style={styles.modalTitle}>WORKING WEIGHTS</Text>
+            <ScrollView showsVerticalScrollIndicator={false}>
+              {COMPOUND_KEYS.map((key) => (
+                <SettingsRow
+                  key={key}
+                  label={keyToDisplayName(key)}
+                  value={`${weights[key]?.working ?? "—"} ${safeProfile.units.toUpperCase()}`}
+                  onPress={() => {
+                    setShowWeightsModal(false);
+                    setTimeout(() => handleEditWeight(key), 300);
+                  }}
+                />
+              ))}
+            </ScrollView>
+            <TouchableOpacity
+              style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: 16 }]}
+              onPress={() => setShowWeightsModal(false)}
+            >
+              <Text style={styles.modalCancelText}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
 
-function NutritionBadge({
-  label,
-  value,
-  color,
-}: {
-  label: string;
-  value: number;
-  color: string;
-}) {
-  return (
-    <View style={styles.badge}>
-      <Text style={[styles.badgeValue, { color }]}>{value}</Text>
-      <Text style={styles.badgeLabel}>{label}</Text>
+      {/* Nutrition Modal */}
+      <Modal
+        visible={showNutritionModal}
+        transparent
+        animationType="fade"
+        onRequestClose={() => setShowNutritionModal(false)}
+      >
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          style={styles.modalOverlay}
+        >
+          <View style={[styles.modalBox, { maxHeight: "80%" }]}>
+            <Text style={styles.modalTitle}>NUTRITION</Text>
+            <ScrollView showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+              <SettingsRow
+                label="AGE"
+                value={String(nutritionForm.age)}
+                onPress={() => {
+                  setShowNutritionModal(false);
+                  setTimeout(() => openEdit("Age (years)", String(nutritionForm.age), (v) => {
+                    const n = parseInt(v, 10);
+                    if (!isNaN(n) && n > 0) {
+                      updateNutritionField("age", n);
+                      nutrition$.age.set(n);
+                    }
+                    closeEdit();
+                  }), 300);
+                }}
+              />
+              <SettingsRow
+                label={`WEIGHT (${safeProfile.units.toUpperCase()})`}
+                value={String(nutritionForm.weight)}
+                onPress={() => {
+                  setShowNutritionModal(false);
+                  setTimeout(() => openEdit(`Body Weight (${safeProfile.units})`, String(nutritionForm.weight), (v) => {
+                    const n = parseFloat(v);
+                    if (!isNaN(n) && n > 0) {
+                      updateNutritionField("weight", n);
+                      nutrition$.weight.set(n);
+                    }
+                    closeEdit();
+                  }), 300);
+                }}
+              />
+              <SettingsRow
+                label={`HEIGHT (${safeProfile.units === "lb" ? "IN" : "CM"})`}
+                value={String(nutritionForm.height)}
+                onPress={() => {
+                  setShowNutritionModal(false);
+                  setTimeout(() => openEdit(`Height (${safeProfile.units === "lb" ? "inches" : "cm"})`, String(nutritionForm.height), (v) => {
+                    const n = parseFloat(v);
+                    if (!isNaN(n) && n > 0) {
+                      updateNutritionField("height", n);
+                      nutrition$.height.set(n);
+                    }
+                    closeEdit();
+                  }), 300);
+                }}
+              />
+              <SettingsRow
+                label="SEX"
+                value={nutritionForm.sex === "male" ? "MALE" : "FEMALE"}
+                onPress={() => {
+                  setShowNutritionModal(false);
+                  setTimeout(() => openPicker(
+                    "Sex",
+                    [
+                      { label: "Male", value: "male" },
+                      { label: "Female", value: "female" },
+                    ],
+                    nutritionForm.sex,
+                    (v) => {
+                      updateNutritionField("sex", v as "male" | "female");
+                      nutrition$.sex.set(v as "male" | "female");
+                      closePicker();
+                    }
+                  ), 300);
+                }}
+              />
+
+              {/* Preview */}
+              <View style={{ padding: 16, borderTopWidth: 1, borderTopColor: colors.hairline }}>
+                <Text style={styles.modalInputLabel}>DAILY TARGETS</Text>
+                <View style={{ flexDirection: "row", justifyContent: "space-around", marginTop: 12 }}>
+                  {(() => {
+                    const t = calculateNutrition(nutritionForm, safeProfile.units);
+                    return (
+                      <>
+                        <View style={{ alignItems: "center" }}>
+                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.accent }}>{t.calories}</Text>
+                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>KCAL</Text>
+                        </View>
+                        <View style={{ alignItems: "center" }}>
+                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.green }}>{t.protein}</Text>
+                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>PROTEIN</Text>
+                        </View>
+                        <View style={{ alignItems: "center" }}>
+                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.text }}>{t.carbs}</Text>
+                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>CARBS</Text>
+                        </View>
+                        <View style={{ alignItems: "center" }}>
+                          <Text style={{ fontFamily: fonts.display, fontSize: 24, lineHeight: 30, color: colors.red }}>{t.fat}</Text>
+                          <Text style={{ fontFamily: fonts.mono, fontSize: 9, letterSpacing: 1.4, color: colors.textSecondary, marginTop: 2 }}>FAT</Text>
+                        </View>
+                      </>
+                    );
+                  })()}
+                </View>
+              </View>
+            </ScrollView>
+            <TouchableOpacity
+              style={[styles.modalBtn, styles.modalCancelBtn, { marginTop: 16 }]}
+              onPress={() => setShowNutritionModal(false)}
+            >
+              <Text style={styles.modalCancelText}>CLOSE</Text>
+            </TouchableOpacity>
+          </View>
+        </KeyboardAvoidingView>
+      </Modal>
     </View>
   );
 }
@@ -1261,225 +1114,109 @@ const styles = StyleSheet.create({
   },
   emptyText: {
     color: colors.textSecondary,
-    ...typography.body,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
     textAlign: "center",
   },
   scroll: {
     flex: 1,
   },
-  scrollContent: {
-    padding: spacing.md,
+
+  // ── Header slab ──
+  headerSlab: {
+    paddingTop: 20,
+    paddingHorizontal: 16,
+    paddingBottom: 14,
+    backgroundColor: colors.bg,
+  },
+  headerLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  headerDisplay: {
+    fontFamily: fonts.display,
+    fontSize: 36,
+    lineHeight: 44,
+    color: colors.text,
+    letterSpacing: -0.3,
+  },
+  accentDot: {
+    color: colors.accent,
+  },
+  headerEmail: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.4,
+    color: colors.textSecondary,
+    marginTop: 2,
+  },
+  hairline: {
+    height: 1,
+    backgroundColor: colors.hairline,
+    marginTop: 14,
   },
 
-  // collapsible section header
-  collapsibleHeader: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    paddingTop: spacing.xl,
-    minHeight: 44,
+  // ── Section headers ──
+  sectionHeader: {
+    paddingTop: 18,
+    paddingBottom: 6,
+    paddingHorizontal: 16,
+    backgroundColor: colors.surface,
   },
   sectionHeaderText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
     color: colors.textSecondary,
-    ...typography.caption,
-  },
-  sectionChevron: {
-    color: colors.textTertiary,
-    fontSize: 14,
   },
 
-  // card
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    overflow: "hidden",
-  },
-
-  // row
+  // ── Rows ──
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
     paddingVertical: 14,
-    minHeight: 52,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+    minHeight: 48,
   },
   rowLabel: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
     color: colors.text,
-    ...typography.body,
     flex: 1,
-  },
-  rowValueWrap: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
   },
   rowValue: {
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    letterSpacing: 1.2,
     color: colors.textSecondary,
-    ...typography.body,
   },
-  rowChevron: {
-    color: colors.textTertiary,
-    fontSize: 20,
-    lineHeight: 22,
-  },
-
-  divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: colors.separator,
-    marginLeft: spacing.md,
-  },
-
-  // units segment control
-  segmentRow: {
-    flexDirection: "row",
-    margin: spacing.md,
-    borderRadius: radius.sm,
-    overflow: "hidden",
-    backgroundColor: colors.surfaceTertiary,
-  },
-  segmentBtn: {
-    flex: 1,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  segmentBtnActive: {
-    backgroundColor: colors.accent,
-  },
-  segmentText: {
-    color: colors.textSecondary,
-    ...typography.caption,
-  },
-  segmentTextActive: {
-    color: colors.bg,
-  },
-  unitsNote: {
-    color: colors.textTertiary,
-    ...typography.micro,
-    paddingHorizontal: spacing.md,
-    paddingBottom: 14,
-    textAlign: "center",
-  },
-
-  // deload toggle
-  deloadToggle: {
-    paddingHorizontal: 18,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceTertiary,
-  },
-  deloadToggleActive: {
-    backgroundColor: colors.accent,
-  },
-  deloadToggleText: {
-    color: colors.textSecondary,
-    ...typography.bodyBold,
-    fontSize: 14,
-  },
-  deloadToggleTextActive: {
-    color: colors.bg,
-  },
-
-  // nutrition fields
-  nutritionField: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: spacing.md,
-    paddingVertical: 14,
-    minHeight: 52,
-  },
-  nutritionLabel: {
-    color: colors.text,
-    ...typography.body,
-    flex: 1,
-  },
-  nutritionValueBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: radius.sm,
-    backgroundColor: colors.surfaceElevated,
-    minWidth: 72,
-    alignItems: "center",
-  },
-  nutritionValueText: {
-    color: colors.accent,
-    ...typography.bodyBold,
-  },
-
-  // nutrition preview
-  nutritionPreview: {
-    padding: spacing.md,
-  },
-  nutritionPreviewTitle: {
-    color: colors.textSecondary,
-    ...typography.caption,
-    marginBottom: spacing.md,
-  },
-  nutritionTargetsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.md,
-  },
-
-  // badge
-  badge: {
-    alignItems: "center",
-    minWidth: 64,
-  },
-  badgeValue: {
-    ...typography.displaySmall,
-  },
-  badgeLabel: {
-    color: colors.textSecondary,
-    ...typography.caption,
-    marginTop: 2,
-  },
-
-  // nutrition action buttons
-  nutritionActions: {
-    flexDirection: "row",
-    padding: spacing.md,
-    gap: spacing.md,
-  },
-  actionBtn: {
-    flex: 1,
-    paddingVertical: 14,
-    borderRadius: radius.md,
-    alignItems: "center",
-  },
-  clearBtn: {
-    backgroundColor: colors.surfaceTertiary,
-  },
-  clearBtnText: {
+  dangerText: {
     color: colors.red,
-    ...typography.bodyBold,
-  },
-  saveBtn: {
-    backgroundColor: colors.accent,
-  },
-  saveBtnText: {
-    color: colors.bg,
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 15,
   },
 
-  // data
-  dataBtn: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    minHeight: 52,
-    justifyContent: "center",
+  // ── Footer ──
+  footer: {
+    paddingVertical: 32,
+    alignItems: "center",
   },
-  dataBtnText: {
-    color: colors.accent,
-    ...typography.body,
+  footerText: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 2,
+    color: colors.textTertiary,
   },
 
-
-  // edit modal
+  // ── Modals ──
   modalOverlay: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -1489,94 +1226,88 @@ const styles = StyleSheet.create({
   },
   modalBox: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.lg,
-    padding: spacing.xl,
+    borderRadius: 0,
+    padding: 24,
     width: "100%",
     maxWidth: 400,
   },
   modalTitle: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
     color: colors.text,
-    ...typography.subtitle,
-    marginBottom: spacing.md,
+    marginBottom: 16,
+  },
+  modalInputLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 1.4,
+    color: colors.textSecondary,
+    marginBottom: 6,
   },
   modalInput: {
     backgroundColor: colors.surfaceTertiary,
-    borderRadius: radius.md,
+    borderRadius: 0,
     color: colors.text,
     fontSize: 20,
-    fontFamily: "PlusJakartaSans_400Regular",
+    fontFamily: fonts.regular,
     paddingHorizontal: 14,
     paddingVertical: 12,
-    marginBottom: spacing.lg,
+    marginBottom: 16,
   },
   modalButtons: {
     flexDirection: "row",
-    gap: spacing.md,
+    gap: 12,
   },
   modalBtn: {
     flex: 1,
     paddingVertical: 14,
-    borderRadius: radius.md,
+    borderRadius: 0,
     alignItems: "center",
   },
   modalCancelBtn: {
     backgroundColor: colors.surfaceTertiary,
   },
   modalCancelText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
     color: colors.textSecondary,
-    ...typography.bodyBold,
   },
   modalSaveBtn: {
     backgroundColor: colors.accent,
   },
   modalSaveText: {
-    color: colors.bg,
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 15,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    color: colors.textInverse,
   },
 
-  // body log history rows
-  bodyLogRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: spacing.md,
-    paddingVertical: 12,
-    minHeight: 48,
-  },
-  bodyLogDate: {
-    color: colors.text,
-    ...typography.body,
-  },
-  bodyLogValues: {
-    color: colors.textSecondary,
-    ...typography.body,
-  },
-
-  // picker modal
+  // ── Picker modal ──
   pickerOption: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     paddingVertical: 14,
-    paddingHorizontal: spacing.xs,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.separator,
+    paddingHorizontal: 4,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
   },
-  pickerOptionSelected: {
-    // subtle tint
-  },
+  pickerOptionSelected: {},
   pickerOptionText: {
+    fontFamily: fonts.regular,
+    fontSize: 14,
     color: colors.textSecondary,
-    ...typography.body,
   },
   pickerOptionTextSelected: {
     color: colors.accent,
-    fontFamily: "PlusJakartaSans_700Bold",
+    fontFamily: fonts.semiBold,
   },
   pickerCheck: {
     color: colors.accent,
-    fontSize: 18,
-    fontFamily: "PlusJakartaSans_700Bold",
+    fontFamily: fonts.mono,
+    fontSize: 14,
   },
 });

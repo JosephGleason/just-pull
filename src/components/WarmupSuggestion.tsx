@@ -50,32 +50,36 @@ export function WarmupSuggestion({
 const styles = StyleSheet.create({
   container: {
     backgroundColor: colors.surface,
-    borderRadius: radius.lg,
+    borderRadius: 0,
     padding: spacing.md,
     marginHorizontal: spacing.xl,
     marginBottom: spacing.md,
   },
   sectionLabel: {
     color: colors.textSecondary,
-    ...typography.caption,
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
     marginBottom: spacing.sm,
   },
   list: {
-    gap: spacing.xs,
+    gap: 1,
   },
   row: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.sm,
+    borderRadius: 0,
     paddingHorizontal: 12,
     paddingVertical: 10,
   },
   label: {
     color: colors.textSecondary,
-    ...typography.bodyBold,
-    fontSize: 13,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 0.8,
   },
   details: {
     flexDirection: "row",
@@ -111,7 +115,9 @@ const styles = StyleSheet.create({
   },
   skipText: {
     color: colors.textTertiary,
-    ...typography.bodyBold,
-    fontSize: 13,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
 });

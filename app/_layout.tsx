@@ -44,11 +44,19 @@ function RootNavigator() {
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
+    "Anton_400Regular": require("../assets/fonts/Anton_400Regular.ttf"),
     "BebasNeue_400Regular": require("../assets/fonts/BebasNeue_400Regular.ttf"),
     "PlusJakartaSans_400Regular": require("../assets/fonts/PlusJakartaSans_400Regular.ttf"),
     "PlusJakartaSans_500Medium": require("../assets/fonts/PlusJakartaSans_500Medium.ttf"),
     "PlusJakartaSans_600SemiBold": require("../assets/fonts/PlusJakartaSans_600SemiBold.ttf"),
     "PlusJakartaSans_700Bold": require("../assets/fonts/PlusJakartaSans_700Bold.ttf"),
+    "SpaceGrotesk_400Regular": require("../assets/fonts/SpaceGrotesk_400Regular.ttf"),
+    "SpaceGrotesk_500Medium": require("../assets/fonts/SpaceGrotesk_500Medium.ttf"),
+    "SpaceGrotesk_600SemiBold": require("../assets/fonts/SpaceGrotesk_600SemiBold.ttf"),
+    "SpaceGrotesk_700Bold": require("../assets/fonts/SpaceGrotesk_700Bold.ttf"),
+    "JetBrainsMono_400Regular": require("../assets/fonts/JetBrainsMono_400Regular.ttf"),
+    "JetBrainsMono_500Medium": require("../assets/fonts/JetBrainsMono_500Medium.ttf"),
+    "JetBrainsMono_700Bold": require("../assets/fonts/JetBrainsMono_700Bold.ttf"),
   });
 
   useEffect(() => {

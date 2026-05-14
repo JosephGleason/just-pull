@@ -38,7 +38,7 @@ export function resetPrsForNewCycle(
     const w = updated[key];
 
     if (cycle_number === 1) {
-      updated[key] = { exercise_key: key, working: w.working, pr: null, pr_status: null };
+      updated[key] = { exercise_key: key, working: w.working, pr: null, pr_status: null, fail_count: 0 };
     } else {
       if (w.pr_status === "succeeded") {
         updated[key] = {
@@ -46,14 +46,28 @@ export function resetPrsForNewCycle(
           working: w.pr!,
           pr: w.pr! + (increments[key]?.increment ?? 5),
           pr_status: "pending",
+          fail_count: 0,
         };
       } else {
-        updated[key] = {
-          exercise_key: key,
-          working: w.working,
-          pr: w.working + (increments[key]?.increment ?? 5),
-          pr_status: "pending",
-        };
+        const newFailCount = (w.fail_count ?? 0) + 1;
+        if (newFailCount >= 2) {
+          const reduced = Math.round(w.working * 0.9 / 2.5) * 2.5;
+          updated[key] = {
+            exercise_key: key,
+            working: reduced,
+            pr: reduced + (increments[key]?.increment ?? 5),
+            pr_status: "pending",
+            fail_count: 0,
+          };
+        } else {
+          updated[key] = {
+            exercise_key: key,
+            working: w.working,
+            pr: w.working + (increments[key]?.increment ?? 5),
+            pr_status: "pending",
+            fail_count: newFailCount,
+          };
+        }
       }
     }
   }

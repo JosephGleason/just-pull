@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet } from "react-native";
 import { ExerciseType } from "../types";
-import { colors, typography, spacing, radius } from "../theme";
+import { colors, fonts } from "../theme";
 
 interface ExerciseCardProps {
   name: string;
@@ -12,18 +12,9 @@ interface ExerciseCardProps {
   isResting: boolean;
   units: string;
   isChinups: boolean;
-}
-
-// Weight color indicates exercise type — no dots, no borders
-function getWeightColor(type: ExerciseType): string {
-  switch (type) {
-    case "blue":
-      return colors.accent; // amber for heavy compound
-    case "red":
-      return colors.text; // warm white for compound
-    case "black":
-      return colors.textSecondary; // muted for AMRAP
-  }
+  index?: number;
+  isActive?: boolean;
+  isDone?: boolean;
 }
 
 export function ExerciseCard({
@@ -35,102 +26,170 @@ export function ExerciseCard({
   isResting,
   units,
   isChinups,
+  index = 0,
+  isActive = false,
+  isDone = false,
 }: ExerciseCardProps) {
-  const isCompound = type === "blue" || type === "red";
+  const indexLabel = String(index + 1).padStart(2, "0");
+  const isAmrap = type === "black";
+  const scheme = isAmrap
+    ? `${sets}×${reps}+AMRAP`
+    : `${sets}×${reps}`;
+  const weightLabel = isChinups ? `+${weight}` : `${weight}`;
+  const unitLabel = units.toUpperCase();
 
   if (isResting) {
     return (
-      <View style={[styles.card, styles.restingCard]}>
-        <View style={styles.header}>
-          <View style={styles.nameCol}>
-            <Text style={styles.restingName} numberOfLines={1}>{name}</Text>
-          </View>
-          <Text style={styles.restingLabel}>Rest this week</Text>
+      <View style={[styles.row, styles.rowResting]}>
+        <Text style={[styles.indexNum, styles.indexResting]}>{indexLabel}</Text>
+        <View style={styles.center}>
+          <Text style={styles.nameResting} numberOfLines={1}>{name}</Text>
+          <Text style={styles.schemeResting}>REST THIS WEEK</Text>
+        </View>
+        <View style={styles.right}>
+          <Text style={styles.restLabel}>REST</Text>
         </View>
       </View>
     );
   }
 
-  const weightLabel = isChinups
-    ? `+${weight}${units}`
-    : `${weight}${units}`;
-
-  const isAmrap = type === "black";
-  const weightColor = getWeightColor(type);
-
   return (
-    <View style={styles.card}>
-      <View style={styles.header}>
-        <View style={styles.nameCol}>
-          <Text style={styles.name} numberOfLines={1}>{name}</Text>
-          <Text style={styles.details}>
-            {sets} sets x {isAmrap ? `~${reps}` : reps}
-            {isChinups ? "  added weight" : ""}
-          </Text>
-        </View>
-        <View style={styles.weightCol}>
-          {isAmrap && (
-            <Text style={styles.amrapLabel}>AMRAP</Text>
-          )}
-          <Text style={[isCompound ? styles.weight : styles.weightSmall, { color: weightColor }]}>{weightLabel}</Text>
-        </View>
+    <View
+      style={[
+        styles.row,
+        isActive && styles.rowActive,
+        isDone && styles.rowDone,
+      ]}
+    >
+      <Text
+        style={[
+          styles.indexNum,
+          isActive && styles.indexActive,
+          isDone && styles.indexDone,
+        ]}
+      >
+        {indexLabel}
+      </Text>
+      <View style={styles.center}>
+        {isDone ? (
+          <>
+            <Text style={[styles.name, styles.textDone]} numberOfLines={1}>{name}</Text>
+            <Text style={styles.doneLabel}>{"✓"} LOGGED</Text>
+          </>
+        ) : (
+          <>
+            <Text style={styles.name} numberOfLines={1}>{name}</Text>
+            <Text style={styles.scheme}>{scheme}</Text>
+          </>
+        )}
+      </View>
+      <View style={styles.right}>
+        <Text style={[styles.weight, isDone && styles.textDone]}>{weightLabel}</Text>
+        <Text style={[styles.unit, isDone && styles.textDone]}>{unitLabel}</Text>
       </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  card: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
-    padding: spacing.lg,
-    marginBottom: 12,
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+    gap: 12,
   },
-  restingCard: {
+  rowActive: {
+    backgroundColor: colors.accentGlow,
+  },
+  rowDone: {
+    opacity: 0.55,
+  },
+  rowResting: {
     opacity: 0.35,
   },
-  header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+  indexNum: {
+    width: 28,
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 0.11 * 11, // 0.15em
+    color: colors.textTertiary,
   },
-  nameCol: {
+  indexActive: {
+    color: colors.accent,
+  },
+  indexDone: {
+    color: colors.textTertiary,
+  },
+  indexResting: {
+    color: colors.textTertiary,
+  },
+  center: {
     flex: 1,
-    marginRight: spacing.md,
   },
   name: {
+    fontFamily: fonts.semiBold,
+    fontSize: 17,
+    letterSpacing: -0.005 * 17,
     color: colors.text,
-    ...typography.subtitle,
   },
-  details: {
+  nameResting: {
+    fontFamily: fonts.semiBold,
+    fontSize: 17,
+    letterSpacing: -0.005 * 17,
+    color: colors.textTertiary,
+  },
+  scheme: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 0.1 * 10, // 0.1em
     color: colors.textSecondary,
-    ...typography.body,
-    marginTop: spacing.xs,
+    textTransform: "uppercase",
+    marginTop: 2,
   },
-  weightCol: {
+  schemeResting: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 0.1 * 10,
+    color: colors.textTertiary,
+    textTransform: "uppercase",
+    marginTop: 2,
+  },
+  right: {
     alignItems: "flex-end",
   },
   weight: {
-    ...typography.displayLarge,
+    fontFamily: fonts.display,
+    fontSize: 30,
+    lineHeight: 36,
+    color: colors.text,
   },
-  weightSmall: {
-    ...typography.displaySmall,
+  unit: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 0.15 * 9,
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    marginTop: -2,
   },
-  amrapLabel: {
-    color: colors.accent,
-    ...typography.caption,
-    marginBottom: 2,
-  },
-  restingName: {
+  restLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 0.15 * 10,
     color: colors.textTertiary,
-    ...typography.subtitle,
-    textDecorationLine: "line-through",
+    textTransform: "uppercase",
   },
-  restingLabel: {
-    color: colors.textTertiary,
-    ...typography.micro,
-    fontStyle: "italic",
+  doneLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    color: colors.green,
+    textTransform: "uppercase",
+    letterSpacing: 0.1 * 9,
+    marginTop: 2,
+  },
+  textDone: {
+    opacity: 0.7,
   },
 });

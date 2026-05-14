@@ -29,7 +29,7 @@ export function NutritionCard({ targets }: NutritionCardProps) {
           </Text>
           <Text style={styles.macroLabel}>CARBS</Text>
         </View>
-        <View style={[styles.macroPill, { backgroundColor: colors.accentDimGlow }]}>
+        <View style={[styles.macroPill, { backgroundColor: colors.accentGlow }]}>
           <Text style={[styles.macroValue, { color: colors.accentDim }]}>
             {targets.fat}g
           </Text>

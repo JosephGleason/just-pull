@@ -1,187 +1,291 @@
 import React, { useState, useMemo } from "react";
-import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
-import Slider from "@react-native-community/slider";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+} from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "@legendapp/state/react";
-import { workouts$, body_log$ } from "../../src/lib/store";
-import { computeMuscleStates } from "../../src/hooks/useBodyModel";
-import { BodyFigure } from "../../src/components/BodyFigure";
-import { EXERCISE_MUSCLE_MAP } from "../../src/components/body/muscles";
-import { WorkoutLogRow, BodyLogRow } from "../../src/types";
-import { colors, typography, spacing } from "../../src/theme";
+import { workouts$ } from "../../src/lib/store";
+import { EXERCISE_MUSCLE_MAP, MUSCLE_GROUPS } from "../../src/components/body/muscles";
+import { WorkoutLogRow } from "../../src/types";
+import { colors, fonts } from "../../src/theme";
 
-/** Return the ISO date string's midnight UTC as a Date */
+const MS_PER_DAY = 86_400_000;
+
 function toDate(s: string): Date {
   return new Date(s.slice(0, 10) + "T00:00:00Z");
 }
 
-const MS_PER_DAY = 86_400_000;
+const PERIODS = ["7D", "14D", "30D"] as const;
+type Period = (typeof PERIODS)[number];
 
-function formatDate(date: Date): string {
-  const months = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  ];
-  return `${months[date.getUTCMonth()]} ${date.getUTCDate()}, ${date.getUTCFullYear()}`;
+function periodToDays(p: Period): number {
+  switch (p) {
+    case "7D": return 7;
+    case "14D": return 14;
+    case "30D": return 30;
+  }
 }
 
-export default function BodyScreen() {
-  const insets = useSafeAreaInsets();
-  const { width: SCREEN_WIDTH, height: SCREEN_HEIGHT } = useWindowDimensions();
-  const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
-  const bodyLogRecord = (useSelector(body_log$) ?? {}) as Record<string, BodyLogRow>;
-  const [side, setSide] = useState<"front" | "back">("front");
-  const [sliderValue, setSliderValue] = useState(1);
+const MUSCLE_LABELS: Record<string, string> = {
+  chest: "CHEST",
+  shoulders: "SHOULDERS",
+  triceps: "TRICEPS",
+  back: "BACK",
+  biceps: "BICEPS",
+  quads: "QUADS",
+  forearms: "FOREARMS",
+  hamstrings: "HAMS",
+  glutes: "GLUTES",
+  calves: "CALVES",
+};
 
-  const historyValues = Object.values(workoutsRecord);
-  const bodyLogValues = Object.values(bodyLogRecord);
-  const hasHistory = historyValues.length > 0;
-  const hasBodyLog = bodyLogValues.length > 0;
+interface MuscleData {
+  id: string;
+  label: string;
+  sets: number;
+  prev: number;
+}
 
-  // Sort history by date ascending to find first workout
-  const sortedHistory = useMemo(
-    () =>
-      [...historyValues].sort(
-        (a, b) => toDate(a.date).getTime() - toDate(b.date).getTime()
-      ),
-    [historyValues]
-  );
+function computeMuscleSets(
+  workouts: WorkoutLogRow[],
+  cutoffDate: Date,
+  days: number
+): MuscleData[] {
+  const periodStart = new Date(cutoffDate.getTime() - days * MS_PER_DAY);
+  const prevStart = new Date(periodStart.getTime() - days * MS_PER_DAY);
 
-  const firstWorkoutDate = useMemo(
-    () => (sortedHistory.length > 0 ? toDate(sortedHistory[0].date) : null),
-    [sortedHistory]
-  );
-
-  const today = useMemo(() => {
-    const d = new Date();
-    return new Date(
-      d.getUTCFullYear() +
-        "-" +
-        String(d.getUTCMonth() + 1).padStart(2, "0") +
-        "-" +
-        String(d.getUTCDate()).padStart(2, "0") +
-        "T00:00:00Z"
-    );
-  }, []);
-
-  const totalDays = useMemo(
-    () =>
-      firstWorkoutDate
-        ? Math.round(
-            (today.getTime() - firstWorkoutDate.getTime()) / MS_PER_DAY
-          )
-        : 0,
-    [firstWorkoutDate, today]
-  );
-
-  const asOfDate = useMemo(() => {
-    if (!firstWorkoutDate || totalDays === 0) return today;
-    const offsetMs = sliderValue * totalDays * MS_PER_DAY;
-    return new Date(firstWorkoutDate.getTime() + offsetMs);
-  }, [firstWorkoutDate, sliderValue, totalDays, today]);
-
-  const modelState = useMemo(
-    () => computeMuscleStates(workoutsRecord, bodyLogRecord, asOfDate),
-    [workoutsRecord, bodyLogRecord, asOfDate]
-  );
-
-  // Muscles trained in the last 7 days (only shown when slider is near today)
-  const thisWeekMuscles = useMemo(() => {
-    if (sliderValue < 0.95) return [];
-    const sevenDaysAgo = new Date(today.getTime() - 7 * MS_PER_DAY);
-    const recentMuscles = new Set<string>();
-    for (const w of historyValues) {
-      const wDate = toDate(w.date);
-      if (wDate >= sevenDaysAgo && wDate <= today) {
+  const accumulate = (from: Date, to: Date) => {
+    const totals: Record<string, number> = {};
+    for (const m of MUSCLE_GROUPS) totals[m] = 0;
+    for (const w of workouts) {
+      const d = toDate(w.date);
+      if (d >= from && d < to) {
         for (const ex of w.exercises) {
           const mapping = EXERCISE_MUSCLE_MAP[ex.key];
-          if (mapping) {
-            for (const muscle of Object.keys(mapping)) {
-              recentMuscles.add(muscle);
-            }
+          if (!mapping) continue;
+          const setCount = ex.sets.length;
+          for (const [muscle, weight] of Object.entries(mapping)) {
+            totals[muscle] = (totals[muscle] ?? 0) + Math.round(setCount * weight);
           }
         }
       }
     }
-    return Array.from(recentMuscles);
-  }, [historyValues, sliderValue, today]);
-
-  const figureWidth = SCREEN_WIDTH * 0.7;
-  const figureHeight = SCREEN_HEIGHT * 0.55;
-
-  const formatStatValue = (value: number, decimals: number = 0): string => {
-    if (value === 0) return "--";
-    return decimals > 0 ? value.toFixed(decimals) : String(Math.round(value));
+    return totals;
   };
 
+  const current = accumulate(periodStart, cutoffDate);
+  const previous = accumulate(prevStart, periodStart);
+
+  return MUSCLE_GROUPS.map((m) => ({
+    id: m,
+    label: MUSCLE_LABELS[m] ?? m.toUpperCase(),
+    sets: current[m] ?? 0,
+    prev: previous[m] ?? 0,
+  }));
+}
+
+function heatColor(n: number, max: number): string {
+  if (max === 0) return colors.textTertiary;
+  const r = n / max;
+  if (r > 0.75) return colors.accent;
+  if (r > 0.5) return colors.accentHot;
+  if (r > 0.25) return colors.textSecondary;
+  return colors.textTertiary;
+}
+
+export default function BodyScreen() {
+  const insets = useSafeAreaInsets();
+  const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
+  const [period, setPeriod] = useState<Period>("7D");
+
+  const today = useMemo(() => {
+    const d = new Date();
+    return new Date(
+      d.getUTCFullYear() + "-" +
+      String(d.getUTCMonth() + 1).padStart(2, "0") + "-" +
+      String(d.getUTCDate()).padStart(2, "0") + "T00:00:00Z"
+    );
+  }, []);
+
+  const history = useMemo(
+    () => Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date)),
+    [workoutsRecord]
+  );
+
+  const days = periodToDays(period);
+
+  const muscleData = useMemo(
+    () => computeMuscleSets(history, today, days),
+    [history, today, days]
+  );
+
+  const sorted = useMemo(
+    () => [...muscleData].sort((a, b) => b.sets - a.sets),
+    [muscleData]
+  );
+
+  const max = useMemo(() => Math.max(...sorted.map((m) => m.sets), 1), [sorted]);
+  const totalSets = useMemo(() => sorted.reduce((n, m) => n + m.sets, 0), [sorted]);
+  const totalPrev = useMemo(() => sorted.reduce((n, m) => n + m.prev, 0), [sorted]);
+
+  const sessionCount = useMemo(() => {
+    const cutoff = new Date(today.getTime() - days * MS_PER_DAY);
+    return history.filter((w) => toDate(w.date) >= cutoff && toDate(w.date) <= today).length;
+  }, [history, today, days]);
+
+  const allUndertrained = useMemo(() => {
+    if (totalSets === 0) return [];
+    const low = sorted.filter((m) => m.sets > 0 && m.sets <= max * 0.2).map((m) => m.label);
+    const zero = sorted.filter((m) => m.sets === 0).map((m) => m.label);
+    return [...low, ...zero];
+  }, [sorted, max, totalSets]);
+
   return (
-    <View style={[styles.container, { paddingTop: insets.top + spacing.md }]}>
-      {/* Title */}
-      <Text style={styles.title}>THE MIRROR</Text>
-
-      {/* Body Figure */}
-      <View style={styles.figureContainer}>
-        <BodyFigure
-          muscles={modelState.muscles}
-          body_fat_percent={modelState.body_fat_percent}
-          highlightedMuscles={thisWeekMuscles}
-          side={side}
-          onToggleSide={() => setSide((s) => (s === "front" ? "back" : "front"))}
-          width={figureWidth}
-          height={figureHeight}
-        />
-      </View>
-
-      {/* Empty state messages */}
-      {!hasHistory && (
-        <Text style={styles.emptyPrompt}>
-          Complete your first workout to start tracking
-        </Text>
-      )}
-      {hasHistory && !hasBodyLog && (
-        <Text style={styles.emptyPrompt}>
-          Log body measurements in Settings
-        </Text>
-      )}
-
-      {/* Stats Row */}
-      <View style={styles.statsRow}>
-        <View style={styles.statColumn}>
-          <Text style={styles.statValue}>
-            {formatStatValue(modelState.body_weight)}
+    <View style={styles.container}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ paddingTop: insets.top, paddingBottom: 40 }}
+      >
+        {/* ── HEADER SLAB ── */}
+        <View style={styles.headerSlab}>
+          <Text style={styles.fLabel}>VOLUME · BY MUSCLE</Text>
+          <Text style={styles.fDisplay}>
+            {period} HEAT<Text style={styles.accentDot}>.</Text>
           </Text>
-          <Text style={styles.statLabel}>WEIGHT</Text>
         </View>
-        <View style={styles.statColumn}>
-          <Text style={styles.statValue}>
-            {formatStatValue(modelState.body_fat_percent, 1)}
-          </Text>
-          <Text style={styles.statLabel}>BODY FAT %</Text>
-        </View>
-        <View style={styles.statColumn}>
-          <Text style={styles.statValue}>
-            {formatStatValue(modelState.months_trained)}
-          </Text>
-          <Text style={styles.statLabel}>MONTHS TRAINED</Text>
-        </View>
-      </View>
 
-      {/* Timeline Slider */}
-      {hasHistory && (
-        <View style={styles.sliderContainer}>
-          <Text style={styles.dateLabel}>{formatDate(asOfDate)}</Text>
-          <Slider
-            style={styles.slider}
-            minimumValue={0}
-            maximumValue={1}
-            value={sliderValue}
-            onValueChange={setSliderValue}
-            minimumTrackTintColor={colors.accent}
-            maximumTrackTintColor={colors.surfaceTertiary}
-            thumbTintColor={colors.accent}
-          />
+        {/* ── PERIOD SELECTOR ── */}
+        <View style={styles.selectorRow}>
+          {PERIODS.map((pp, idx) => {
+            const isActive = pp === period;
+            const isLast = idx === PERIODS.length - 1;
+            return (
+              <TouchableOpacity
+                key={pp}
+                style={[
+                  styles.selectorTab,
+                  isActive && styles.selectorTabActive,
+                  !isLast && styles.selectorTabBorder,
+                ]}
+                onPress={() => setPeriod(pp)}
+                activeOpacity={0.7}
+              >
+                <Text
+                  style={[
+                    styles.selectorText,
+                    isActive && styles.selectorTextActive,
+                  ]}
+                >
+                  {pp}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
         </View>
-      )}
+
+        {/* ── GLANCE STATS ── */}
+        <View style={styles.glanceRow}>
+          <View style={[styles.glanceCell, styles.glanceBorder]}>
+            <Text style={styles.glanceLabel}>TOTAL SETS</Text>
+            <Text style={styles.glanceNum}>{totalSets}</Text>
+          </View>
+          <View style={[styles.glanceCell, styles.glanceBorder]}>
+            <Text style={styles.glanceLabel}>VS PRIOR</Text>
+            <Text
+              style={[
+                styles.glanceNum,
+                {
+                  color:
+                    totalSets >= totalPrev ? colors.green : colors.accent,
+                },
+              ]}
+            >
+              {totalSets >= totalPrev ? "+" : ""}
+              {totalSets - totalPrev}
+            </Text>
+          </View>
+          <View style={styles.glanceCell}>
+            <Text style={styles.glanceLabel}>SESSIONS</Text>
+            <Text style={styles.glanceNum}>{sessionCount}</Text>
+          </View>
+        </View>
+        <View style={styles.hairline} />
+
+        {/* ── MUSCLE BARS ── */}
+        <View style={styles.barsContainer}>
+          {sorted.map((m, i) => {
+            const pct = max > 0 ? m.sets / max : 0;
+            const delta = m.sets - m.prev;
+            return (
+              <View key={m.id} style={styles.barRow}>
+                <View style={styles.barHeader}>
+                  <View style={styles.barHeaderLeft}>
+                    <Text style={styles.barIndex}>
+                      {String(i + 1).padStart(2, "0")}
+                    </Text>
+                    <Text style={styles.barName}>{m.label}</Text>
+                  </View>
+                  <View style={styles.barHeaderRight}>
+                    <Text
+                      style={[
+                        styles.barDelta,
+                        {
+                          color:
+                            delta > 0
+                              ? colors.green
+                              : delta < 0
+                              ? colors.accent
+                              : colors.textTertiary,
+                        },
+                      ]}
+                    >
+                      {delta > 0 ? "+" : ""}
+                      {delta}
+                    </Text>
+                    <Text style={styles.barSets}>{m.sets}</Text>
+                  </View>
+                </View>
+                <View style={styles.barTrack}>
+                  <View
+                    style={[
+                      styles.barFill,
+                      {
+                        width: `${pct * 100}%`,
+                        backgroundColor: heatColor(m.sets, max),
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            );
+          })}
+        </View>
+
+        {/* ── COACH NOTE ── */}
+        {allUndertrained.length > 0 && (
+          <View style={styles.coachSlab}>
+            <Text style={styles.coachLabel}>
+              UNDERTRAINED · {period}
+            </Text>
+            <Text style={styles.coachTitle}>
+              {allUndertrained[0]}
+              {allUndertrained.length > 1 && (
+                <Text style={styles.coachTitleMuted}>
+                  {" · "}
+                  {allUndertrained.slice(1).join(" · ")}
+                </Text>
+              )}
+            </Text>
+            <Text style={styles.coachHint}>
+              PUSH ACCESSORY VOLUME ON NEXT SESSION
+            </Text>
+          </View>
+        )}
+      </ScrollView>
     </View>
   );
 }
@@ -190,57 +294,191 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: colors.bg,
-    alignItems: "center",
   },
-  title: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: "center",
-    marginBottom: spacing.sm,
-  },
-  figureContainer: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyPrompt: {
-    ...typography.caption,
-    color: colors.textTertiary,
-    textAlign: "center",
-    marginTop: spacing.sm,
-  },
-  statsRow: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    width: "100%",
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.md,
-  },
-  statColumn: {
-    alignItems: "center",
+  scroll: {
     flex: 1,
   },
-  statValue: {
-    ...typography.displayMedium,
+
+  // ── Header ──
+  headerSlab: {
+    paddingTop: 18,
+    paddingHorizontal: 16,
+    paddingBottom: 12,
+  },
+  fLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: colors.textSecondary,
+    marginBottom: 4,
+  },
+  fDisplay: {
+    fontFamily: fonts.display,
+    fontSize: 38,
+    lineHeight: 46,
     color: colors.text,
   },
-  statLabel: {
-    ...typography.caption,
+  accentDot: {
+    color: colors.accent,
+  },
+
+  // ── Period selector (breadcrumb) ──
+  selectorRow: {
+    flexDirection: "row",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+  },
+  selectorTab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
+  },
+  selectorTabActive: {
+    backgroundColor: colors.text,
+  },
+  selectorTabBorder: {
+    borderRightWidth: 1,
+    borderRightColor: colors.hairlineSoft,
+  },
+  selectorText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: colors.textTertiary,
+  },
+  selectorTextActive: {
+    color: colors.textInverse,
+  },
+
+  // ── Glance stats ──
+  glanceRow: {
+    flexDirection: "row",
+  },
+  glanceCell: {
+    flex: 1,
+    padding: 14,
+  },
+  glanceBorder: {
+    borderRightWidth: 1,
+    borderRightColor: colors.hairline,
+  },
+  glanceLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
     color: colors.textSecondary,
-    marginTop: spacing.xs,
+    marginBottom: 2,
   },
-  sliderContainer: {
-    width: "100%",
-    paddingHorizontal: spacing.lg,
-    marginTop: spacing.lg,
+  glanceNum: {
+    fontFamily: fonts.display,
+    fontSize: 40,
+    lineHeight: 48,
+    color: colors.text,
   },
-  dateLabel: {
-    ...typography.caption,
+  hairline: {
+    height: 1,
+    backgroundColor: colors.hairline,
+  },
+
+  // ── Muscle bars ──
+  barsContainer: {
+    paddingTop: 4,
+    paddingBottom: 16,
+  },
+  barRow: {
+    paddingVertical: 10,
+    paddingHorizontal: 16,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairlineSoft,
+  },
+  barHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 6,
+  },
+  barHeaderLeft: {
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  barIndex: {
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 1.6,
+    color: colors.textTertiary,
+    marginRight: 8,
+    width: 20,
+  },
+  barName: {
+    fontFamily: fonts.semiBold,
+    fontSize: 14,
+    color: colors.text,
+  },
+  barHeaderRight: {
+    flexDirection: "row",
+    alignItems: "baseline",
+    gap: 12,
+  },
+  barDelta: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+  },
+  barSets: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    lineHeight: 28,
+    color: colors.text,
+  },
+  barTrack: {
+    height: 10,
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: 0,
+  },
+  barFill: {
+    position: "absolute",
+    left: 0,
+    top: 0,
+    bottom: 0,
+    borderRadius: 0,
+  },
+
+  // ── Coach note ──
+  coachSlab: {
+    backgroundColor: colors.surfaceElevated,
+    padding: 16,
+  },
+  coachLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
     color: colors.textSecondary,
-    textAlign: "center",
-    marginBottom: spacing.sm,
+    marginBottom: 6,
   },
-  slider: {
-    width: "100%",
-    height: 40,
+  coachTitle: {
+    fontFamily: fonts.display,
+    fontSize: 22,
+    lineHeight: 28,
+    color: colors.text,
+  },
+  coachTitleMuted: {
+    fontFamily: fonts.mono,
+    fontSize: 12,
+    letterSpacing: 1,
+    color: colors.textSecondary,
+  },
+  coachHint: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1,
+    color: colors.textSecondary,
+    marginTop: 6,
+    lineHeight: 16,
   },
 });

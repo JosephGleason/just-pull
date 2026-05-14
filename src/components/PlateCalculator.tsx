@@ -264,7 +264,7 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.xl,
+    borderRadius: 0,
     padding: spacing.lg,
     width: "100%",
     maxWidth: 340,
@@ -283,6 +283,7 @@ const styles = StyleSheet.create({
     color: colors.text,
     fontFamily: fonts.display,
     fontSize: 48,
+    lineHeight: 58,
     textAlign: "center",
   },
   totalWeightUnit: {
@@ -334,11 +335,11 @@ const styles = StyleSheet.create({
     width: 8,
     height: 16,
     backgroundColor: colors.textTertiary,
-    borderTopLeftRadius: 3,
-    borderBottomLeftRadius: 3,
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
   },
   plate: {
-    borderRadius: 4,
+    borderRadius: 0,
     marginLeft: 2,
     justifyContent: "center",
     alignItems: "center",
@@ -351,8 +352,8 @@ const styles = StyleSheet.create({
     height: 6,
     width: 60,
     backgroundColor: colors.textTertiary,
-    borderTopRightRadius: 3,
-    borderBottomRightRadius: 3,
+    borderTopRightRadius: 0,
+    borderBottomRightRadius: 0,
     marginLeft: 2,
   },
   summaryList: {
@@ -367,7 +368,7 @@ const styles = StyleSheet.create({
   summaryDot: {
     width: 10,
     height: 10,
-    borderRadius: 5,
+    borderRadius: 0,
   },
   summaryText: {
     color: colors.textSecondary,

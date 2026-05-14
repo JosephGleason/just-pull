@@ -12,20 +12,25 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { signIn, signUp } from "../src/lib/auth";
-import { colors, typography, spacing, radius } from "../src/theme";
+import { colors, fonts } from "../src/theme";
 
 const friendlyError = (msg: string) => {
   if (msg.includes("Invalid login")) return "Incorrect email or password.";
-  if (msg.includes("already registered")) return "An account with this email already exists. Try signing in.";
-  if (msg.includes("Password")) return "Password must be at least 6 characters.";
+  if (msg.includes("already registered"))
+    return "An account with this email already exists. Try signing in.";
+  if (msg.includes("Password"))
+    return "Password must be at least 6 characters.";
   return "Something went wrong. Please try again.";
 };
+
+type Mode = "signin" | "create";
 
 export default function AuthScreen() {
   const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [mode, setMode] = useState<Mode>("signin");
 
   const handleSignIn = async () => {
     if (!email.trim() || !password.trim()) return;
@@ -43,87 +48,149 @@ export default function AuthScreen() {
     if (error) Alert.alert("Error", friendlyError(error.message));
   };
 
+  const handleCTA = mode === "signin" ? handleSignIn : handleSignUp;
+  const ctaLabel = mode === "signin" ? "SIGN IN ▸" : "CREATE ACCOUNT ▸";
+
   return (
     <KeyboardAvoidingView
       style={styles.root}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
-      <View
-        style={[
-          styles.container,
-          { paddingTop: Math.max(insets.top + 16, 60) },
-        ]}
-      >
-        {/* Header */}
-        <View style={styles.header}>
-          <Text style={styles.brand}>JUST PULL</Text>
-          <Text style={styles.subtitle}>
-            Sign in to sync your training
+      <View style={[styles.container, { paddingTop: insets.top }]}>
+        {/* ── Wordmark slab ── */}
+        <View style={styles.wordmark}>
+          <Text style={styles.volLabel}>VOL. 01 · THE PROGRAM</Text>
+          <Text style={styles.display}>
+            JUST{"\n"}PULL<Text style={styles.displayDot}>.</Text>
+          </Text>
+          <Text style={styles.tagline}>
+            A LOGBOOK FOR THE LVYSAUR{"\n"}INTERMEDIATE AESTHETIC ROUTINE.
           </Text>
         </View>
+        <View style={styles.strongDivider} />
 
-        {/* Form */}
-        <View style={styles.form}>
-          <View>
-            <Text style={styles.inputLabel}>Email</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="email@address.com"
-              placeholderTextColor={colors.textTertiary}
-              value={email}
-              onChangeText={setEmail}
-              autoCapitalize="none"
-              keyboardType="email-address"
-              autoCorrect={false}
-              editable={!loading}
-              accessibilityLabel="Email address"
-            />
-          </View>
-          <View>
-            <Text style={styles.inputLabel}>Password</Text>
-            <TextInput
-              style={styles.input}
-              placeholder="Password"
-              placeholderTextColor={colors.textTertiary}
-              value={password}
-              onChangeText={setPassword}
-              secureTextEntry
-              autoCapitalize="none"
-              autoCorrect={false}
-              editable={!loading}
-              accessibilityLabel="Password"
-            />
-          </View>
-        </View>
-
-        {/* Buttons */}
-        <View style={styles.buttons}>
+        {/* ── Mode tabs ── */}
+        <View style={styles.tabRow}>
           <TouchableOpacity
-            style={[styles.signInButton, loading && styles.buttonDisabled]}
-            onPress={handleSignIn}
-            disabled={loading}
+            style={[styles.tab, mode === "signin" && styles.tabActive]}
+            onPress={() => setMode("signin")}
             activeOpacity={0.7}
-            accessibilityLabel="Sign in"
-            accessibilityRole="button"
+            accessibilityRole="tab"
+            accessibilityState={{ selected: mode === "signin" }}
+            accessibilityLabel="Sign in tab"
           >
-            {loading ? (
-              <ActivityIndicator color={colors.bg} />
-            ) : (
-              <Text style={styles.signInButtonText}>Sign In</Text>
-            )}
+            <Text
+              style={[
+                styles.tabText,
+                mode === "signin" && styles.tabTextActive,
+              ]}
+            >
+              SIGN IN
+            </Text>
           </TouchableOpacity>
-
+          <View style={styles.tabDivider} />
           <TouchableOpacity
-            style={[styles.createAccountButton, loading && styles.buttonDisabled]}
-            onPress={handleSignUp}
-            disabled={loading}
+            style={[styles.tab, mode === "create" && styles.tabActive]}
+            onPress={() => setMode("create")}
             activeOpacity={0.7}
-            accessibilityLabel="Create account"
-            accessibilityRole="button"
+            accessibilityRole="tab"
+            accessibilityState={{ selected: mode === "create" }}
+            accessibilityLabel="Create account tab"
           >
-            <Text style={styles.createAccountButtonText}>Create Account</Text>
+            <Text
+              style={[
+                styles.tabText,
+                mode === "create" && styles.tabTextActive,
+              ]}
+            >
+              CREATE
+            </Text>
           </TouchableOpacity>
         </View>
+        <View style={styles.hairlineDivider} />
+
+        {/* ── Email input slab ── */}
+        <View style={styles.inputSlab}>
+          <Text style={styles.inputLabel}>EMAIL</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="email@address.com"
+            placeholderTextColor={colors.textTertiary}
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            autoCorrect={false}
+            editable={!loading}
+            accessibilityLabel="Email address"
+          />
+        </View>
+
+        {/* ── Password input slab ── */}
+        <View style={styles.inputSlab}>
+          <Text style={styles.inputLabel}>PASSWORD</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="••••••••"
+            placeholderTextColor={colors.textTertiary}
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+            editable={!loading}
+            accessibilityLabel="Password"
+          />
+        </View>
+
+        {/* ── Spacer ── */}
+        <View style={styles.spacer} />
+
+        {/* ── CTA slab ── */}
+        <TouchableOpacity
+          style={[styles.ctaButton, loading && styles.ctaDisabled]}
+          onPress={handleCTA}
+          disabled={loading}
+          activeOpacity={0.7}
+          accessibilityLabel={
+            mode === "signin" ? "Sign in" : "Create account"
+          }
+          accessibilityRole="button"
+        >
+          {loading ? (
+            <ActivityIndicator color="#FFFFFF" />
+          ) : (
+            <Text style={styles.ctaText}>{ctaLabel}</Text>
+          )}
+        </TouchableOpacity>
+
+        {/* ── Footer toggle ── */}
+        <View style={styles.footer}>
+          {mode === "signin" ? (
+            <Text style={styles.footerText}>
+              NO ACCOUNT?{" "}
+              <Text
+                style={styles.footerLink}
+                onPress={() => setMode("create")}
+              >
+                CREATE
+              </Text>
+            </Text>
+          ) : (
+            <Text style={styles.footerText}>
+              EXISTING USER?{" "}
+              <Text
+                style={styles.footerLink}
+                onPress={() => setMode("signin")}
+              >
+                SIGN IN
+              </Text>
+            </Text>
+          )}
+        </View>
+
+        {/* Bottom safe area padding */}
+        <View style={{ height: Math.max(insets.bottom, 16) }} />
       </View>
     </KeyboardAvoidingView>
   );
@@ -136,77 +203,140 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    paddingTop: 60,
-    paddingBottom: 36,
-    paddingHorizontal: spacing.xl,
+  },
+
+  // ── Wordmark slab ──
+  wordmark: {
+    paddingTop: 40,
+    paddingHorizontal: 16,
+    paddingBottom: 24,
+  },
+  volLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
+    color: colors.textSecondary,
+    marginBottom: 12,
+  },
+  display: {
+    fontFamily: fonts.display,
+    fontSize: 76,
+    lineHeight: 72,
+    color: colors.text,
+  },
+  displayDot: {
+    color: colors.accent,
+  },
+  tagline: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    letterSpacing: 1.6,
+    lineHeight: 11 * 1.5,
+    color: colors.textSecondary,
+    textTransform: "uppercase",
+    marginTop: 10,
+    maxWidth: 240,
+  },
+  strongDivider: {
+    height: 1,
+    backgroundColor: colors.hairlineStrong,
+  },
+
+  // ── Mode tabs ──
+  tabRow: {
+    flexDirection: "row",
+  },
+  tab: {
+    flex: 1,
+    paddingVertical: 10,
+    alignItems: "center",
     justifyContent: "center",
   },
+  tabActive: {
+    backgroundColor: colors.text,
+  },
+  tabText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: colors.textTertiary,
+  },
+  tabTextActive: {
+    color: colors.textInverse,
+  },
+  tabDivider: {
+    width: 1,
+    backgroundColor: colors.hairlineSoft,
+  },
+  hairlineDivider: {
+    height: 1,
+    backgroundColor: colors.hairline,
+  },
 
-  // Header
-  header: {
-    alignItems: "center",
-    marginBottom: spacing.xl,
-  },
-  brand: {
-    ...typography.displayLarge,
-    color: colors.accent,
-    letterSpacing: 6,
-    marginBottom: spacing.md,
-  },
-  subtitle: {
-    color: colors.textSecondary,
-    ...typography.body,
-    lineHeight: 22,
-  },
-
-  // Form
-  form: {
-    gap: spacing.md,
-    marginBottom: spacing.xl,
+  // ── Input slabs ──
+  inputSlab: {
+    paddingHorizontal: 16,
+    paddingVertical: 16,
   },
   inputLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.6,
+    textTransform: "uppercase",
     color: colors.textSecondary,
-    ...typography.bodyBold,
-    marginBottom: spacing.xs,
+    marginBottom: 8,
   },
   input: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: radius.md,
+    backgroundColor: "transparent",
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairlineStrong,
+    fontFamily: fonts.regular,
+    fontSize: 18,
     color: colors.text,
-    ...typography.body,
-    height: 52,
-    paddingHorizontal: spacing.md,
+    paddingVertical: 6,
+    paddingHorizontal: 0,
   },
 
-  // Buttons
-  buttons: {
-    gap: spacing.md,
+  // ── Spacer ──
+  spacer: {
+    flex: 1,
+    minHeight: 20,
   },
-  signInButton: {
+
+  // ── CTA button ──
+  ctaButton: {
     backgroundColor: colors.accent,
-    height: 56,
-    borderRadius: 14,
-    justifyContent: "center",
+    paddingVertical: 18,
     alignItems: "center",
-  },
-  signInButtonText: {
-    color: colors.bg,
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 15,
-  },
-  createAccountButton: {
-    backgroundColor: colors.surface,
-    height: 56,
-    borderRadius: 14,
     justifyContent: "center",
-    alignItems: "center",
   },
-  createAccountButtonText: {
-    color: colors.textSecondary,
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 15,
+  ctaText: {
+    fontFamily: fonts.display,
+    fontSize: 26,
+    color: "#FFFFFF",
+    letterSpacing: 26 * 0.06,
+    textTransform: "uppercase",
   },
-  buttonDisabled: {
+  ctaDisabled: {
     opacity: 0.5,
+  },
+
+  // ── Footer ──
+  footer: {
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    alignItems: "center",
+  },
+  footerText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    color: colors.textTertiary,
+  },
+  footerLink: {
+    color: colors.accent,
   },
 });

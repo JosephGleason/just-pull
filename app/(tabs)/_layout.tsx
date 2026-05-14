@@ -1,6 +1,7 @@
+import React from "react";
 import { Tabs } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
-import { colors } from "../../src/theme";
+import { View, StyleSheet } from "react-native";
+import { colors, fonts } from "../../src/theme";
 
 export default function TabLayout() {
   return (
@@ -8,66 +9,57 @@ export default function TabLayout() {
       screenOptions={{
         tabBarStyle: {
           backgroundColor: colors.bg,
-          borderTopColor: colors.separator,
-          borderTopWidth: 0.5,
-          paddingTop: 8,
-          paddingBottom: 16,
+          borderTopColor: colors.hairline,
+          borderTopWidth: 1,
         },
         tabBarShowLabel: true,
+        tabBarIconStyle: { display: "none" },
         tabBarLabelStyle: {
-          fontFamily: "PlusJakartaSans_500Medium",
-          fontSize: 9,
+          fontFamily: fonts.mono,
+          fontSize: 10,
+          letterSpacing: 1.6,
           textTransform: "uppercase",
-          letterSpacing: 1.2,
+          marginTop: 0,
+          marginBottom: 0,
         },
-        tabBarActiveTintColor: colors.accent,
+        tabBarActiveTintColor: colors.text,
         tabBarInactiveTintColor: colors.textTertiary,
+        tabBarActiveBackgroundColor: "transparent",
+        tabBarItemStyle: {
+          borderRightWidth: 1,
+          borderRightColor: colors.hairlineSoft,
+          paddingTop: 12,
+          paddingBottom: 11,
+        },
         headerShown: false,
       }}
     >
       <Tabs.Screen
         name="index"
-        options={{
-          title: "Today",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="barbell-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Today" }}
       />
       <Tabs.Screen
         name="progress"
-        options={{
-          title: "Progress",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="trending-up-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Prog" }}
       />
       <Tabs.Screen
         name="history"
-        options={{
-          title: "History",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="calendar-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Hist" }}
       />
       <Tabs.Screen
         name="body"
-        options={{
-          title: "Body",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="body-outline" size={size} color={color} />
-          ),
-        }}
+        options={{ title: "Body" }}
       />
       <Tabs.Screen
         name="settings"
         options={{
-          title: "Settings",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" size={size} color={color} />
-          ),
+          title: "≡",
+          tabBarLabelStyle: {
+            fontFamily: fonts.mono,
+            fontSize: 16,
+            letterSpacing: 0,
+            marginTop: -2,
+          },
         }}
       />
     </Tabs>

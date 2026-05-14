@@ -81,6 +81,7 @@ export interface ExerciseWeightInput {
   working: number;
   pr: number | null;
   pr_status: PrStatus | null;
+  fail_count: number;
 }
 export interface ExerciseWeightRow extends ExerciseWeightInput, OwnedDbRow {}
 

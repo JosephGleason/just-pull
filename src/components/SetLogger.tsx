@@ -4,12 +4,11 @@ import {
   Text,
   StyleSheet,
   TouchableOpacity,
-  TextInput,
+  ScrollView,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import { ExerciseType, SetLog } from "../types";
-import { colors, typography, spacing, radius } from "../theme";
 import { PlateCalculator } from "./PlateCalculator";
+import { colors, fonts } from "../theme";
 
 interface SetLoggerProps {
   exerciseName: string;
@@ -45,12 +44,31 @@ export function SetLogger({
   lastSet,
 }: SetLoggerProps) {
   const [currentWeight, setCurrentWeight] = useState(weight);
-  const [reps, setReps] = useState(String(targetReps));
+  const [reps, setReps] = useState(targetReps);
   const [showPlateCalc, setShowPlateCalc] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const isAmrap = exerciseType === "black";
   const increment = exerciseType === "black" ? 5 : 2.5;
+
+  const allSetsDone = setNumber > totalSets;
+
+  // Build the scheme string, e.g. "4×6"
+  const scheme = `${totalSets}×${targetReps}${isAmrap ? "+" : ""}`;
+
+  // Determine set dot statuses
+  const setDots = Array.from({ length: totalSets }, (_, i) => {
+    const setIdx = i + 1;
+    if (setIdx < setNumber) return "done"; // already logged
+    if (setIdx === setNumber) return "active";
+    return "unlogged";
+  });
+
+  // Weight delta vs target
+  const weightDelta = currentWeight - weight;
+
+  // Reps over target (for AMRAP)
+  const repsOverTarget = reps - targetReps;
 
   const handleWeightChange = (delta: number) => {
     const newWeight = Math.max(0, currentWeight + delta);
@@ -58,14 +76,17 @@ export function SetLogger({
     onWeightChange(newWeight);
   };
 
+  const handleRepsChange = (delta: number) => {
+    setReps((prev) => Math.max(0, prev + delta));
+  };
+
   const handleComplete = () => {
-    const parsedReps = parseInt(reps, 10);
-    if (isNaN(parsedReps) || parsedReps <= 0) return;
+    if (reps <= 0) return;
     if (submitting) return;
     setSubmitting(true);
     onComplete({
       weight: currentWeight,
-      reps: parsedReps,
+      reps: reps,
       is_amrap: isAmrap,
       is_pr: isPrAttempt,
     });
@@ -87,71 +108,170 @@ export function SetLogger({
   const weightLabel = isChinups ? "ADDED WEIGHT" : "WEIGHT";
 
   return (
-    <View style={styles.container}>
-      {/* Set counter */}
-      <View style={styles.setCounterRow}>
-        {isPrAttempt && (
-          <View style={styles.prBadge}>
-            <Text style={styles.prBadgeText}>PR</Text>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={styles.scrollContent}
+      bounces={false}
+      showsVerticalScrollIndicator={false}
+    >
+      {/* ── EXERCISE HEADER SLAB ── */}
+      <View style={styles.headerSlab}>
+        <View style={styles.headerGrid}>
+          <View style={styles.headerLeft}>
+            <Text style={styles.exerciseName}>{exerciseName}</Text>
+            <Text style={styles.exerciseMeta}>
+              SET {setNumber} OF {totalSets}
+              {isAmrap ? " · AMRAP" : ""}
+              {isPrAttempt ? " · PR" : ""}
+              {" · "}{scheme}
+            </Text>
           </View>
-        )}
-        <Text style={styles.setCounter}>
-          SET {setNumber} OF {totalSets}
-        </Text>
-      </View>
-
-      {/* Exercise name */}
-      <Text style={styles.exerciseName}>{exerciseName}</Text>
-
-      {/* Previous performance */}
-      {previousPerformance && (
-        <Text style={styles.previousPerformance}>{previousPerformance}</Text>
-      )}
-
-      {/* Weight display */}
-      <View style={styles.weightLabelRow}>
-        <Text style={styles.weightLabelText}>{weightLabel}</Text>
-        {!isChinups && (
-          <TouchableOpacity
-            onPress={() => setShowPlateCalc(true)}
-            style={styles.platesButton}
-            activeOpacity={0.7}
-            hitSlop={8}
-            accessibilityLabel="Show plate calculator"
-            accessibilityRole="button"
-          >
-            <Ionicons name="layers-outline" size={16} color={colors.textSecondary} />
-            <Text style={styles.platesButtonText}>PLATES</Text>
-          </TouchableOpacity>
-        )}
-      </View>
-      <View style={styles.weightRow}>
-        <TouchableOpacity
-          onPress={() => handleWeightChange(-increment)}
-          style={styles.weightButton}
-          activeOpacity={0.7}
-          accessibilityLabel="Decrease weight"
-          accessibilityRole="button"
-        >
-          <Text style={styles.weightButtonText}>-</Text>
-        </TouchableOpacity>
-
-        <View style={[styles.weightDisplay, isPrAttempt && styles.weightDisplayPr]}>
-          <Text style={[styles.weightValue, isPrAttempt && styles.weightValuePr]}>
-            {currentWeight}
-            <Text style={styles.weightUnitInline}> {units}</Text>
-          </Text>
+          <View style={styles.headerRight}>
+            <View style={styles.setDotsRow}>
+              {setDots.map((status, i) => (
+                <View
+                  key={i}
+                  style={[
+                    styles.setDot,
+                    status === "done" && styles.setDotDone,
+                    status === "active" && styles.setDotActive,
+                    status === "unlogged" && styles.setDotUnlogged,
+                    isPrAttempt && status === "active" && styles.setDotPr,
+                  ]}
+                />
+              ))}
+            </View>
+          </View>
         </View>
 
-        <TouchableOpacity
-          onPress={() => handleWeightChange(increment)}
-          style={styles.weightButton}
-          activeOpacity={0.7}
-          accessibilityLabel="Increase weight"
-          accessibilityRole="button"
-        >
-          <Text style={styles.weightButtonText}>+</Text>
-        </TouchableOpacity>
+        {previousPerformance ? (
+          <>
+            <View style={styles.hairline} />
+            <Text style={styles.prevPerf}>
+              LAST · {previousPerformance.replace(/^Last:\s*/i, "")}
+            </Text>
+          </>
+        ) : null}
+      </View>
+
+      {/* ── WEIGHT STEPPER SLAB ── */}
+      <View style={styles.slab}>
+        <View style={styles.labelRow}>
+          <Text style={styles.slabLabel}>
+            {weightLabel} · {units.toUpperCase()}
+          </Text>
+          {weightDelta !== 0 && (
+            <Text style={styles.deltaLabel}>
+              {weightDelta > 0 ? "+" : ""}{weightDelta} VS TARGET
+            </Text>
+          )}
+          {!isChinups && (
+            <TouchableOpacity
+              onPress={() => setShowPlateCalc(true)}
+              style={styles.platesBtn}
+              activeOpacity={0.7}
+              hitSlop={8}
+              accessibilityLabel="Show plate calculator"
+              accessibilityRole="button"
+            >
+              <Text style={styles.platesBtnText}>PLATES</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+
+        <View style={styles.stepperRow}>
+          <TouchableOpacity
+            onPress={() => handleWeightChange(-increment)}
+            style={styles.stepButton}
+            activeOpacity={0.7}
+            accessibilityLabel="Decrease weight"
+            accessibilityRole="button"
+          >
+            <Text style={styles.stepButtonText}>{"−"}</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.hugeNumeral}>{currentWeight}</Text>
+
+          <TouchableOpacity
+            onPress={() => handleWeightChange(increment)}
+            style={styles.stepButton}
+            activeOpacity={0.7}
+            accessibilityLabel="Increase weight"
+            accessibilityRole="button"
+          >
+            <Text style={styles.stepButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Fine adjustment buttons */}
+        <View style={styles.adjustRow}>
+          {[-5, -2.5, 2.5, 5].map((delta) => (
+            <TouchableOpacity
+              key={delta}
+              onPress={() => handleWeightChange(delta)}
+              style={styles.adjustButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.adjustButtonText}>
+                {delta > 0 ? "+" : ""}{delta}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
+      </View>
+
+      {/* ── REPS STEPPER SLAB ── */}
+      <View style={styles.slab}>
+        <View style={styles.labelRow}>
+          <Text style={styles.slabLabel}>
+            REPS · TARGET {targetReps}{isAmrap ? "+" : ""}
+          </Text>
+          {isAmrap && repsOverTarget > 0 && (
+            <Text style={styles.overTargetLabel}>
+              +{repsOverTarget} OVER TARGET
+            </Text>
+          )}
+        </View>
+
+        <View style={styles.stepperRow}>
+          <TouchableOpacity
+            onPress={() => handleRepsChange(-1)}
+            style={styles.stepButton}
+            activeOpacity={0.7}
+            accessibilityLabel="Decrease reps"
+            accessibilityRole="button"
+          >
+            <Text style={styles.stepButtonText}>{"−"}</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.repsNumeral}>{reps}</Text>
+
+          <TouchableOpacity
+            onPress={() => handleRepsChange(1)}
+            style={styles.stepButton}
+            activeOpacity={0.7}
+            accessibilityLabel="Increase reps"
+            accessibilityRole="button"
+          >
+            <Text style={styles.stepButtonText}>+</Text>
+          </TouchableOpacity>
+        </View>
+
+        {/* Fine adjustment buttons for reps */}
+        <View style={styles.adjustRow}>
+          {[-2, -1, 1, 2, 3].map((delta) => (
+            <TouchableOpacity
+              key={delta}
+              onPress={() => handleRepsChange(delta)}
+              style={styles.adjustButton}
+              activeOpacity={0.7}
+            >
+              <Text style={styles.adjustButtonText}>
+                {delta > 0 ? "+" : ""}{delta}
+              </Text>
+            </TouchableOpacity>
+          ))}
+        </View>
       </View>
 
       {/* Plate Calculator Modal */}
@@ -162,56 +282,27 @@ export function SetLogger({
         onClose={() => setShowPlateCalc(false)}
       />
 
-      {/* Reps input */}
-      <Text style={styles.sectionLabel}>REPS</Text>
-      {isAmrap && (
-        <Text style={styles.amrapHint}>AMRAP (~{targetReps})</Text>
-      )}
-      <View style={styles.repsRow}>
-        <TouchableOpacity
-          onPress={() =>
-            setReps(String(Math.max(0, (parseInt(reps, 10) || 0) - 1)))
-          }
-          style={styles.repsButton}
-          activeOpacity={0.7}
-          accessibilityLabel="Decrease reps"
-          accessibilityRole="button"
-        >
-          <Text style={styles.repsButtonText}>-</Text>
-        </TouchableOpacity>
-
-        <TextInput
-          style={styles.repsInput}
-          value={reps}
-          onChangeText={setReps}
-          keyboardType="number-pad"
-          selectTextOnFocus
-          maxLength={3}
-        />
-
-        <TouchableOpacity
-          onPress={() =>
-            setReps(String((parseInt(reps, 10) || 0) + 1))
-          }
-          style={styles.repsButton}
-          activeOpacity={0.7}
-          accessibilityLabel="Increase reps"
-          accessibilityRole="button"
-        >
-          <Text style={styles.repsButtonText}>+</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Complete Set button */}
+      {/* ── CTA SLAB ── */}
       <TouchableOpacity
-        style={[styles.completeButton, submitting && { opacity: 0.5 }]}
+        style={[
+          styles.ctaButton,
+          allSetsDone && styles.ctaButtonInverted,
+          submitting && { opacity: 0.5 },
+        ]}
         onPress={handleComplete}
         disabled={submitting}
         activeOpacity={0.8}
         accessibilityLabel="Log set"
         accessibilityRole="button"
       >
-        <Text style={styles.completeButtonText}>LOG SET</Text>
+        <Text
+          style={[
+            styles.ctaButtonText,
+            allSetsDone && styles.ctaButtonTextInverted,
+          ]}
+        >
+          {allSetsDone ? "NEXT EXERCISE ▸" : "LOG SET ✓"}
+        </Text>
       </TouchableOpacity>
 
       {lastSet ? (
@@ -224,190 +315,248 @@ export function SetLogger({
           accessibilityRole="button"
         >
           <Text style={styles.repeatButtonText}>
-            REPEAT LAST ({lastSet.weight}{units} x {lastSet.reps})
+            REPEAT LAST ({lastSet.weight}{units} × {lastSet.reps})
           </Text>
         </TouchableOpacity>
       ) : null}
-    </View>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  scroll: {
     flex: 1,
-    paddingHorizontal: spacing.xl,
-    paddingTop: spacing.lg,
-    alignItems: "center",
   },
-  setCounterRow: {
+  scrollContent: {
+    paddingBottom: 32,
+  },
+
+  /* ── Header slab ── */
+  headerSlab: {
+    paddingHorizontal: 16,
+    paddingTop: 14,
+    paddingBottom: 10,
+  },
+  headerGrid: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.xs,
+    justifyContent: "space-between",
+    alignItems: "flex-start",
   },
-  setCounter: {
-    color: colors.textSecondary,
-    ...typography.caption,
+  headerLeft: {
+    flex: 1,
+  },
+  headerRight: {
+    paddingLeft: 12,
+    justifyContent: "center",
   },
   exerciseName: {
+    fontFamily: fonts.display,
+    fontSize: 34,
+    lineHeight: 42,
     color: colors.text,
-    ...typography.title,
-    textAlign: "center",
-    marginBottom: spacing.xs,
+    textTransform: "uppercase",
   },
-  prBadge: {
-    backgroundColor: colors.accent,
-    paddingHorizontal: 10,
-    paddingVertical: 3,
-    borderRadius: 10,
-    marginRight: spacing.sm,
-  },
-  prBadgeText: {
-    color: colors.bg,
-    ...typography.caption,
-    letterSpacing: 0.5,
-  },
-  previousPerformance: {
-    color: colors.textTertiary,
-    ...typography.micro,
-    marginBottom: spacing.lg,
-  },
-  sectionLabel: {
-    color: colors.textSecondary,
-    ...typography.caption,
-    marginBottom: spacing.sm,
-    marginTop: spacing.xl,
-  },
-  weightLabelRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.md,
-    marginTop: spacing.xl,
-    marginBottom: spacing.sm,
-  },
-  weightLabelText: {
-    color: colors.textSecondary,
-    ...typography.caption,
-  },
-  platesButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    backgroundColor: colors.surface,
-    borderRadius: radius.sm,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  platesButtonText: {
-    color: colors.textSecondary,
-    ...typography.caption,
+  exerciseMeta: {
+    fontFamily: fonts.mono,
     fontSize: 10,
-    letterSpacing: 1,
+    color: colors.textSecondary,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginTop: 2,
   },
-  weightRow: {
+
+  /* ── Set dots ── */
+  setDotsRow: {
     flexDirection: "row",
-    alignItems: "center",
-    marginBottom: spacing.md,
+    gap: 4,
   },
-  weightButton: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 26,
-    width: 52,
-    height: 52,
-    justifyContent: "center",
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.cardBorder,
+  setDot: {
+    width: 14,
+    height: 6,
+    borderRadius: 0,
   },
-  weightButtonText: {
-    color: colors.accent,
-    fontSize: 24,
-    fontFamily: "PlusJakartaSans_600SemiBold",
+  setDotUnlogged: {
+    backgroundColor: colors.hairlineStrong,
   },
-  weightDisplay: {
-    alignItems: "center",
-    marginHorizontal: spacing.xl,
-    minWidth: 140,
+  setDotDone: {
+    backgroundColor: colors.text,
   },
-  weightDisplayPr: {
-    shadowColor: colors.accent,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
-    elevation: 8,
+  setDotActive: {
+    backgroundColor: colors.accent,
   },
-  weightValue: {
-    color: colors.text,
-    fontFamily: "BebasNeue_400Regular",
-    fontSize: 64,
+  setDotPr: {
+    backgroundColor: colors.pr,
   },
-  weightValuePr: {
-    color: colors.accent,
+
+  /* ── Previous perf ── */
+  hairline: {
+    height: 1,
+    backgroundColor: colors.hairline,
+    marginTop: 8,
   },
-  weightUnitInline: {
+  prevPerf: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
     color: colors.textTertiary,
-    fontFamily: "BebasNeue_400Regular",
-    fontSize: 28,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginTop: 6,
   },
-  amrapHint: {
-    color: colors.accent,
-    ...typography.micro,
-    marginBottom: spacing.xs,
-    marginTop: -spacing.xs,
+
+  /* ── Slabs ── */
+  slab: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 8,
   },
-  repsRow: {
+  labelRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: spacing.xl,
+    marginBottom: 8,
   },
-  repsButton: {
-    backgroundColor: colors.surfaceElevated,
-    borderRadius: 24,
-    width: 48,
-    height: 48,
-    justifyContent: "center",
-    alignItems: "center",
+  slabLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textSecondary,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
   },
-  repsButtonText: {
+  deltaLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
     color: colors.accent,
-    fontSize: 22,
-    fontFamily: "PlusJakartaSans_600SemiBold",
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginLeft: 8,
   },
-  repsInput: {
-    color: colors.text,
-    ...typography.displayMedium,
-    textAlign: "center",
-    minWidth: 100,
-    marginHorizontal: spacing.md,
+  overTargetLabel: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.pr,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+    marginLeft: 8,
   },
-  completeButton: {
-    backgroundColor: colors.green,
-    borderRadius: 14,
-    height: 64,
-    alignSelf: "stretch",
+  platesBtn: {
+    marginLeft: "auto",
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 0,
+  },
+  platesBtnText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textSecondary,
+    letterSpacing: 1.4,
+    textTransform: "uppercase",
+  },
+
+  /* ── Steppers ── */
+  stepperRow: {
+    flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
   },
-  completeButtonText: {
-    color: colors.bg,
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 16,
-    letterSpacing: 1,
-  },
-  repeatButton: {
+  stepButton: {
+    width: 56,
+    height: 56,
     backgroundColor: colors.surfaceElevated,
-    borderRadius: 14,
-    height: 48,
-    alignSelf: "stretch",
+    borderWidth: 1,
+    borderColor: colors.hairline,
+    borderRadius: 0,
     alignItems: "center",
     justifyContent: "center",
-    marginTop: spacing.sm,
+  },
+  stepButtonText: {
+    fontFamily: fonts.display,
+    fontSize: 32,
+    lineHeight: 38,
+    color: colors.text,
+  },
+  hugeNumeral: {
+    fontFamily: fonts.display,
+    fontSize: 124,
+    color: colors.text,
+    textAlign: "center",
+    minWidth: 180,
+    lineHeight: 150,
+    includeFontPadding: true,
+  },
+  repsNumeral: {
+    fontFamily: fonts.display,
+    fontSize: 96,
+    color: colors.text,
+    textAlign: "center",
+    minWidth: 140,
+    lineHeight: 116,
+    includeFontPadding: true,
+  },
+
+  /* ── Adjustment buttons ── */
+  adjustRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: 8,
+    marginTop: 8,
+  },
+  adjustButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
+    borderRadius: 0,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+  },
+  adjustButtonText: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textSecondary,
+    letterSpacing: 1.4,
+  },
+
+  /* ── CTA ── */
+  ctaButton: {
+    backgroundColor: colors.accent,
+    borderRadius: 0,
+    paddingVertical: 18,
+    marginHorizontal: 16,
+    marginTop: 16,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  ctaButtonInverted: {
+    backgroundColor: colors.text,
+  },
+  ctaButtonText: {
+    fontFamily: fonts.display,
+    fontSize: 26,
+    color: "#FFFFFF",
+    letterSpacing: 1,
+    textTransform: "uppercase",
+  },
+  ctaButtonTextInverted: {
+    color: colors.textInverse,
+  },
+
+  /* ── Repeat last ── */
+  repeatButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
+    borderRadius: 0,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    alignItems: "center",
+    justifyContent: "center",
   },
   repeatButtonText: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
     color: colors.textSecondary,
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 13,
-    letterSpacing: 0.5,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
   },
 });

@@ -51,7 +51,7 @@ describe("advanceCycleState", () => {
 describe("resetPrsForNewCycle", () => {
   test("cycle 1 sets pr to null", () => {
     const weights: Record<string, ExerciseWeightInput> = {
-      bench_4: { exercise_key: "bench_4", working: 135, pr: null, pr_status: null },
+      bench_4: { exercise_key: "bench_4", working: 135, pr: null, pr_status: null, fail_count: 0 },
     };
     const result = resetPrsForNewCycle(weights, { bench_4: { increment: 5 } }, 1);
     expect(result.bench_4.pr).toBeNull();
@@ -60,7 +60,7 @@ describe("resetPrsForNewCycle", () => {
 
   test("cycle 2+ sets pr to working + increment", () => {
     const weights: Record<string, ExerciseWeightInput> = {
-      bench_4: { exercise_key: "bench_4", working: 135, pr: null, pr_status: null },
+      bench_4: { exercise_key: "bench_4", working: 135, pr: null, pr_status: null, fail_count: 0 },
     };
     const result = resetPrsForNewCycle(weights, { bench_4: { increment: 5 } }, 2);
     expect(result.bench_4.pr).toBe(140);
@@ -69,7 +69,7 @@ describe("resetPrsForNewCycle", () => {
 
   test("succeeded PR becomes new working weight", () => {
     const weights: Record<string, ExerciseWeightInput> = {
-      bench_4: { exercise_key: "bench_4", working: 135, pr: 140, pr_status: "succeeded" },
+      bench_4: { exercise_key: "bench_4", working: 135, pr: 140, pr_status: "succeeded", fail_count: 0 },
     };
     const result = resetPrsForNewCycle(weights, { bench_4: { increment: 5 } }, 3);
     expect(result.bench_4.working).toBe(140);
@@ -77,19 +77,40 @@ describe("resetPrsForNewCycle", () => {
     expect(result.bench_4.pr_status).toBe("pending");
   });
 
-  test("failed PR keeps working weight", () => {
+  test("first failed PR keeps working weight, increments fail_count", () => {
     const weights: Record<string, ExerciseWeightInput> = {
-      bench_4: { exercise_key: "bench_4", working: 135, pr: 140, pr_status: "failed" },
+      bench_4: { exercise_key: "bench_4", working: 135, pr: 140, pr_status: "failed", fail_count: 0 },
     };
     const result = resetPrsForNewCycle(weights, { bench_4: { increment: 5 } }, 3);
     expect(result.bench_4.working).toBe(135);
     expect(result.bench_4.pr).toBe(140);
     expect(result.bench_4.pr_status).toBe("pending");
+    expect(result.bench_4.fail_count).toBe(1);
+  });
+
+  test("second consecutive failure drops weight by 10% and resets fail_count", () => {
+    const weights: Record<string, ExerciseWeightInput> = {
+      bench_4: { exercise_key: "bench_4", working: 135, pr: 140, pr_status: "failed", fail_count: 1 },
+    };
+    const result = resetPrsForNewCycle(weights, { bench_4: { increment: 5 } }, 4);
+    expect(result.bench_4.working).toBe(122.5); // 135 * 0.9 = 121.5, rounded to nearest 2.5 = 122.5
+    expect(result.bench_4.pr).toBe(127.5);
+    expect(result.bench_4.pr_status).toBe("pending");
+    expect(result.bench_4.fail_count).toBe(0);
+  });
+
+  test("succeeded PR resets fail_count", () => {
+    const weights: Record<string, ExerciseWeightInput> = {
+      bench_4: { exercise_key: "bench_4", working: 135, pr: 140, pr_status: "succeeded", fail_count: 1 },
+    };
+    const result = resetPrsForNewCycle(weights, { bench_4: { increment: 5 } }, 3);
+    expect(result.bench_4.working).toBe(140);
+    expect(result.bench_4.fail_count).toBe(0);
   });
 
   test("defaults to 5lb increment when not configured", () => {
     const weights: Record<string, ExerciseWeightInput> = {
-      bench_4: { exercise_key: "bench_4", working: 135, pr: null, pr_status: null },
+      bench_4: { exercise_key: "bench_4", working: 135, pr: null, pr_status: null, fail_count: 0 },
     };
     const result = resetPrsForNewCycle(weights, {}, 2);
     expect(result.bench_4.pr).toBe(140);

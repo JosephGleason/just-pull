@@ -254,11 +254,11 @@ const styles = StyleSheet.create({
     width: "100%",
     height: 3,
     backgroundColor: colors.separator,
-    borderRadius: 1.5,
+    borderRadius: 0,
     marginTop: 4,
   },
   intensityFill: {
     height: 3,
-    borderRadius: 1.5,
+    borderRadius: 0,
   },
 });

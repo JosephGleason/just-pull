@@ -1,77 +1,93 @@
-// Iron & Ember Design System
-// A lifting app that feels like forged metal — dark, powerful, precise.
+// FORGE Design System
+// Brutalist, pitch-black, signal-orange. Slabs share edges. The lift dominates.
 
 export const colors = {
-  // Backgrounds
-  bg: "#0B0B0E",                    // Near-black, barely warm
-  surface: "#16161A",              // Cards — slightly more visible elevation
-  surfaceElevated: "#1E1E22",     // Elevated content, modals, inputs
-  surfaceTertiary: "#28282D",     // Pressed states, active inputs
+  // Surfaces
+  bg: "#000000",
+  surface: "#0A0A0A",
+  surfaceElevated: "#131313",
+  surfaceTertiary: "#1C1C1C",
 
-  // Accent — "the ember"
-  accent: "#E8A838",               // Warm amber
-  accentDim: "#C7792F",           // Deeper amber for pressed states
-  accentGlow: "rgba(232, 168, 56, 0.12)", // Subtle amber glow
-  accentHot: "rgba(232, 168, 56, 0.25)", // Intense amber glow (heatmap)
+  // Hairlines / borders
+  hairline: "#232323",
+  hairlineSoft: "#161616",
+  hairlineStrong: "#353535",
+
+  // Accent — signal orange "the ember"
+  accent: "#FF4D14",
+  accentHot: "#FF6D3D",
+  accentGlow: "rgba(255, 77, 20, 0.12)",
+  accentDim: "#D83A07",
 
   // Semantic
-  green: "#5BD488",                // Soft mint — set completion
-  greenGlow: "rgba(91, 212, 136, 0.08)", // Subtle green glow
-  red: "#E85454",                  // Warm red — danger
-  pr: "#E8A838",                   // PRs are golden (same as accent)
-  accentDimGlow: "rgba(199, 121, 47, 0.08)", // Dim accent glow
+  green: "#5BD488",
+  greenGlow: "rgba(91, 212, 136, 0.08)",
+  red: "#FF3B3B",
+  pr: "#FFB84D",
+  prGlow: "rgba(255, 184, 77, 0.06)",
 
   // Text
-  text: "#F2F0EB",                 // Warm white — NOT pure white
-  textSecondary: "#8A897F",       // Warm gray
-  textTertiary: "#6E6D66",        // Dark warm gray — raised for WCAG AA large-text contrast
+  text: "#F2F0EB",
+  textSecondary: "#8A857A",
+  textTertiary: "#4D4A44",
+  textInverse: "#0A0A0A",
 
-  // Borders
-  cardBorder: "rgba(255, 255, 255, 0.04)", // Barely-visible warm white edge
+  // Borders (legacy compat)
+  cardBorder: "rgba(255, 255, 255, 0.04)",
 
   // Separators
-  separator: "#1E1E22",
+  separator: "#232323",
 
   // Overlays
-  overlay: "rgba(0, 0, 0, 0.8)",  // Modal/sheet backdrop
+  overlay: "rgba(0, 0, 0, 0.85)",
 };
 
-// Font families — must match exact names from expo-google-fonts
+// Font families — FORGE typography stack
 export const fonts = {
-  display: "BebasNeue_400Regular",
-  regular: "PlusJakartaSans_400Regular",
-  medium: "PlusJakartaSans_500Medium",
-  semiBold: "PlusJakartaSans_600SemiBold",
-  bold: "PlusJakartaSans_700Bold",
+  display: "Anton_400Regular",           // condensed display numerals
+  displayFallback: "BebasNeue_400Regular",
+  regular: "SpaceGrotesk_400Regular",    // body text
+  medium: "SpaceGrotesk_500Medium",
+  semiBold: "SpaceGrotesk_600SemiBold",
+  bold: "SpaceGrotesk_700Bold",
+  mono: "JetBrainsMono_400Regular",      // labels, data
+  monoMedium: "JetBrainsMono_500Medium",
+  monoBold: "JetBrainsMono_700Bold",
 };
 
 export const typography = {
-  // Display numbers — Bebas Neue
+  // Display numbers — Anton
   displayXL: {
     fontFamily: fonts.display,
     fontSize: 56,
+    letterSpacing: -0.5,
   },
   displayLarge: {
     fontFamily: fonts.display,
     fontSize: 40,
+    letterSpacing: -0.3,
   },
   displayMedium: {
     fontFamily: fonts.display,
     fontSize: 32,
+    letterSpacing: -0.2,
   },
   displaySmall: {
     fontFamily: fonts.display,
     fontSize: 24,
+    letterSpacing: -0.1,
   },
 
-  // Body text — Plus Jakarta Sans
+  // Body text — Space Grotesk
   title: {
     fontFamily: fonts.bold,
     fontSize: 20,
+    letterSpacing: -0.2,
   },
   subtitle: {
     fontFamily: fonts.semiBold,
     fontSize: 16,
+    letterSpacing: -0.1,
   },
   body: {
     fontFamily: fonts.regular,
@@ -81,15 +97,25 @@ export const typography = {
     fontFamily: fonts.semiBold,
     fontSize: 15,
   },
+
+  // Labels — JetBrains Mono
   caption: {
-    fontFamily: fonts.medium,
-    fontSize: 11,
+    fontFamily: fonts.mono,
+    fontSize: 10,
     textTransform: "uppercase" as const,
-    letterSpacing: 1.5,
+    letterSpacing: 1.6,
   },
   micro: {
-    fontFamily: fonts.regular,
+    fontFamily: fonts.mono,
+    fontSize: 9,
+    letterSpacing: 1.4,
+  },
+  label: {
+    fontFamily: fonts.mono,
     fontSize: 10,
+    textTransform: "uppercase" as const,
+    letterSpacing: 1.6,
+    color: colors.textSecondary,
   },
 };
 
@@ -103,8 +129,9 @@ export const spacing = {
 };
 
 export const radius = {
-  sm: 8,
-  md: 12,
-  lg: 16,
-  xl: 20,
+  none: 0,
+  sm: 0,
+  md: 0,
+  lg: 0,
+  xl: 0,
 };

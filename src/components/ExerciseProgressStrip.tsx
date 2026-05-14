@@ -1,7 +1,7 @@
 import React from "react";
 import { View, Text, StyleSheet, TouchableOpacity } from "react-native";
-import { colors, fonts, spacing, radius } from "../theme";
 import { ExerciseLog } from "../types";
+import { colors, fonts } from "../theme";
 
 interface ExerciseProgressStripProps {
   exercises: ExerciseLog[];
@@ -9,36 +9,20 @@ interface ExerciseProgressStripProps {
   onSkipTo: (index: number) => void;
 }
 
-const SHORT_NAMES: Record<string, string> = {
-  Deadlift: "DL",
-  Chinups: "Chin",
-  "BB Rows": "Rows",
-  Curls: "Curls",
-  Bench: "Bench",
-  "Incline Press": "Inc",
-  Flies: "Flies",
-  "Tricep Ext": "Tri",
-  Squat: "Squat",
-  OHP: "OHP",
-  "Calf Raise": "Calf",
-  "Rear Delt Fly": "RDF",
-  "Lat Raise": "Lat",
-};
-
-function getShortName(name: string): string {
-  return SHORT_NAMES[name] ?? name.split(" ")[0].slice(0, 5);
+function getTabLabel(name: string): string {
+  return name.length > 7 ? name.slice(0, 7) : name;
 }
 
-type PillStatus = "completed" | "current" | "skipped" | "upcoming";
+type TabStatus = "done" | "active" | "upcoming";
 
-function getPillStatus(
+function getStatus(
   index: number,
   currentIndex: number,
   setsLogged: number
-): PillStatus {
-  if (index === currentIndex) return "current";
-  if (index > currentIndex) return "upcoming";
-  return setsLogged > 0 ? "completed" : "skipped";
+): TabStatus {
+  if (index === currentIndex) return "active";
+  if (index < currentIndex) return "done";
+  return "upcoming";
 }
 
 export function ExerciseProgressStrip({
@@ -49,13 +33,18 @@ export function ExerciseProgressStrip({
   return (
     <View style={styles.container}>
       {exercises.map((ex, i) => {
-        const status = getPillStatus(i, currentIndex, ex.sets.length);
+        const status = getStatus(i, currentIndex, ex.sets.length);
         const tappable = status === "upcoming";
+        const isLast = i === exercises.length - 1;
 
         return (
           <TouchableOpacity
             key={ex.key}
-            style={[styles.pill, statusBg[status]]}
+            style={[
+              styles.tab,
+              status === "active" && styles.tabActive,
+              !isLast && styles.tabDivider,
+            ]}
             disabled={!tappable}
             onPress={() => onSkipTo(i)}
             activeOpacity={tappable ? 0.7 : 1}
@@ -64,10 +53,16 @@ export function ExerciseProgressStrip({
             accessibilityRole={tappable ? "button" : "text"}
           >
             <Text
-              style={[styles.pillText, statusText[status]]}
+              style={[
+                styles.tabText,
+                status === "done" && styles.tabTextDone,
+                status === "active" && styles.tabTextActive,
+                status === "upcoming" && styles.tabTextUpcoming,
+              ]}
               numberOfLines={1}
             >
-              {getShortName(ex.name)}
+              {status === "done" ? "✓ " : ""}
+              {getTabLabel(ex.name).toUpperCase()}
             </Text>
           </TouchableOpacity>
         );
@@ -79,59 +74,36 @@ export function ExerciseProgressStrip({
 const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs,
-    gap: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
   },
-  pill: {
+  tab: {
     flex: 1,
-    height: 32,
-    borderRadius: radius.sm,
+    paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: spacing.xs,
-    borderWidth: 1,
-    borderColor: "transparent",
   },
-  pillText: {
-    fontFamily: fonts.semiBold,
-    fontSize: 11,
-    letterSpacing: 0.5,
+  tabActive: {
+    backgroundColor: colors.text,
+  },
+  tabDivider: {
+    borderRightWidth: 1,
+    borderRightColor: colors.hairlineSoft,
+  },
+  tabText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    letterSpacing: 1.4,
     textTransform: "uppercase",
-  },
-});
-
-const statusBg = StyleSheet.create({
-  completed: {
-    backgroundColor: colors.surfaceTertiary,
-    borderColor: "transparent",
-  },
-  current: {
-    backgroundColor: colors.accent,
-    borderColor: "transparent",
-  },
-  skipped: {
-    backgroundColor: colors.surface,
-    borderColor: colors.separator,
-  },
-  upcoming: {
-    backgroundColor: colors.surfaceElevated,
-    borderColor: "transparent",
-  },
-});
-
-const statusText = StyleSheet.create({
-  completed: {
-    color: colors.green,
-  },
-  current: {
-    color: colors.bg,
-  },
-  skipped: {
     color: colors.textTertiary,
-    textDecorationLine: "line-through",
   },
-  upcoming: {
+  tabTextDone: {
     color: colors.textSecondary,
+  },
+  tabTextActive: {
+    color: colors.textInverse,
+  },
+  tabTextUpcoming: {
+    color: colors.textTertiary,
   },
 });

@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, TouchableOpacity, StyleSheet } from "react-native";
-import { colors, typography, spacing, radius } from "../theme";
+import { colors, fonts } from "../theme";
 
 interface CalendarGridProps {
   workoutDates: Set<string>;
@@ -10,19 +10,21 @@ interface CalendarGridProps {
   year: number;
   onPrevMonth: () => void;
   onNextMonth: () => void;
+  prDates?: Set<string>;
 }
 
-const DAY_LABELS = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+const DAY_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 
-const MONTH_NAMES = [
-  "January", "February", "March", "April", "May", "June",
-  "July", "August", "September", "October", "November", "December",
-];
 
 function toISODate(year: number, month: number, day: number): string {
   const mm = String(month + 1).padStart(2, "0");
   const dd = String(day).padStart(2, "0");
   return `${year}-${mm}-${dd}`;
+}
+
+function getTodayISO(): string {
+  const now = new Date();
+  return toISODate(now.getFullYear(), now.getMonth(), now.getDate());
 }
 
 export function CalendarGrid({
@@ -33,154 +35,166 @@ export function CalendarGrid({
   year,
   onPrevMonth,
   onNextMonth,
+  prDates,
 }: CalendarGridProps) {
-  // First day of month (0 = Sunday)
-  const firstDayOfWeek = new Date(year, month, 1).getDay();
-  // Total days in month
+  const today = getTodayISO();
+
+  // First day of month — adjust for Monday start (0=Mon, 6=Sun)
+  const firstDayJS = new Date(year, month, 1).getDay(); // 0=Sun
+  const firstDayMon = firstDayJS === 0 ? 6 : firstDayJS - 1;
   const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-  // Build grid cells: leading empty slots + day numbers
+  // Build grid cells
   const cells: (number | null)[] = [];
-  for (let i = 0; i < firstDayOfWeek; i++) {
-    cells.push(null);
-  }
-  for (let d = 1; d <= daysInMonth; d++) {
-    cells.push(d);
-  }
-  // Pad to complete last row
-  while (cells.length % 7 !== 0) {
-    cells.push(null);
-  }
+  for (let i = 0; i < firstDayMon; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+  while (cells.length % 7 !== 0) cells.push(null);
 
-  // Split into weeks (rows)
+  // Split into weeks
   const weeks: (number | null)[][] = [];
   for (let i = 0; i < cells.length; i += 7) {
     weeks.push(cells.slice(i, i + 7));
   }
 
   return (
-    <View style={styles.container}>
-      {/* Month/year header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={onPrevMonth} style={styles.navButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Previous month" accessibilityRole="button">
-          <Text style={styles.navArrow}>{"‹"}</Text>
-        </TouchableOpacity>
-        <Text style={styles.monthLabel}>
-          {MONTH_NAMES[month]} {year}
-        </Text>
-        <TouchableOpacity onPress={onNextMonth} style={styles.navButton} hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }} accessibilityLabel="Next month" accessibilityRole="button">
-          <Text style={styles.navArrow}>{"›"}</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* Day-of-week header row */}
-      <View style={styles.row}>
+    <View>
+      {/* Weekday header */}
+      <View style={styles.weekdayRow}>
         {DAY_LABELS.map((label, i) => (
-          <View key={i} style={styles.cell}>
-            <Text style={styles.dayLabel}>{label}</Text>
+          <View key={i} style={styles.weekdayCell}>
+            <Text style={styles.weekdayText}>{label}</Text>
           </View>
         ))}
       </View>
 
       {/* Calendar grid */}
-      {weeks.map((week, wi) => (
-        <View key={wi} style={styles.row}>
-          {week.map((day, di) => {
-            if (day === null) {
-              return <View key={di} style={styles.cell} />;
-            }
-            const isoDate = toISODate(year, month, day);
-            const hasWorkout = workoutDates.has(isoDate);
-            const isSelected = selectedDate === isoDate;
+      <View style={styles.gridContainer}>
+        {weeks.map((week, wi) => (
+          <View key={wi} style={styles.weekRow}>
+            {week.map((day, di) => {
+              if (day === null) {
+                return (
+                  <View key={di} style={[styles.dayCell, styles.emptyCell]}>
+                    <View style={styles.dayCellInner} />
+                  </View>
+                );
+              }
 
-            return (
-              <TouchableOpacity
-                key={di}
-                style={styles.cell}
-                onPress={() => onSelectDate(isoDate)}
-                activeOpacity={0.7}
-              >
-                <View style={[styles.dayCircle, isSelected && styles.selectedCircle]}>
-                  <Text style={[styles.dayNumber, isSelected && styles.selectedDayNumber]}>
-                    {day}
-                  </Text>
-                </View>
-                {hasWorkout && <View style={styles.dot} />}
-              </TouchableOpacity>
-            );
-          })}
-        </View>
-      ))}
+              const isoDate = toISODate(year, month, day);
+              const hasWorkout = workoutDates.has(isoDate);
+              const isToday = isoDate === today;
+              const isPR = prDates?.has(isoDate) ?? false;
+              const isFuture = isoDate > today;
+              const isSelected = selectedDate === isoDate;
+
+              return (
+                <TouchableOpacity
+                  key={di}
+                  style={[
+                    styles.dayCell,
+                    hasWorkout && !isToday && styles.workoutCell,
+                    isToday && styles.todayCell,
+                    isSelected && !isToday && styles.selectedCell,
+                  ]}
+                  onPress={() => onSelectDate(isoDate)}
+                  activeOpacity={0.7}
+                  accessibilityLabel={`${day}, ${hasWorkout ? "workout day" : ""}${isToday ? " today" : ""}${isPR ? " PR" : ""}`}
+                  accessibilityRole="button"
+                >
+                  <View style={styles.dayCellInner}>
+                    <Text
+                      style={[
+                        styles.dayText,
+                        hasWorkout && !isToday && styles.workoutDayText,
+                        isToday && styles.todayText,
+                        isFuture && styles.futureText,
+                      ]}
+                    >
+                      {day}
+                    </Text>
+                    {isPR && <View style={styles.prDot} />}
+                  </View>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        ))}
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.md,
-    marginBottom: spacing.md,
-  },
-  header: {
+  weekdayRow: {
     flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    marginBottom: spacing.md,
-    paddingHorizontal: spacing.xs,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.hairline,
+    paddingVertical: 8,
   },
-  navButton: {
-    minWidth: 44,
-    minHeight: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  navArrow: {
-    color: colors.accent,
-    fontSize: 24,
-    fontFamily: "PlusJakartaSans_500Medium",
-  },
-  monthLabel: {
-    color: colors.text,
-    ...typography.subtitle,
-  },
-  row: {
-    flexDirection: "row",
-  },
-  cell: {
+  weekdayCell: {
     flex: 1,
     alignItems: "center",
-    paddingVertical: spacing.xs,
-    minHeight: 44,
-    justifyContent: "center",
   },
-  dayLabel: {
-    color: colors.textTertiary,
-    ...typography.caption,
+  weekdayText: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textSecondary,
+    letterSpacing: 1.6,
   },
-  dayCircle: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
+  gridContainer: {
+    backgroundColor: colors.hairlineSoft,
+    gap: 1,
+  },
+  weekRow: {
+    flexDirection: "row",
+    gap: 1,
+  },
+  dayCell: {
+    flex: 1,
+    aspectRatio: 1,
+    backgroundColor: colors.bg,
     alignItems: "center",
     justifyContent: "center",
   },
-  selectedCircle: {
+  dayCellInner: {
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyCell: {
+    opacity: 0.3,
+  },
+  workoutCell: {
+    backgroundColor: colors.surfaceElevated,
+  },
+  todayCell: {
     backgroundColor: colors.accent,
   },
-  dayNumber: {
+  selectedCell: {
+    backgroundColor: colors.surfaceElevated,
+    borderWidth: 1,
+    borderColor: colors.accent,
+  },
+  dayText: {
+    fontFamily: fonts.mono,
+    fontSize: 11,
+    color: colors.textSecondary,
+  },
+  workoutDayText: {
     color: colors.text,
-    ...typography.body,
+    fontFamily: fonts.monoMedium,
   },
-  selectedDayNumber: {
-    color: colors.bg,
-    fontFamily: "PlusJakartaSans_700Bold",
+  todayText: {
+    color: "#FFFFFF",
+    fontFamily: "JetBrainsMono_700Bold",
   },
-  dot: {
-    width: 5,
-    height: 5,
-    borderRadius: 2.5,
-    backgroundColor: colors.green,
+  futureText: {
+    color: colors.textTertiary,
+  },
+  prDot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: colors.pr,
     marginTop: 2,
   },
 });
