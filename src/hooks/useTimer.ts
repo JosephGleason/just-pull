@@ -46,11 +46,12 @@ export function useTimer() {
     setState((prev) => ({ ...prev, secondsLeft: 0, isRunning: false }));
   }, [clear]);
 
+  // Only increase secondsLeft — totalSeconds stays at the original value so
+  // the progress bar continues from where it was rather than jumping backwards.
   const extend = useCallback((extraSeconds: number) => {
     setState((prev) => ({
       ...prev,
       secondsLeft: prev.secondsLeft + extraSeconds,
-      totalSeconds: prev.totalSeconds + extraSeconds,
     }));
   }, []);
 
@@ -64,7 +65,7 @@ export function useTimer() {
     totalSeconds: state.totalSeconds,
     progress:
       state.totalSeconds > 0
-        ? 1 - state.secondsLeft / state.totalSeconds
+        ? Math.max(0, Math.min(1, 1 - state.secondsLeft / state.totalSeconds))
         : 0,
     start,
     dismiss,

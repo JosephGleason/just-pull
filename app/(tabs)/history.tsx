@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from "react-nati
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { useSelector } from "@legendapp/state/react";
-import { workouts$ } from "../../src/lib/store";
+import { workouts$, profile$ } from "../../src/lib/store";
 import { CalendarGrid } from "../../src/components/CalendarGrid";
 import { WorkoutLogRow } from "../../src/types";
 import { colors, fonts, forgeStyles } from "../../src/theme";
@@ -30,7 +30,9 @@ function formatDuration(startedAt: string, completedAt: string | null): string {
   if (!completedAt) return "—";
   const start = new Date(startedAt).getTime();
   const end = new Date(completedAt).getTime();
+  if (isNaN(start) || isNaN(end)) return "—";
   const mins = Math.round((end - start) / 60000);
+  if (mins <= 0) return "—";
   if (mins < 60) return `${mins}m`;
   const h = Math.floor(mins / 60);
   const m = mins % 60;
@@ -46,6 +48,8 @@ export default function HistoryScreen() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const workoutsRecord = (useSelector(workouts$) ?? {}) as Record<string, WorkoutLogRow>;
+  const profile = useSelector(profile$) as { units: string } | undefined;
+  const units = (profile?.units ?? "lb").toUpperCase();
   const history = useMemo(
     () => Object.values(workoutsRecord).sort((a, b) => a.date.localeCompare(b.date)),
     [workoutsRecord]
@@ -227,7 +231,7 @@ export default function HistoryScreen() {
         <View style={[styles.glanceStat, styles.glanceStatBorder]}>
           <Text style={styles.glanceStatLabel}>VOLUME</Text>
           <Text style={styles.glanceStatNum}>{formatVolume(monthStats.volume)}</Text>
-          <Text style={styles.glanceStatSub}>TOTAL LB</Text>
+          <Text style={styles.glanceStatSub}>TOTAL {units}</Text>
         </View>
         <View style={styles.glanceStat}>
           <Text style={styles.glanceStatLabel}>PRS</Text>

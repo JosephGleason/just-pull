@@ -60,6 +60,11 @@ export default function TabLayout() {
             letterSpacing: 0,
             marginTop: -2,
           },
+          tabBarItemStyle: {
+            borderRightWidth: 0,
+            paddingTop: 12,
+            paddingBottom: 11,
+          },
         }}
       />
     </Tabs>

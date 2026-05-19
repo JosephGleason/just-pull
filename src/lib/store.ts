@@ -68,13 +68,22 @@ export const cycle_state$ = observable(
   })
 );
 
+// current_session is a single-row-per-user table that is fully deleted (not
+// soft-deleted) when a workout finishes or is discarded.  We intentionally
+// disable the global `fieldDeleted: "deleted"` setting here so that
+// `current_session$.set(null)` issues a hard DELETE rather than setting a
+// `deleted` flag.  This is correct because:
+//   1. There is at most one row per user — no history to preserve.
+//   2. Realtime subscriptions on other devices receive the DELETE event.
+//   3. A soft-delete would leave a stale row that the next workout start
+//      would need to un-delete, adding unnecessary complexity.
 export const current_session$ = observable(
   syncedSupabase({
     supabase,
     collection: "current_session",
     ...singleRowBase,
     realtime: true,
-    fieldDeleted: false as any,
+    fieldDeleted: false as any, // intentional hard DELETE — see comment above
     filter: (select: any) => select.eq("id", auth$.uid.get()!),
     persist: {
       name: "ls_current_session",
@@ -153,3 +162,30 @@ export const is_ready$ = observable(() => {
     (auth$.uid.get() === null || profile$.get() !== undefined)
   );
 });
+
+// --- Local store cleanup ---
+
+const PERSIST_KEYS = [
+  "ls_profiles", "ls_profiles__m",
+  "ls_nutrition", "ls_nutrition__m",
+  "ls_cycle_state", "ls_cycle_state__m",
+  "ls_current_session", "ls_current_session__m",
+  "ls_exercise_weights", "ls_exercise_weights__m",
+  "ls_increments", "ls_increments__m",
+  "ls_workouts", "ls_workouts__m",
+  "ls_body_log", "ls_body_log__m",
+];
+
+export async function clearLocalStores() {
+  // Clear in-memory collection observables FIRST while Legend-State
+  // metadata is still in AsyncStorage.  The caller is responsible for
+  // ensuring Supabase rows are already deleted before calling this, so
+  // any sync triggered by the .set() calls is a harmless no-op.
+  weights$.set({} as any);
+  increments$.set({} as any);
+  workouts$.set({} as any);
+  body_log$.set({} as any);
+  // Then wipe AsyncStorage to remove Legend-State metadata and any
+  // pending retrySync queue.
+  await AsyncStorage.multiRemove(PERSIST_KEYS);
+}

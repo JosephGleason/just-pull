@@ -30,8 +30,8 @@ export function calculateNutrition(
     bmr = 10 * weightKg + 6.25 * heightCm - 5 * nutrition.age - 161;
   }
 
-  const tdee = bmr * ACTIVITY_MULTIPLIERS[nutrition.activity_level];
-  const calories = Math.round(tdee + GOAL_OFFSETS[nutrition.goal]);
+  const tdee = bmr * (ACTIVITY_MULTIPLIERS[nutrition.activity_level] ?? 1.55);
+  const calories = Math.round(tdee + (GOAL_OFFSETS[nutrition.goal] ?? 0));
 
   const weightLb =
     units === "lb" ? nutrition.weight : nutrition.weight * 2.20462;

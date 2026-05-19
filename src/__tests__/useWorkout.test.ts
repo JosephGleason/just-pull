@@ -10,6 +10,9 @@ jest.mock("../lib/store", () => ({
   increments$: { get: jest.fn() },
   workouts$: {},
 }));
+jest.mock("../lib/auth", () => ({
+  auth$: { uid: { get: () => "test-uid" } },
+}));
 
 import { buildSessionExercises, getTargetWeight } from "../hooks/useWorkout";
 import { CycleStateInput, ExerciseWeightInput } from "../types";

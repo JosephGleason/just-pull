@@ -11,9 +11,11 @@ export async function initAuth() {
   auth$.uid.set(data.session?.user.id ?? null);
   auth$.loading.set(false);
 
-  supabase.auth.onAuthStateChange((_event, session) => {
+  const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
     auth$.uid.set(session?.user.id ?? null);
   });
+
+  return () => subscription.unsubscribe();
 }
 
 export async function signIn(email: string, password: string) {

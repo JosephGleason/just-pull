@@ -33,7 +33,10 @@ export default function AuthScreen() {
   const [mode, setMode] = useState<Mode>("signin");
 
   const handleSignIn = async () => {
-    if (!email.trim() || !password.trim()) return;
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Missing Fields", "Please enter both email and password.");
+      return;
+    }
     setLoading(true);
     const { error } = await signIn(email.trim(), password);
     setLoading(false);
@@ -41,7 +44,10 @@ export default function AuthScreen() {
   };
 
   const handleSignUp = async () => {
-    if (!email.trim() || !password.trim()) return;
+    if (!email.trim() || !password.trim()) {
+      Alert.alert("Missing Fields", "Please enter both email and password.");
+      return;
+    }
     setLoading(true);
     const { error } = await signUp(email.trim(), password);
     setLoading(false);

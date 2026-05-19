@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useMemo } from "react";
+import React, { useState, useCallback, useMemo, useEffect, useRef } from "react";
 import * as Crypto from "expo-crypto";
 import {
   View,
@@ -16,11 +16,10 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSelector } from "@legendapp/state/react";
-import { profile$, cycle_state$, weights$, increments$, nutrition$, body_log$, workouts$, current_session$ } from "../../src/lib/store";
+import { profile$, cycle_state$, weights$, increments$, nutrition$, body_log$, workouts$, current_session$, clearLocalStores } from "../../src/lib/store";
 import { signOut, auth$ } from "../../src/lib/auth";
 import { supabase } from "../../src/lib/supabase";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { COMPOUND_KEYS } from "../../src/program";
+import { ALL_EXERCISE_KEYS } from "../../src/program";
 import { calculateNutrition } from "../../src/hooks/useNutrition";
 import {
   ProfileRow,
@@ -475,6 +474,7 @@ export default function SettingsScreen() {
         weights$[key].set({
           ...(existing ?? { exercise_key: key, pr: null, pr_status: null, fail_count: 0 }),
           working: num,
+          user_id: auth$.uid.get(),
         } as any);
         closeEdit();
       }
@@ -497,6 +497,7 @@ export default function SettingsScreen() {
         increments$[key].set({
           ...(existing ?? { exercise_key: key }),
           increment: num,
+          user_id: auth$.uid.get(),
         } as any);
         closeEdit();
       }
@@ -562,19 +563,6 @@ export default function SettingsScreen() {
     setNutritionForm((prev) => ({ ...prev, [field]: value }));
   }
 
-  function handleSaveNutrition() {
-    if (
-      !nutritionForm.age ||
-      !nutritionForm.weight ||
-      !nutritionForm.height
-    ) {
-      Alert.alert("Incomplete", "Please fill in age, weight, and height.");
-      return;
-    }
-    nutrition$.set(nutritionForm as any);
-    Alert.alert("Saved", "Nutrition settings updated.");
-  }
-
   function handleClearNutrition() {
     Alert.alert("Clear Nutrition", "Remove nutrition data?", [
       { text: "Cancel", style: "cancel" },
@@ -611,28 +599,31 @@ export default function SettingsScreen() {
   // Clear all data
   function handleClearAllData() {
     const doClear = async () => {
-      const uid = auth$.uid.get();
-      if (uid) {
-        await supabase.from("exercise_weights").delete().eq("user_id", uid);
-        await supabase.from("increments").delete().eq("user_id", uid);
-        await supabase.from("workouts").delete().eq("user_id", uid);
-        await supabase.from("body_log").delete().eq("user_id", uid);
-        await supabase.from("current_session").delete().eq("id", uid);
-        await supabase.from("nutrition_settings").delete().eq("id", uid);
-        await supabase.from("cycle_state").delete().eq("id", uid);
-        await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
+      try {
+        const uid = auth$.uid.get();
+        if (uid) {
+          const deletes = [
+            supabase.from("exercise_weights").delete().eq("user_id", uid),
+            supabase.from("increments").delete().eq("user_id", uid),
+            supabase.from("workouts").delete().eq("user_id", uid),
+            supabase.from("body_log").delete().eq("user_id", uid),
+            supabase.from("current_session").delete().eq("id", uid),
+            supabase.from("nutrition_settings").delete().eq("id", uid),
+            supabase.from("cycle_state").delete().eq("id", uid),
+          ];
+          const results = await Promise.all(deletes);
+          const failures = results.filter((r) => r.error);
+          if (failures.length > 0) {
+            Alert.alert("Warning", "Some data could not be deleted from the server. Please try again with a network connection.");
+            return;
+          }
+          await supabase.from("profiles").update({ onboarding_complete: false }).eq("id", uid);
+        }
+        await clearLocalStores();
+        await signOut();
+      } catch {
+        Alert.alert("Error", "Failed to clear data. Please check your connection and try again.");
       }
-      await AsyncStorage.multiRemove([
-        "ls_profiles", "ls_profiles__m",
-        "ls_nutrition", "ls_nutrition__m",
-        "ls_cycle_state", "ls_cycle_state__m",
-        "ls_current_session", "ls_current_session__m",
-        "ls_exercise_weights", "ls_exercise_weights__m",
-        "ls_increments", "ls_increments__m",
-        "ls_workouts", "ls_workouts__m",
-        "ls_body_log", "ls_body_log__m",
-      ]);
-      await signOut();
     };
     if (Platform.OS === "web") {
       if (window.confirm("This will delete all data. This cannot be undone. Continue?")) {
@@ -652,19 +643,18 @@ export default function SettingsScreen() {
 
   // Sign out
   function handleSignOut() {
+    const doSignOut = async () => {
+      await clearLocalStores();
+      await signOut();
+    };
     if (Platform.OS === "web") {
       if (window.confirm("Are you sure you want to sign out?")) {
-        signOut();
+        doSignOut();
       }
     } else {
       Alert.alert("Sign Out", "Are you sure you want to sign out?", [
         { text: "Cancel", style: "cancel" },
-        {
-          text: "Sign Out",
-          onPress: async () => {
-            await signOut();
-          },
-        },
+        { text: "Sign Out", onPress: doSignOut },
       ]);
     }
   }
@@ -684,10 +674,32 @@ export default function SettingsScreen() {
     [nutritionForm, safeProfile.units]
   );
 
-  // Helper: close nutrition modal then run callback after animation
+  // Pending action to run after a modal close animation completes.
+  // We store the callback in a ref and trigger it via useEffect when
+  // the modal visibility state changes to false, avoiding setTimeout races.
+  const pendingModalActionRef = useRef<(() => void) | null>(null);
+
+  useEffect(() => {
+    if (!showNutritionModal && pendingModalActionRef.current) {
+      const action = pendingModalActionRef.current;
+      pendingModalActionRef.current = null;
+      // requestAnimationFrame ensures the modal's close animation has
+      // completed and the next frame is rendered before opening a new modal.
+      requestAnimationFrame(action);
+    }
+  }, [showNutritionModal]);
+
+  useEffect(() => {
+    if (!showWeightsModal && pendingModalActionRef.current) {
+      const action = pendingModalActionRef.current;
+      pendingModalActionRef.current = null;
+      requestAnimationFrame(action);
+    }
+  }, [showWeightsModal]);
+
   function closeNutritionThen(fn: () => void) {
+    pendingModalActionRef.current = fn;
     setShowNutritionModal(false);
-    setTimeout(fn, 300);
   }
 
   // -- render -----------------------------------------------------------------
@@ -719,26 +731,6 @@ export default function SettingsScreen() {
             label="BODYWEIGHT"
             value={latestBodyLog ? `${latestBodyLog.weight} ${safeProfile.units.toUpperCase()}` : `— ${safeProfile.units.toUpperCase()}`}
             onPress={() => setBodyLogModalVisible(true)}
-          />
-          <SettingsRow
-            label="GOAL"
-            value={nutritionForm.goal ? goalLabel(nutritionForm.goal).toUpperCase() : "—"}
-            onPress={() =>
-              openPicker(
-                "Goal",
-                [
-                  { label: "Bulk (+400 kcal)", value: "bulk" },
-                  { label: "Maintain", value: "maintain" },
-                  { label: "Cut (-400 kcal)", value: "cut" },
-                ],
-                nutritionForm.goal,
-                (v) => {
-                  updateNutritionField("goal", v as Goal);
-                  nutrition$.goal.set(v as Goal);
-                  closePicker();
-                }
-              )
-            }
           />
           <SettingsRow
             label="UNITS"
@@ -831,6 +823,12 @@ export default function SettingsScreen() {
                   )
                 }
               />
+              <SettingsRow
+                label="CLEAR NUTRITION"
+                value="→"
+                onPress={handleClearNutrition}
+                danger
+              />
             </>
           ) : (
             <SettingsRow
@@ -913,6 +911,7 @@ export default function SettingsScreen() {
             date: new Date().toISOString().split("T")[0],
             weight,
             body_fat_percent: bf,
+            user_id: auth$.uid.get(),
           } as any);
           setLastSavedBodyLog({ weight, body_fat_percent: bf });
           // Sync bodyweight to nutrition so TDEE recalculates
@@ -937,14 +936,14 @@ export default function SettingsScreen() {
           <View style={[styles.modalBox, { maxHeight: "80%" }]}>
             <Text style={styles.modalTitle}>WORKING WEIGHTS</Text>
             <ScrollView showsVerticalScrollIndicator={false}>
-              {COMPOUND_KEYS.map((key) => (
+              {ALL_EXERCISE_KEYS.map((key) => (
                 <SettingsRow
                   key={key}
                   label={keyToDisplayName(key)}
                   value={`${weights[key]?.working ?? "—"} ${safeProfile.units.toUpperCase()}`}
                   onPress={() => {
+                    pendingModalActionRef.current = () => handleEditWeight(key);
                     setShowWeightsModal(false);
-                    setTimeout(() => handleEditWeight(key), 300);
                   }}
                 />
               ))}

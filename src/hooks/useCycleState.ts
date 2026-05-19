@@ -23,7 +23,7 @@ export function advanceCycleState(current: CycleStateInput): CycleStateInput {
     cycle_number: nextCycle,
     week_number: 1,
     next_day: DAY_SEQUENCE[0],
-    is_deload: nextCycle % 6 === 0,
+    is_deload: nextCycle % 3 === 0,
   };
 }
 

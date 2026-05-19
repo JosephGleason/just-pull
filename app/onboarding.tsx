@@ -16,7 +16,6 @@ import { createInitialCycleState } from "../src/hooks/useCycleState";
 import { ALL_EXERCISE_KEYS, COMPOUND_KEYS } from "../src/program";
 import { profile$, cycle_state$, weights$, increments$, nutrition$ } from "../src/lib/store";
 import { auth$ } from "../src/lib/auth";
-import { supabase } from "../src/lib/supabase";
 import {
   ExerciseWeightInput,
   NutritionInput,
@@ -257,7 +256,7 @@ function StepTimer({
     <View style={s.inputSlab}>
       <View style={s.timerCard}>
         <Text style={s.timerLabel}>Compound Exercises</Text>
-        <Text style={s.timerHint}>SQUAT, BENCH, DEADLIFT, ETcolors.</Text>
+        <Text style={s.timerHint}>SQUAT, BENCH, DEADLIFT, ETC.</Text>
         <View style={s.timerInputRow}>
           <TextInput
             style={s.timerInput}
@@ -273,7 +272,7 @@ function StepTimer({
 
       <View style={s.timerCard}>
         <Text style={s.timerLabel}>Accessory Exercises</Text>
-        <Text style={s.timerHint}>CURLS, FLIES, CALF RAISES, ETcolors.</Text>
+        <Text style={s.timerHint}>CURLS, FLIES, CALF RAISES, ETC.</Text>
         <View style={s.timerInputRow}>
           <TextInput
             style={s.timerInput}
@@ -493,26 +492,25 @@ export default function OnboardingScreen() {
 
     // 1. Update profile
     const currentProfile = profile$.get();
-    if (currentProfile) {
-      profile$.set({
-        ...currentProfile,
-        units: selectedUnits,
-        rest_timer_compound: parseInt(compoundTimer, 10) || 180,
-        rest_timer_accessory: parseInt(accessoryTimer, 10) || 90,
-      });
-    }
+    profile$.set({
+      ...(currentProfile ?? { id: auth$.uid.get()! }),
+      units: selectedUnits,
+      rest_timer_compound: parseInt(compoundTimer, 10) || 180,
+      rest_timer_accessory: parseInt(accessoryTimer, 10) || 90,
+    } as any);
 
     // 2. Create cycle state
     cycle_state$.set({ id: auth$.uid.get()!, ...createInitialCycleState() } as any);
 
     // 3. Exercise weights (compound from user input)
+    const uid = auth$.uid.get();
     for (const ex of COMPOUND_EXERCISES) {
       const raw = startingWeights[ex.label];
       const defaultVal = selectedUnits === "lb" ? ex.defaultLb : ex.defaultKg;
       const weight = raw && raw.trim() !== "" ? parseFloat(raw) : defaultVal;
 
       for (const key of ex.keys) {
-        weights$[key].set({ exercise_key: key, working: weight, pr: null, pr_status: null, fail_count: 0 } as any);
+        weights$[key].set({ exercise_key: key, working: weight, pr: null, pr_status: null, fail_count: 0, user_id: uid } as any);
       }
     }
 
@@ -520,14 +518,15 @@ export default function OnboardingScreen() {
     for (const key of ACCESSORY_KEYS) {
       const defaultLb = ACCESSORY_DEFAULTS[key] ?? 0;
       const defaultWeight = selectedUnits === "lb" ? defaultLb : Math.round(defaultLb / 2.2 / 2.5) * 2.5;
-      weights$[key].set({ exercise_key: key, working: defaultWeight, pr: null, pr_status: null, fail_count: 0 } as any);
+      weights$[key].set({ exercise_key: key, working: defaultWeight, pr: null, pr_status: null, fail_count: 0, user_id: uid } as any);
     }
 
-    // 4. Increments (compound only) — insert directly via Supabase
-    const incrementRows = COMPOUND_EXERCISES.flatMap((ex) =>
-      ex.keys.map((key) => ({ exercise_key: key, increment: ex.increment }))
-    );
-    await supabase.from("increments").insert(incrementRows);
+    // 4. Increments (compound only) — write through Legend-State
+    for (const ex of COMPOUND_EXERCISES) {
+      for (const key of ex.keys) {
+        increments$[key].set({ exercise_key: key, increment: ex.increment, user_id: uid } as any);
+      }
+    }
 
     // 5. Optional nutrition
     const allNutritionFieldsFilled =

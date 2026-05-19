@@ -1,10 +1,12 @@
 import { useRef } from "react";
 import * as Crypto from "expo-crypto";
 import * as Haptics from "expo-haptics";
+import { batch } from "@legendapp/state";
 import { CurrentSessionData, ExerciseLog, SetLog, WorkoutLogInput, ProgramExercise, ExerciseWeightInput, CycleStateInput } from "../types";
 import { getProgramDay, getSetsForWeek } from "../program";
 import { advanceCycleState, resetPrsForNewCycle } from "./useCycleState";
 import { weights$, cycle_state$, current_session$, increments$, workouts$ } from "../lib/store";
+import { auth$ } from "../lib/auth";
 
 export function getTargetSets(
   exerciseKey: string,
@@ -114,7 +116,7 @@ export function useWorkout() {
   const failPr = (exerciseKey: string) => {
     const w = weights$[exerciseKey].get();
     if (!w) return;
-    weights$[exerciseKey].pr_status.set("failed" as const);
+    weights$[exerciseKey].set({ ...w, pr_status: "failed" as const, user_id: auth$.uid.get() } as any);
   };
 
   const finishWorkout = () => {
@@ -124,50 +126,55 @@ export function useWorkout() {
 
     const currentData = sessionRow.data;
     const currentWeights = weights$.get() ?? {};
+    const uid = auth$.uid.get();
 
-    // Check PR success for compound exercises
-    for (const ex of currentData.exercises) {
-      const w = currentWeights[ex.key];
-      if (!w || w.pr_status !== "pending" || w.pr === null) continue;
+    // batch() groups all observable mutations into a single tick, minimising
+    // the window for partial state if the app crashes mid-sequence.
+    batch(() => {
+      // Check PR success for compound exercises
+      for (const ex of currentData.exercises) {
+        const w = currentWeights[ex.key];
+        if (!w || w.pr_status !== "pending" || w.pr === null) continue;
 
-      // Check if all PR sets hit target reps
-      const prSets = ex.sets.filter((s: SetLog) => s.is_pr);
-      if (prSets.length > 0 && prSets.every((s: SetLog) => s.reps >= ex.reps)) {
-        weights$[ex.key].set({ ...w, pr_status: "succeeded" as const });
+        // Check if all PR sets hit target reps
+        const prSets = ex.sets.filter((s: SetLog) => s.is_pr);
+        if (prSets.length > 0 && prSets.every((s: SetLog) => s.reps >= ex.reps)) {
+          weights$[ex.key].set({ ...w, pr_status: "succeeded" as const, user_id: uid } as any);
+        }
       }
-    }
 
-    const workoutLog: WorkoutLogInput = {
-      id: Crypto.randomUUID(),
-      date: new Date().toISOString().split("T")[0],
-      day: currentData.day,
-      week: currentData.week,
-      cycle: currentData.cycle,
-      exercises: currentData.exercises,
-      completed_at: new Date().toISOString(),
-    };
+      const workoutLog: WorkoutLogInput = {
+        id: Crypto.randomUUID(),
+        date: new Date().toISOString().split("T")[0],
+        day: currentData.day,
+        week: currentData.week,
+        cycle: currentData.cycle,
+        exercises: currentData.exercises,
+        completed_at: new Date().toISOString(),
+      };
 
-    workouts$[workoutLog.id].set(workoutLog as any);
+      workouts$[workoutLog.id].set({ ...workoutLog, user_id: uid } as any);
 
-    // Advance cycle state
-    const newCycleState = advanceCycleState(cycleState);
-    const isNewCycle = newCycleState.cycle_number !== cycleState.cycle_number;
+      // Advance cycle state
+      const newCycleState = advanceCycleState(cycleState);
+      const isNewCycle = newCycleState.cycle_number !== cycleState.cycle_number;
 
-    if (isNewCycle) {
-      const currentIncrements = increments$.get() ?? {};
-      const resetWeights = resetPrsForNewCycle(
-        weights$.get() ?? {},
-        currentIncrements,
-        newCycleState.cycle_number
-      );
-      for (const [key, newWeight] of Object.entries(resetWeights)) {
-        weights$[key].set(newWeight as any);
+      if (isNewCycle) {
+        const currentIncrements = increments$.get() ?? {};
+        const resetWeights = resetPrsForNewCycle(
+          weights$.get() ?? {},
+          currentIncrements,
+          newCycleState.cycle_number
+        );
+        for (const [key, newWeight] of Object.entries(resetWeights)) {
+          weights$[key].set({ ...newWeight, user_id: uid } as any);
+        }
       }
-    }
 
-    const existing = cycle_state$.get();
-    cycle_state$.set({ ...existing, ...newCycleState } as any);
-    current_session$.set(null as any);
+      const existing = cycle_state$.get();
+      cycle_state$.set({ ...existing, ...newCycleState } as any);
+      current_session$.set(null as any);
+    });
   };
 
   const discardWorkout = () => {

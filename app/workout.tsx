@@ -11,7 +11,7 @@ import { SetLogger } from "../src/components/SetLogger";
 import { RestTimer } from "../src/components/RestTimer";
 import { ExerciseProgressStrip } from "../src/components/ExerciseProgressStrip";
 import { WorkoutSummary } from "../src/components/WorkoutSummary";
-import { SetLog, ExerciseLog, WorkoutLogRow, ExerciseWeightInput, CurrentSessionData, CurrentSessionRow, CycleStateInput, ProfileRow } from "../src/types";
+import { SetLog, ExerciseLog, WorkoutLogRow, ExerciseWeightInput, CurrentSessionData, CurrentSessionRow, CycleStateInput, ProfileRow, TrainingDay, WeekNumber } from "../src/types";
 import { generateWarmupSets } from "../src/hooks/useWarmup";
 import { WarmupSuggestion } from "../src/components/WarmupSuggestion";
 import { colors, typography, spacing, radius, fonts } from "../src/theme";
@@ -45,11 +45,44 @@ export default function WorkoutScreen() {
   const undoTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const undoCallbackRef = useRef<(() => void) | null>(null);
 
-  // Allow time for current_session$ to sync from Supabase before deciding
-  // whether to resume or start fresh
+  // Wait for current_session$ to hydrate before deciding whether to resume or
+  // start fresh.  We set ready=true as soon as the observable has a non-undefined
+  // value (session exists → resume it) or after a 2-second ceiling (no session →
+  // start new).  This replaces the old fixed 500ms timeout that could race against
+  // slow AsyncStorage / Supabase hydration and accidentally discard a mid-crash
+  // session.
   useEffect(() => {
-    const timer = setTimeout(() => setReady(true), 500);
-    return () => clearTimeout(timer);
+    // If current_session$ already has a value, we're ready immediately.
+    if (current_session$.get() !== undefined) {
+      setReady(true);
+      return;
+    }
+
+    let cancelled = false;
+
+    // Watch for session hydration reactively.
+    const dispose = current_session$.onChange(() => {
+      if (!cancelled) {
+        cancelled = true;
+        dispose();
+        setReady(true);
+      }
+    });
+
+    // Safety ceiling: don't wait forever if there truly is no session.
+    const timeout = setTimeout(() => {
+      if (!cancelled) {
+        cancelled = true;
+        dispose();
+        setReady(true);
+      }
+    }, 2000);
+
+    return () => {
+      cancelled = true;
+      dispose();
+      clearTimeout(timeout);
+    };
   }, []);
 
   // Start or resume workout on mount
@@ -59,7 +92,7 @@ export default function WorkoutScreen() {
     if (currentSession) {
       // Resume: find where we left off
       hasStartedRef.current = true;
-      resumeSession(currentSession.exercises);
+      resumeSession(currentSession);
     } else if (cycleState) {
       hasStartedRef.current = true;
       startWorkout();
@@ -93,18 +126,17 @@ export default function WorkoutScreen() {
     return () => clearInterval(interval);
   }, [currentSession?.started_at]);
 
-  const resumeSession = (exercises: ExerciseLog[]) => {
-    if (!cycleState) return;
-    const programDay = getProgramDay(cycleState.next_day);
+  const resumeSession = (sessionData: CurrentSessionData) => {
+    const programDay = getProgramDay(sessionData.day as TrainingDay);
 
-    for (let i = 0; i < exercises.length; i++) {
-      const ex = exercises[i];
+    for (let i = 0; i < sessionData.exercises.length; i++) {
+      const ex = sessionData.exercises[i];
       const programEx = programDay.exercises.find((pe) => pe.key === ex.key);
       if (!programEx) continue;
       const totalSets = getSetsForWeek(
         programEx,
-        cycleState.week_number,
-        cycleState.is_deload
+        sessionData.week as WeekNumber,
+        cycleState?.is_deload ?? false
       );
 
       if (ex.sets.length < totalSets) {
@@ -114,7 +146,6 @@ export default function WorkoutScreen() {
       }
     }
 
-    // All exercises done
     setIsComplete(true);
   };
 
@@ -207,7 +238,9 @@ export default function WorkoutScreen() {
     timer.dismiss();
     setCurrentExerciseIndex(targetIndex);
     const ex = exercises[targetIndex];
-    setCurrentSetIndex(ex?.sets?.length ?? 0);
+    const logged = ex?.sets?.length ?? 0;
+    setCurrentSetIndex(logged);
+    setIsComplete(false);
   }, [currentExerciseIndex, exercises, timer]);
 
   const handleSkipExercise = useCallback(() => {
@@ -256,28 +289,7 @@ export default function WorkoutScreen() {
       const nextSetIdx = currentSetIndex + 1;
       const isLastSetOfExercise = nextSetIdx >= totalSets;
 
-      // Check PR failure on last set
-      if (isLastSetOfExercise && isPrAttempt) {
-        const targetReps = currentExercise.reps;
-        // Gather all sets for this exercise including the one just completed
-        const allSets = [
-          ...(currentSession?.exercises[currentExerciseIndex]?.sets ?? []),
-          set,
-        ];
-        const prSetsFailedTarget = allSets.some(
-          (s) => s.is_pr && s.reps < targetReps
-        );
-        if (prSetsFailedTarget) {
-          // PR failed -- mark it
-          await failPr(currentExercise.key);
-        }
-      }
-
-      if (
-        !isLastSetOfExercise &&
-        isPrAttempt &&
-        set.reps < currentExercise.reps
-      ) {
+      if (isPrAttempt && set.is_pr && set.reps < currentExercise.reps) {
         failPr(currentExercise.key);
       }
 

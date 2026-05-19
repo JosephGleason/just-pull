@@ -60,7 +60,13 @@ export default function RootLayout() {
   });
 
   useEffect(() => {
-    initAuth();
+    let unsubscribe: (() => void) | undefined;
+    initAuth().then((unsub) => {
+      unsubscribe = unsub;
+    });
+    return () => {
+      unsubscribe?.();
+    };
   }, []);
 
   if (!fontsLoaded) {

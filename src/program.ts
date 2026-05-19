@@ -86,7 +86,11 @@ export const COMPOUND_KEYS = ALL_EXERCISE_KEYS.filter(
 );
 
 export function getProgramDay(day: TrainingDay): ProgramDay {
-  return PROGRAM.find((d) => d.day === day)!;
+  const found = PROGRAM.find((d) => d.day === day);
+  if (!found) {
+    return PROGRAM[0];
+  }
+  return found;
 }
 
 export function getSetsForWeek(
