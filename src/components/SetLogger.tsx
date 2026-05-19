@@ -24,6 +24,7 @@ interface SetLoggerProps {
   isChinups: boolean;
   onComplete: (set: SetLog) => void;
   onWeightChange: (newWeight: number) => void;
+  onSkip: () => void;
   lastSet: SetLog | null;
 }
 
@@ -41,6 +42,7 @@ export function SetLogger({
   isChinups,
   onComplete,
   onWeightChange,
+  onSkip,
   lastSet,
 }: SetLoggerProps) {
   const [currentWeight, setCurrentWeight] = useState(weight);
@@ -127,6 +129,14 @@ export function SetLogger({
             </Text>
           </View>
           <View style={styles.headerRight}>
+            <TouchableOpacity
+              style={styles.skipBtn}
+              onPress={onSkip}
+              activeOpacity={0.7}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <Text style={styles.skipBtnText}>SKIP ▸</Text>
+            </TouchableOpacity>
             <View style={styles.setDotsRow}>
               {setDots.map((status, i) => (
                 <View
@@ -347,7 +357,20 @@ const styles = StyleSheet.create({
   },
   headerRight: {
     paddingLeft: 12,
-    justifyContent: "center",
+    alignItems: "flex-end",
+    gap: 8,
+  },
+  skipBtn: {
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderWidth: 1,
+    borderColor: colors.hairlineStrong,
+  },
+  skipBtnText: {
+    fontFamily: fonts.mono,
+    fontSize: 10,
+    color: colors.textSecondary,
+    letterSpacing: 1.4,
   },
   exerciseName: {
     fontFamily: fonts.display,

@@ -202,6 +202,34 @@ export default function WorkoutScreen() {
     setCurrentSetIndex(0);
   }, [currentExerciseIndex, currentSetIndex, exercises, showUndo, timer]);
 
+  const handleNavigateTo = useCallback((targetIndex: number) => {
+    if (targetIndex === currentExerciseIndex) return;
+    timer.dismiss();
+    setCurrentExerciseIndex(targetIndex);
+    const ex = exercises[targetIndex];
+    setCurrentSetIndex(ex?.sets?.length ?? 0);
+  }, [currentExerciseIndex, exercises, timer]);
+
+  const handleSkipExercise = useCallback(() => {
+    const prevExIndex = currentExerciseIndex;
+    const prevSetIndex = currentSetIndex;
+    const skippedName = currentExercise?.name ?? "exercise";
+
+    if (currentExerciseIndex >= exercises.length - 1) {
+      setIsComplete(true);
+    } else {
+      setCurrentExerciseIndex(currentExerciseIndex + 1);
+      setCurrentSetIndex(0);
+    }
+
+    timer.dismiss();
+    showUndo(`Skipped ${skippedName}`, () => {
+      setCurrentExerciseIndex(prevExIndex);
+      setCurrentSetIndex(prevSetIndex);
+      setIsComplete(false);
+    });
+  }, [currentExerciseIndex, currentSetIndex, currentExercise, exercises.length, timer, showUndo]);
+
   const handleCompleteSet = useCallback(
     async (set: SetLog) => {
       if (!cycleState || !programExercise || !currentExercise) return;
@@ -386,6 +414,7 @@ export default function WorkoutScreen() {
         exercises={exercises}
         currentIndex={currentExerciseIndex}
         onSkipTo={handleSkipTo}
+        onNavigateTo={handleNavigateTo}
       />
 
       {showWarmup && warmupSets.length > 0 && (
@@ -434,6 +463,7 @@ export default function WorkoutScreen() {
         isChinups={isChinups}
         onComplete={handleCompleteSet}
         onWeightChange={() => {}}
+        onSkip={handleSkipExercise}
         lastSet={
           currentExercise.sets.length > 0
             ? currentExercise.sets[currentExercise.sets.length - 1]

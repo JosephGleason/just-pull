@@ -99,11 +99,8 @@ export default function BodyScreen() {
 
   const today = useMemo(() => {
     const d = new Date();
-    return new Date(
-      d.getUTCFullYear() + "-" +
-      String(d.getUTCMonth() + 1).padStart(2, "0") + "-" +
-      String(d.getUTCDate()).padStart(2, "0") + "T00:00:00Z"
-    );
+    const tomorrow = new Date(Date.UTC(d.getUTCFullYear(), d.getUTCMonth(), d.getUTCDate() + 1));
+    return tomorrow;
   }, []);
 
   const history = useMemo(

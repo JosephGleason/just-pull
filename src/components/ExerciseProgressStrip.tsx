@@ -7,6 +7,7 @@ interface ExerciseProgressStripProps {
   exercises: ExerciseLog[];
   currentIndex: number;
   onSkipTo: (index: number) => void;
+  onNavigateTo: (index: number) => void;
 }
 
 function getTabLabel(name: string): string {
@@ -29,12 +30,13 @@ export function ExerciseProgressStrip({
   exercises,
   currentIndex,
   onSkipTo,
+  onNavigateTo,
 }: ExerciseProgressStripProps) {
   return (
     <View style={styles.container}>
       {exercises.map((ex, i) => {
         const status = getStatus(i, currentIndex, ex.sets.length);
-        const tappable = status === "upcoming";
+        const isCurrent = i === currentIndex;
         const isLast = i === exercises.length - 1;
 
         return (
@@ -45,12 +47,12 @@ export function ExerciseProgressStrip({
               status === "active" && styles.tabActive,
               !isLast && styles.tabDivider,
             ]}
-            disabled={!tappable}
-            onPress={() => onSkipTo(i)}
-            activeOpacity={tappable ? 0.7 : 1}
+            disabled={isCurrent}
+            onPress={() => i > currentIndex ? onSkipTo(i) : onNavigateTo(i)}
+            activeOpacity={0.7}
             hitSlop={{ top: 6, bottom: 6 }}
-            accessibilityLabel={`${ex.name}, ${status}${tappable ? ", tap to skip to this exercise" : ""}`}
-            accessibilityRole={tappable ? "button" : "text"}
+            accessibilityLabel={`${ex.name}, ${status}, tap to ${i > currentIndex ? "skip to" : "go back to"} this exercise`}
+            accessibilityRole={isCurrent ? "text" : "button"}
           >
             <Text
               style={[

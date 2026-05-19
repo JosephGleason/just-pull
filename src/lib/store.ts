@@ -91,6 +91,7 @@ export const weights$ = observable(
     supabase,
     collection: "exercise_weights",
     fieldId: "exercise_key",
+    generateId: () => Crypto.randomUUID(),
     filter: (select: any) => select.eq("user_id", auth$.uid.get()!),
     realtime: true,
     persist: {
@@ -108,6 +109,7 @@ export const increments$ = observable(
     supabase,
     collection: "increments",
     fieldId: "exercise_key",
+    generateId: () => Crypto.randomUUID(),
     filter: (select: any) => select.eq("user_id", auth$.uid.get()!),
     persist: {
       name: "ls_increments",
