@@ -8,6 +8,12 @@
     "scheme": "justpullapp",
     "owner": "josephgleason",
     "userInterfaceStyle": "automatic",
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/c5d67125-c72c-4e7b-b39c-b594f8920da2"
+    },
     "ios": {
       "icon": "./assets/expo.icon"
     },
