@@ -275,7 +275,7 @@ export default function WorkoutScreen() {
       const nextSetIdx = currentSetIndex + 1;
       const isLastSetOfExercise = nextSetIdx >= totalSets;
 
-      if (isPrAttempt && set.is_pr && set.reps < currentExercise.reps) {
+      if (isPrAttempt && set.is_pr && (set.reps < currentExercise.reps || set.failed)) {
         failPr(currentExercise.key);
       }
 
@@ -352,9 +352,9 @@ export default function WorkoutScreen() {
       if (ex.type === "black") return false;
       const w = weights[ex.key];
       if (!w || w.pr_status !== "pending") return false;
-      return ex.sets.filter((s) => s.is_pr).every((s) => s.reps >= ex.reps);
+      const prSets = ex.sets.filter((s) => s.is_pr);
+      return prSets.length > 0 && prSets.every((s) => s.reps >= ex.reps && !s.failed);
     })
-    .filter((ex) => ex.sets.some((s) => s.is_pr))
     .map((ex) => ex.name);
 
   // Loading state
@@ -466,6 +466,7 @@ export default function WorkoutScreen() {
             ? currentExercise.sets[currentExercise.sets.length - 1]
             : null
         }
+        loggedSets={currentExercise.sets}
       />
 
       {undoMessage ? (

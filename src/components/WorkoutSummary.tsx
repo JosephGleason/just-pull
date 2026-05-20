@@ -37,6 +37,7 @@ export function WorkoutSummary({
   const getSetDots = (ex: ExerciseLog) =>
     ex.sets.map((set) => ({
       isPr: set.is_pr && prsHit.includes(ex.name),
+      isFailed: set.failed === true,
     }));
 
   // Format set summary string, e.g. "215x6 · 215x6 · 215x8*"
@@ -45,7 +46,8 @@ export function WorkoutSummary({
       .map((s) => {
         const star =
           s.is_pr && prsHit.includes(ex.name) ? "★" : "";
-        return `${s.weight}×${s.reps}${star}`;
+        const fail = s.failed ? "✗" : "";
+        return `${fail}${s.weight}×${s.reps}${star}`;
       })
       .join(" · ");
 
@@ -137,7 +139,11 @@ export function WorkoutSummary({
                     key={j}
                     style={[
                       styles.setDot,
-                      d.isPr ? styles.setDotPr : styles.setDotDone,
+                      d.isFailed
+                        ? styles.setDotFailed
+                        : d.isPr
+                          ? styles.setDotPr
+                          : styles.setDotDone,
                     ]}
                   />
                 ))}
@@ -323,6 +329,9 @@ const styles = StyleSheet.create({
   },
   setDotPr: {
     backgroundColor: colors.pr,
+  },
+  setDotFailed: {
+    backgroundColor: colors.red,
   },
 
   /* ── Bottom buttons ── */
