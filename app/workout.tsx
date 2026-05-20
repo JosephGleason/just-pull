@@ -342,8 +342,8 @@ export default function WorkoutScreen() {
     timer.dismiss();
   }, [timer]);
 
-  const handleTimerExtend = useCallback(() => {
-    timer.extend(30);
+  const handleTimerAdjust = useCallback((seconds: number) => {
+    timer.adjust(seconds);
   }, [timer]);
 
   // Get list of PRs hit for summary
@@ -429,10 +429,11 @@ export default function WorkoutScreen() {
 
       <RestTimer
         secondsLeft={timer.secondsLeft}
+        totalDuration={timer.totalDuration}
         isRunning={timer.isRunning}
         progress={timer.progress}
         onDismiss={handleTimerDismiss}
-        onExtend={handleTimerExtend}
+        onAdjust={handleTimerAdjust}
         nextExerciseName={
           timer.isRunning && currentSetIndex === 0
             ? currentExercise?.name

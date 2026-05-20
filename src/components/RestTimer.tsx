@@ -12,20 +12,22 @@ import { formatTime } from "../utils/date";
 
 interface RestTimerProps {
   secondsLeft: number;
+  totalDuration: number;
   isRunning: boolean;
   progress: number;
   onDismiss: () => void;
-  onExtend: () => void;
+  onAdjust: (seconds: number) => void;
   nextExerciseName?: string;
   exerciseProgress?: string;
 }
 
 export function RestTimer({
   secondsLeft,
+  totalDuration,
   isRunning,
   progress,
   onDismiss,
-  onExtend,
+  onAdjust,
   nextExerciseName,
   exerciseProgress,
 }: RestTimerProps) {
@@ -61,14 +63,6 @@ export function RestTimer({
 
   // Progress bar: shrinks from 100% to 0%
   const widthPercent = Math.min(progress * 100, 100);
-
-  // Determine if we're counting or compound/accessory
-  const isCompound = exerciseProgress?.includes("Compound") ?? false;
-
-  // Compute total time from progress (progress = remaining / total)
-  // When progress=1, remaining=total. When progress=0, remaining=0.
-  const totalSeconds =
-    progress > 0 ? Math.round(secondsLeft / progress) : secondsLeft;
 
   return (
     <View
@@ -121,7 +115,7 @@ export function RestTimer({
         </Animated.Text>
 
         <Text style={styles.countdownMeta}>
-          OF {formatTime(totalSeconds)} · {exerciseProgress ?? "REST"}
+          OF {formatTime(totalDuration)} · {exerciseProgress ?? "REST"}
         </Text>
       </View>
 
@@ -155,7 +149,25 @@ export function RestTimer({
       {/* ── ACTION BUTTONS ROW ── */}
       <View style={styles.actionRow}>
         <TouchableOpacity
-          onPress={onExtend}
+          onPress={() => onAdjust(-30)}
+          style={styles.actionButton}
+          activeOpacity={0.7}
+          accessibilityLabel="Subtract 30 seconds"
+          accessibilityRole="button"
+        >
+          <Text style={styles.actionButtonText}>{"−30S"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onAdjust(-60)}
+          style={styles.actionButton}
+          activeOpacity={0.7}
+          accessibilityLabel="Subtract 1 minute"
+          accessibilityRole="button"
+        >
+          <Text style={styles.actionButtonText}>{"−1M"}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => onAdjust(30)}
           style={styles.actionButton}
           activeOpacity={0.7}
           accessibilityLabel="Add 30 seconds"
@@ -164,10 +176,7 @@ export function RestTimer({
           <Text style={styles.actionButtonText}>+30S</Text>
         </TouchableOpacity>
         <TouchableOpacity
-          onPress={() => {
-            onExtend();
-            onExtend();
-          }}
+          onPress={() => onAdjust(60)}
           style={styles.actionButton}
           activeOpacity={0.7}
           accessibilityLabel="Add 1 minute"
