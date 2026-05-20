@@ -1,74 +1,100 @@
 import { useState, useRef, useCallback, useEffect } from "react";
+import { AppState } from "react-native";
 import * as Haptics from "expo-haptics";
 
 interface TimerState {
-  secondsLeft: number;
+  endAt: number;
+  totalDuration: number;
   isRunning: boolean;
-  totalSeconds: number;
+}
+
+function computeSecondsLeft(endAt: number): number {
+  return Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
 }
 
 export function useTimer() {
   const [state, setState] = useState<TimerState>({
-    secondsLeft: 0,
+    endAt: 0,
+    totalDuration: 0,
     isRunning: false,
-    totalSeconds: 0,
   });
+  const [, setTick] = useState(0);
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const hasFiredDoneRef = useRef(false);
 
-  const clear = useCallback(() => {
+  const secondsLeft = state.isRunning
+    ? computeSecondsLeft(state.endAt)
+    : 0;
+
+  const clearTimer = useCallback(() => {
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
   }, []);
 
+  useEffect(() => {
+    if (state.isRunning && secondsLeft <= 0 && !hasFiredDoneRef.current) {
+      hasFiredDoneRef.current = true;
+      clearTimer();
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+      setState((prev) => ({ ...prev, isRunning: false }));
+    }
+  }, [state.isRunning, secondsLeft, clearTimer]);
+
   const start = useCallback(
     (seconds: number) => {
-      clear();
-      setState({ secondsLeft: seconds, isRunning: true, totalSeconds: seconds });
+      clearTimer();
+      hasFiredDoneRef.current = false;
+      setState({
+        endAt: Date.now() + seconds * 1000,
+        totalDuration: seconds,
+        isRunning: true,
+      });
       intervalRef.current = setInterval(() => {
-        setState((prev) => {
-          if (prev.secondsLeft <= 1) {
-            clearInterval(intervalRef.current!);
-            intervalRef.current = null;
-            Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-            return { ...prev, secondsLeft: 0, isRunning: false };
-          }
-          return { ...prev, secondsLeft: prev.secondsLeft - 1 };
-        });
+        setTick((t) => t + 1);
       }, 1000);
     },
-    [clear]
+    [clearTimer]
   );
 
   const dismiss = useCallback(() => {
-    clear();
-    setState((prev) => ({ ...prev, secondsLeft: 0, isRunning: false }));
-  }, [clear]);
+    clearTimer();
+    hasFiredDoneRef.current = true;
+    setState((prev) => ({ ...prev, isRunning: false }));
+  }, [clearTimer]);
 
-  // Only increase secondsLeft — totalSeconds stays at the original value so
-  // the progress bar continues from where it was rather than jumping backwards.
-  const extend = useCallback((extraSeconds: number) => {
-    setState((prev) => ({
-      ...prev,
-      secondsLeft: prev.secondsLeft + extraSeconds,
-    }));
+  const adjust = useCallback((seconds: number) => {
+    setState((prev) => {
+      if (!prev.isRunning) return prev;
+      const newEndAt = prev.endAt + seconds * 1000;
+      return { ...prev, endAt: Math.max(Date.now(), newEndAt) };
+    });
   }, []);
 
   useEffect(() => {
-    return clear;
-  }, [clear]);
+    const subscription = AppState.addEventListener("change", (nextState) => {
+      if (nextState === "active") {
+        setTick((t) => t + 1);
+      }
+    });
+    return () => subscription.remove();
+  }, []);
+
+  useEffect(() => {
+    return clearTimer;
+  }, [clearTimer]);
 
   return {
-    secondsLeft: state.secondsLeft,
+    secondsLeft,
     isRunning: state.isRunning,
-    totalSeconds: state.totalSeconds,
+    totalDuration: state.totalDuration,
     progress:
-      state.totalSeconds > 0
-        ? Math.max(0, Math.min(1, 1 - state.secondsLeft / state.totalSeconds))
+      state.totalDuration > 0
+        ? Math.max(0, Math.min(1, 1 - secondsLeft / state.totalDuration))
         : 0,
     start,
     dismiss,
-    extend,
+    adjust,
   };
 }
