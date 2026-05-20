@@ -26,6 +26,7 @@ interface SetLoggerProps {
   onWeightChange: (newWeight: number) => void;
   onSkip: () => void;
   lastSet: SetLog | null;
+  loggedSets?: SetLog[];
 }
 
 export function SetLogger({
@@ -44,6 +45,7 @@ export function SetLogger({
   onWeightChange,
   onSkip,
   lastSet,
+  loggedSets,
 }: SetLoggerProps) {
   const [currentWeight, setCurrentWeight] = useState(weight);
   const [reps, setReps] = useState(targetReps);
@@ -61,7 +63,10 @@ export function SetLogger({
   // Determine set dot statuses
   const setDots = Array.from({ length: totalSets }, (_, i) => {
     const setIdx = i + 1;
-    if (setIdx < setNumber) return "done"; // already logged
+    if (setIdx < setNumber) {
+      const logged = loggedSets?.[i];
+      return logged?.failed ? "failed" : "done";
+    }
     if (setIdx === setNumber) return "active";
     return "unlogged";
   });
@@ -91,6 +96,20 @@ export function SetLogger({
       reps: reps,
       is_amrap: isAmrap,
       is_pr: isPrAttempt,
+      failed: false,
+    });
+    setTimeout(() => setSubmitting(false), 500);
+  };
+
+  const handleFail = () => {
+    if (submitting) return;
+    setSubmitting(true);
+    onComplete({
+      weight: currentWeight,
+      reps: reps,
+      is_amrap: isAmrap,
+      is_pr: isPrAttempt,
+      failed: true,
     });
     setTimeout(() => setSubmitting(false), 500);
   };
@@ -103,6 +122,7 @@ export function SetLogger({
       reps: lastSet.reps,
       is_amrap: isAmrap,
       is_pr: isPrAttempt,
+      failed: false,
     });
     setTimeout(() => setSubmitting(false), 500);
   };
@@ -144,6 +164,7 @@ export function SetLogger({
                   style={[
                     styles.setDot,
                     status === "done" && styles.setDotDone,
+                    status === "failed" && styles.setDotFailed,
                     status === "active" && styles.setDotActive,
                     status === "unlogged" && styles.setDotUnlogged,
                     isPrAttempt && status === "active" && styles.setDotPr,
@@ -315,6 +336,19 @@ export function SetLogger({
         </Text>
       </TouchableOpacity>
 
+      {!allSetsDone && (
+        <TouchableOpacity
+          style={[styles.failButton, submitting && { opacity: 0.5 }]}
+          onPress={handleFail}
+          disabled={submitting}
+          activeOpacity={0.8}
+          accessibilityLabel="Log failed set"
+          accessibilityRole="button"
+        >
+          <Text style={styles.failButtonText}>{"FAIL ✗"}</Text>
+        </TouchableOpacity>
+      )}
+
       {lastSet ? (
         <TouchableOpacity
           style={[styles.repeatButton, submitting && { opacity: 0.5 }]}
@@ -409,6 +443,9 @@ const styles = StyleSheet.create({
   },
   setDotPr: {
     backgroundColor: colors.pr,
+  },
+  setDotFailed: {
+    backgroundColor: colors.red,
   },
 
   /* ── Previous perf ── */
@@ -561,6 +598,26 @@ const styles = StyleSheet.create({
   },
   ctaButtonTextInverted: {
     color: colors.textInverse,
+  },
+
+  /* ── Fail button ── */
+  failButton: {
+    backgroundColor: "transparent",
+    borderWidth: 1,
+    borderColor: colors.red,
+    borderRadius: 0,
+    paddingVertical: 12,
+    marginHorizontal: 16,
+    marginTop: 8,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  failButtonText: {
+    fontFamily: fonts.display,
+    fontSize: 20,
+    color: colors.red,
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
 
   /* ── Repeat last ── */
