@@ -9,6 +9,14 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { colors, typography, spacing, radius, fonts } from "../theme";
+import {
+  calculatePlates,
+  PlateInfo,
+  LB_PLATES,
+  KG_PLATES,
+  LB_PLATE_COLORS,
+  KG_PLATE_COLORS,
+} from "../utils/plates";
 
 interface PlateCalculatorProps {
   visible: boolean;
@@ -17,34 +25,10 @@ interface PlateCalculatorProps {
   onClose: () => void;
 }
 
-interface PlateInfo {
-  weight: number;
-  color: string;
+interface VisualPlate extends PlateInfo {
   height: number;
   width: number;
 }
-
-const LB_PLATES = [45, 35, 25, 10, 5, 2.5];
-const KG_PLATES = [25, 20, 15, 10, 5, 2.5, 1.25];
-
-const LB_PLATE_COLORS: Record<number, string> = {
-  45: "#E85454",
-  35: "#4A8FE8",
-  25: "#5BD488",
-  10: "#E8A838",
-  5: "#F2F0EB",
-  2.5: "#8A897F",
-};
-
-const KG_PLATE_COLORS: Record<number, string> = {
-  25: "#E85454",
-  20: "#4A8FE8",
-  15: "#E8A838",
-  10: "#5BD488",
-  5: "#F2F0EB",
-  2.5: "#8A897F",
-  1.25: colors.textTertiary,
-};
 
 function getPlateHeight(plateWeight: number, maxPlate: number): number {
   const minHeight = 32;
@@ -60,62 +44,6 @@ function getPlateWidth(plateWeight: number, maxPlate: number): number {
   return Math.round(minWidth + ratio * (maxWidth - minWidth));
 }
 
-function calculatePlates(
-  weight: number,
-  units: string
-): { plates: PlateInfo[]; error: string | null } {
-  const barWeight = units === "kg" ? 20 : 45;
-  const availablePlates = units === "kg" ? KG_PLATES : LB_PLATES;
-  const plateColors = units === "kg" ? KG_PLATE_COLORS : LB_PLATE_COLORS;
-  const maxPlate = availablePlates[0];
-
-  if (weight <= barWeight) {
-    return { plates: [], error: "Bar only" };
-  }
-
-  const remainder = weight - barWeight;
-  if (remainder % 2 !== 0 && units === "lb") {
-    // Check if it can be split — for lb plates with 2.5lb minimum, remainder must be divisible by 5 total (2.5 per side)
-    const perSide = remainder / 2;
-    // 2.5lb is the smallest plate, so perSide must be achievable with 2.5 increments
-    if (perSide !== Math.floor(perSide * 2) / 2) {
-      return { plates: [], error: "Can't split evenly" };
-    }
-  }
-
-  const perSide = remainder / 2;
-
-  // Check if perSide can actually be achieved
-  if (perSide < 0) {
-    return { plates: [], error: "Bar only" };
-  }
-
-  // For kg, smallest plate is 1.25, so perSide must be achievable in 1.25 increments
-  // For lb, smallest plate is 2.5, so perSide must be achievable in 2.5 increments
-  const smallestPlate = availablePlates[availablePlates.length - 1];
-  const canSplit = (perSide * 10) % (smallestPlate * 10) === 0;
-  if (!canSplit) {
-    return { plates: [], error: "Can't split evenly" };
-  }
-
-  const plates: PlateInfo[] = [];
-  let remaining = perSide;
-
-  for (const plate of availablePlates) {
-    while (remaining >= plate) {
-      plates.push({
-        weight: plate,
-        color: plateColors[plate] ?? colors.textTertiary,
-        height: getPlateHeight(plate, maxPlate),
-        width: getPlateWidth(plate, maxPlate),
-      });
-      remaining -= plate;
-    }
-  }
-
-  return { plates, error: null };
-}
-
 export function PlateCalculator({
   visible,
   weight,
@@ -123,7 +51,13 @@ export function PlateCalculator({
   onClose,
 }: PlateCalculatorProps) {
   const barWeight = units === "kg" ? 20 : 45;
-  const { plates, error } = calculatePlates(weight, units);
+  const { plates: basePlates, error } = calculatePlates(weight, units);
+  const maxPlate = (units === "kg" ? KG_PLATES : LB_PLATES)[0];
+  const plates: VisualPlate[] = basePlates.map((p) => ({
+    ...p,
+    height: getPlateHeight(p.weight, maxPlate),
+    width: getPlateWidth(p.weight, maxPlate),
+  }));
   const perSideWeight = weight > barWeight ? (weight - barWeight) / 2 : 0;
 
   return (
