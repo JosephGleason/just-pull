@@ -138,7 +138,7 @@ export function useWorkout() {
 
         // Check if all PR sets hit target reps
         const prSets = ex.sets.filter((s: SetLog) => s.is_pr);
-        if (prSets.length > 0 && prSets.every((s: SetLog) => s.reps >= ex.reps)) {
+        if (prSets.length > 0 && prSets.every((s: SetLog) => s.reps >= ex.reps && !s.failed)) {
           weights$[ex.key].set({ ...w, pr_status: "succeeded" as const, user_id: uid } as any);
         }
       }

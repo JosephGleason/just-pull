@@ -312,7 +312,7 @@ export default function HistoryScreen() {
               <View style={styles.detailSets}>
                 {ex.sets.map((s, si) => (
                   <Text key={si} style={styles.detailSetText}>
-                    {s.weight}{"×"}{s.reps}
+                    {s.failed ? "✗" : ""}{s.weight}{"×"}{s.reps}
                     {s.is_amrap ? "*" : ""}
                     {s.is_pr ? (
                       <Text style={styles.detailPR}> PR</Text>
