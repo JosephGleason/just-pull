@@ -218,21 +218,6 @@ export default function WorkoutScreen() {
     }, 5000);
   }, []);
 
-  const handleSkipTo = useCallback((targetIndex: number) => {
-    if (targetIndex <= currentExerciseIndex) return;
-    const prevExIndex = currentExerciseIndex;
-    const prevSetIndex = currentSetIndex;
-
-    showUndo(`Skipped to ${exercises[targetIndex].name}`, () => {
-      setCurrentExerciseIndex(prevExIndex);
-      setCurrentSetIndex(prevSetIndex);
-    });
-
-    timer.dismiss();
-    setCurrentExerciseIndex(targetIndex);
-    setCurrentSetIndex(0);
-  }, [currentExerciseIndex, currentSetIndex, exercises, showUndo, timer]);
-
   const handleNavigateTo = useCallback((targetIndex: number) => {
     if (targetIndex === currentExerciseIndex) return;
     timer.dismiss();
@@ -251,8 +236,9 @@ export default function WorkoutScreen() {
     if (currentExerciseIndex >= exercises.length - 1) {
       setIsComplete(true);
     } else {
-      setCurrentExerciseIndex(currentExerciseIndex + 1);
-      setCurrentSetIndex(0);
+      const nextIdx = currentExerciseIndex + 1;
+      setCurrentExerciseIndex(nextIdx);
+      setCurrentSetIndex(exercises[nextIdx]?.sets?.length ?? 0);
     }
 
     timer.dismiss();
@@ -425,7 +411,6 @@ export default function WorkoutScreen() {
       <ExerciseProgressStrip
         exercises={exercises}
         currentIndex={currentExerciseIndex}
-        onSkipTo={handleSkipTo}
         onNavigateTo={handleNavigateTo}
       />
 

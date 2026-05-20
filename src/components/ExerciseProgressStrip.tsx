@@ -6,7 +6,6 @@ import { colors, fonts } from "../theme";
 interface ExerciseProgressStripProps {
   exercises: ExerciseLog[];
   currentIndex: number;
-  onSkipTo: (index: number) => void;
   onNavigateTo: (index: number) => void;
 }
 
@@ -29,7 +28,6 @@ function getStatus(
 export function ExerciseProgressStrip({
   exercises,
   currentIndex,
-  onSkipTo,
   onNavigateTo,
 }: ExerciseProgressStripProps) {
   return (
@@ -48,10 +46,10 @@ export function ExerciseProgressStrip({
               !isLast && styles.tabDivider,
             ]}
             disabled={isCurrent}
-            onPress={() => i > currentIndex ? onSkipTo(i) : onNavigateTo(i)}
+            onPress={() => onNavigateTo(i)}
             activeOpacity={0.7}
             hitSlop={{ top: 6, bottom: 6 }}
-            accessibilityLabel={`${ex.name}, ${status}, tap to ${i > currentIndex ? "skip to" : "go back to"} this exercise`}
+            accessibilityLabel={`${ex.name}, ${status}, tap to navigate to this exercise`}
             accessibilityRole={isCurrent ? "text" : "button"}
           >
             <Text
