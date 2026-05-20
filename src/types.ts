@@ -90,6 +90,7 @@ export interface SetLog {
   reps: number;
   is_amrap: boolean;
   is_pr: boolean;
+  failed?: boolean;
 }
 
 export interface ExerciseLog {
