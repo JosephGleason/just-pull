@@ -2,28 +2,27 @@
 
 import React from "react";
 import { act, create } from "react-test-renderer";
-import { useTimer } from "../hooks/useTimer";
+
+let mockAppStateCallback: ((state: string) => void) | null = null;
+
+jest.mock("react-native", () => ({
+  AppState: {
+    addEventListener: jest.fn((_event: string, callback: (state: string) => void) => {
+      mockAppStateCallback = callback;
+      return { remove: jest.fn(() => { mockAppStateCallback = null; }) };
+    }),
+  },
+}));
 
 jest.mock("expo-haptics", () => ({
   notificationAsync: jest.fn(),
   NotificationFeedbackType: { Success: "success" },
 }));
 
-beforeEach(() => {
-  jest.useFakeTimers();
-});
-
-afterEach(() => {
-  jest.useRealTimers();
-});
+import { useTimer } from "../hooks/useTimer";
 
 type TimerResult = ReturnType<typeof useTimer>;
 
-/**
- * Lightweight renderHook helper using react-test-renderer.
- * Returns a { result } ref where result.current always points to the latest
- * hook return value (re-assigned on every render).
- */
 function renderTimerHook() {
   const result = { current: undefined as unknown as TimerResult };
 
@@ -39,6 +38,15 @@ function renderTimerHook() {
   return { result };
 }
 
+beforeEach(() => {
+  jest.useFakeTimers();
+  mockAppStateCallback = null;
+});
+
+afterEach(() => {
+  jest.useRealTimers();
+});
+
 describe("useTimer", () => {
   test("starts with 0 seconds and not running", () => {
     const { result } = renderTimerHook();
@@ -53,7 +61,7 @@ describe("useTimer", () => {
     expect(result.current.isRunning).toBe(true);
   });
 
-  test("countdown decrements each second", () => {
+  test("countdown decrements via wall clock", () => {
     const { result } = renderTimerHook();
     act(() => result.current.start(5));
     act(() => jest.advanceTimersByTime(2000));
@@ -68,12 +76,31 @@ describe("useTimer", () => {
     expect(result.current.secondsLeft).toBe(0);
   });
 
-  test("extend adds time", () => {
+  test("adjust positive adds time", () => {
     const { result } = renderTimerHook();
     act(() => result.current.start(60));
     act(() => jest.advanceTimersByTime(10000));
-    act(() => result.current.extend(30));
+    act(() => result.current.adjust(30));
     expect(result.current.secondsLeft).toBe(80);
+  });
+
+  test("adjust negative subtracts time", () => {
+    const { result } = renderTimerHook();
+    act(() => result.current.start(60));
+    act(() => jest.advanceTimersByTime(10000));
+    act(() => result.current.adjust(-20));
+    expect(result.current.secondsLeft).toBe(30);
+  });
+
+  test("adjust negative clamps to 0", () => {
+    const { result } = renderTimerHook();
+    act(() => result.current.start(30));
+    act(() => jest.advanceTimersByTime(20000));
+    act(() => result.current.adjust(-60));
+    // Trigger the completion effect
+    act(() => jest.advanceTimersByTime(1000));
+    expect(result.current.secondsLeft).toBe(0);
+    expect(result.current.isRunning).toBe(false);
   });
 
   test("progress is 0 to 1", () => {
@@ -82,5 +109,23 @@ describe("useTimer", () => {
     expect(result.current.progress).toBeCloseTo(0);
     act(() => jest.advanceTimersByTime(5000));
     expect(result.current.progress).toBeCloseTo(0.5);
+  });
+
+  test("timer completes and fires haptic", () => {
+    const Haptics = require("expo-haptics");
+    const { result } = renderTimerHook();
+    act(() => result.current.start(3));
+    act(() => jest.advanceTimersByTime(4000));
+    expect(result.current.isRunning).toBe(false);
+    expect(result.current.secondsLeft).toBe(0);
+    expect(Haptics.notificationAsync).toHaveBeenCalled();
+  });
+
+  test("foreground resume updates time correctly", () => {
+    const { result } = renderTimerHook();
+    act(() => result.current.start(60));
+    act(() => jest.advanceTimersByTime(30000));
+    act(() => { mockAppStateCallback?.("active"); });
+    expect(result.current.secondsLeft).toBe(30);
   });
 });
