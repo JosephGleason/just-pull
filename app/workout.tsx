@@ -397,7 +397,7 @@ export default function WorkoutScreen() {
   }
 
   return (
-    <View style={[styles.container, { paddingTop: insets.top }]}>
+    <View style={[styles.container, { paddingTop: insets.top, paddingBottom: insets.bottom }]}>
       {elapsedTime ? (
         <View style={styles.statusStrip}>
           <Text style={styles.statusLabel}>● SESSION · LIVE</Text>
