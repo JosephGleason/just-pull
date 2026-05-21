@@ -517,9 +517,10 @@ const styles = StyleSheet.create({
   },
   undoToast: {
     position: "absolute",
-    bottom: 80,
+    top: 56,
     left: spacing.md,
     right: spacing.md,
+    zIndex: 10,
     backgroundColor: colors.surface,
     borderRadius: 0,
     paddingVertical: spacing.sm,
