@@ -33,17 +33,17 @@ describe("buildSessionExercises", () => {
     expect(exercises.map((e) => e.key)).toEqual(["deadlift_4", "chinups_8", "bb_rows_4", "curls_12"]);
   });
 
-  test("Day 1 Week 3 excludes deadlift (0 sets)", () => {
+  test("Day 1 Week 3 includes deadlift (6 sets)", () => {
     const cycle = { ...baseCycle, week_number: 3 as const };
     const exercises = buildSessionExercises(cycle, weights);
-    expect(exercises.map((e) => e.key)).not.toContain("deadlift_4");
-    expect(exercises).toHaveLength(3);
+    expect(exercises.map((e) => e.key)).toContain("deadlift_4");
+    expect(exercises).toHaveLength(4);
   });
 
-  test("deload week 1 excludes deadlift (2-2=0)", () => {
+  test("deload week 1 includes deadlift (4-2=2)", () => {
     const cycle = { ...baseCycle, is_deload: true };
     const exercises = buildSessionExercises(cycle, weights);
-    expect(exercises.map((e) => e.key)).not.toContain("deadlift_4");
+    expect(exercises.map((e) => e.key)).toContain("deadlift_4");
   });
 
   test("exercises start with empty sets array", () => {

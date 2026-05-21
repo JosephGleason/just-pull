@@ -33,13 +33,6 @@ describe("advanceCycleState", () => {
     expect(next.is_deload).toBe(false);
   });
 
-  test("cycle 2 wraps to cycle 3 which is deload", () => {
-    const state: CycleStateInput = { cycle_number: 2, week_number: 3, next_day: 6, is_deload: false };
-    const next = advanceCycleState(state);
-    expect(next.cycle_number).toBe(3);
-    expect(next.is_deload).toBe(true);
-  });
-
   test("cycle 5 wraps to cycle 6 which is deload", () => {
     const state: CycleStateInput = { cycle_number: 5, week_number: 3, next_day: 6, is_deload: false };
     const next = advanceCycleState(state);
@@ -47,10 +40,17 @@ describe("advanceCycleState", () => {
     expect(next.is_deload).toBe(true);
   });
 
-  test("cycle 3 wraps to cycle 4 which is NOT deload", () => {
-    const state: CycleStateInput = { cycle_number: 3, week_number: 3, next_day: 6, is_deload: true };
+  test("cycle 11 wraps to cycle 12 which is deload", () => {
+    const state: CycleStateInput = { cycle_number: 11, week_number: 3, next_day: 6, is_deload: false };
     const next = advanceCycleState(state);
-    expect(next.cycle_number).toBe(4);
+    expect(next.cycle_number).toBe(12);
+    expect(next.is_deload).toBe(true);
+  });
+
+  test("cycle 3 is NOT deload", () => {
+    const state: CycleStateInput = { cycle_number: 2, week_number: 3, next_day: 6, is_deload: false };
+    const next = advanceCycleState(state);
+    expect(next.cycle_number).toBe(3);
     expect(next.is_deload).toBe(false);
   });
 });

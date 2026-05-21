@@ -212,10 +212,7 @@ export default function WorkoutScreen() {
     undoCallbackRef.current = callback;
     setUndoMessage(message);
     if (undoTimerRef.current) clearTimeout(undoTimerRef.current);
-    undoTimerRef.current = setTimeout(() => {
-      setUndoMessage(null);
-      undoCallbackRef.current = null;
-    }, 5000);
+    undoTimerRef.current = null;
   }, []);
 
   const handleNavigateTo = useCallback((targetIndex: number) => {

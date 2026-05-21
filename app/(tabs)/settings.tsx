@@ -661,7 +661,7 @@ export default function SettingsScreen() {
 
   // -- computed --
   const totalWeeks = 3;
-  const cyclesUntilDeload = 3 - (safeCycleState.cycle_number % 3 || 3);
+  const cyclesUntilDeload = 6 - (safeCycleState.cycle_number % 6 || 6);
   const daysUntilDeload = cyclesUntilDeload * 15;
   const latestBodyLog = lastSavedBodyLog ?? (bodyLog.length > 0 ? bodyLog[bodyLog.length - 1] : null);
 
@@ -747,7 +747,7 @@ export default function SettingsScreen() {
             value={`${safeCycleState.cycle_number} · WK ${safeCycleState.week_number}/${totalWeeks}`}
             onPress={() => handleEditCycleField("cycle_number")}
           />
-          <StaticRow label="DELOAD EVERY" value="3 CYCLES" />
+          <StaticRow label="DELOAD EVERY" value="6 CYCLES" />
           <StaticRow label="NEXT DELOAD" value={safeCycleState.is_deload ? "NOW" : `${daysUntilDeload} DAYS`} />
           <SettingsRow
             label="NEXT DAY"

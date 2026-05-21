@@ -11,7 +11,7 @@ export function generateWarmupSets(
   if (workingWeight <= barWeight) return [];
 
   const warmups: WarmupSet[] = [
-    { weight: barWeight, reps: 10, label: "Empty bar" },
+    { weight: barWeight, reps: 5, label: "Empty bar" },
   ];
 
   const fiftyPercent = Math.round((workingWeight * 0.5) / 5) * 5;

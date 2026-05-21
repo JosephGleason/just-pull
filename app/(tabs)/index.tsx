@@ -267,24 +267,24 @@ export default function TodayScreen() {
 
               <Text style={styles.modalSectionLabel}>3-WEEK CYCLES</Text>
               <Text style={styles.modalSectionBody}>
-                Sets taper each week to manage fatigue. Week 1 is full volume,
-                Week 2 is reduced, and Week 3 is minimal. After each cycle,
-                weights increase and the cycle resets.
+                Volume ascends each week. Week 1 introduces heavier weight at
+                low volume, Week 2 adds sets, and Week 3 is peak volume. After
+                each cycle, weights increase and the cycle resets.
               </Text>
               <View style={styles.hairline} />
 
               <Text style={styles.modalSectionLabel}>EXERCISE TYPES</Text>
               <Text style={styles.modalSectionBody}>
-                Compounds (red) are the main lifts and increase each cycle.
-                Heavy compounds (blue) like squat and deadlift follow the same
-                progression with fewer sets. Accessories (black) are AMRAP
-                sets where you hit the target reps or more.
+                Compounds (red) are the main lifts (3/4/5 sets across weeks).
+                Heavy compounds (blue) like squat and deadlift get more
+                volume (4/5/6 sets). Accessories (black) are AMRAP sets
+                (3/4/5 sets) where you push to failure each set.
               </Text>
               <View style={styles.hairline} />
 
               <Text style={styles.modalSectionLabel}>DELOAD</Text>
               <Text style={styles.modalSectionBody}>
-                Every 3rd cycle is a deload that reduces set counts further,
+                Every 6th cycle is a deload that reduces set counts by 2,
                 giving your body time to recover before pushing heavier.
               </Text>
               <View style={styles.hairline} />

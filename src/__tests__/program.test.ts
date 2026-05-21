@@ -12,32 +12,32 @@ describe("program definition", () => {
     expect(day1.exercises[0].key).toBe("deadlift_4");
   });
 
-  test("blue exercises taper 2/1/0", () => {
+  test("blue exercises ascend 4/5/6", () => {
     const day1 = getProgramDay(1);
     const deadlift = day1.exercises[0];
     expect(deadlift.type).toBe("blue");
-    expect(getSetsForWeek(deadlift, 1, false)).toBe(2);
-    expect(getSetsForWeek(deadlift, 2, false)).toBe(1);
-    expect(getSetsForWeek(deadlift, 3, false)).toBe(0);
+    expect(getSetsForWeek(deadlift, 1, false)).toBe(4);
+    expect(getSetsForWeek(deadlift, 2, false)).toBe(5);
+    expect(getSetsForWeek(deadlift, 3, false)).toBe(6);
   });
 
-  test("red/black exercises taper 3/2/1", () => {
+  test("red/black exercises ascend 3/4/5", () => {
     const day1 = getProgramDay(1);
     const chinups = day1.exercises[1];
     expect(chinups.type).toBe("red");
     expect(getSetsForWeek(chinups, 1, false)).toBe(3);
-    expect(getSetsForWeek(chinups, 2, false)).toBe(2);
-    expect(getSetsForWeek(chinups, 3, false)).toBe(1);
+    expect(getSetsForWeek(chinups, 2, false)).toBe(4);
+    expect(getSetsForWeek(chinups, 3, false)).toBe(5);
   });
 
   test("deload reduces sets by 2, clamped to 0", () => {
     const day1 = getProgramDay(1);
     const deadlift = day1.exercises[0];
     const chinups = day1.exercises[1];
-    expect(getSetsForWeek(deadlift, 1, true)).toBe(0);
+    expect(getSetsForWeek(deadlift, 1, true)).toBe(2);
     expect(getSetsForWeek(chinups, 1, true)).toBe(1);
-    expect(getSetsForWeek(chinups, 2, true)).toBe(0);
-    expect(getSetsForWeek(chinups, 3, true)).toBe(0);
+    expect(getSetsForWeek(chinups, 2, true)).toBe(2);
+    expect(getSetsForWeek(chinups, 3, true)).toBe(3);
   });
 
   test("all canonical keys are unique", () => {

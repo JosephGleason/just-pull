@@ -16,20 +16,37 @@ Expo Router app (SDK 54, React Native 0.81) implementing a weightlifting tracker
 
 ### Program Model
 
-The training program is a fixed 5-day/week schedule (days 1, 2, 3, 5, 6) running in 3-week cycles. Exercises have a color-coded type system:
-- **red** — compound lifts with 3/2/1 set taper across weeks
-- **blue** — heavy compounds (squat, deadlift) with 2/1/0 set taper
-- **black** — accessories with the same 3/2/1 taper
+The training program is a fixed 5-day/week schedule (days 1, 2, 3, 5, 6) running in 3-week cycles. Volume **ascends** within each cycle — you introduce PR weight at low volume in Week 1 and build up through Week 3. Exercises have a color-coded type system:
+- **red** — compound lifts with 3/4/5 ascending sets across weeks
+- **blue** — heavy compounds (squat, deadlift) with 4/5/6 ascending sets
+- **black** — accessories with the same 3/4/5 ascending sets (AMRAP)
 
-After every 3rd cycle, a deload week subtracts 2 from set counts. The program definition lives entirely in `src/program.ts`.
+The set arrays in `src/program.ts` are `[week1, week2, week3]`. In the original spreadsheet, the 6 Set columns represent the max possible; **x marks cross off unused columns** (e.g. x in Set 5 & 6 = only do sets 1-4). Blank cells are where you log your work.
 
-### State & Persistence
+After every 6th cycle, a deload subtracts 2 from set counts. The program definition lives entirely in `src/program.ts`.
 
-All app state flows through a single React Context (`src/context.tsx` → `AppProvider`). The context holds settings, cycle state, exercise weights, workout history, current session, and body log. Each setter persists to AsyncStorage via `src/storage.ts`, so the context is the single source of truth for both in-memory and persisted state.
+### State & Data Sync
+
+All app state lives in **Legend-State observables** (`src/lib/store.ts`) synced to **Supabase Postgres** via `@legendapp/state/sync-plugins/supabase`. Components read state with `useSelector()` from `@legendapp/state/react` — there is no React Context or custom provider.
+
+Each observable is configured with:
+- **AsyncStorage persistence** — offline-first local cache with `retrySync: true`
+- **Supabase sync** — two-way sync filtered by `user_id`/`id`
+- **Realtime** — `cycle_state$`, `current_session$`, and `weights$` subscribe to Supabase Realtime for cross-device sync
+- **Infinite retry** — queued writes replay automatically on reconnect
+
+Single-row tables (`profile$`, `nutrition$`, `cycle_state$`, `current_session$`) use `as: "value"`. Collection tables (`weights$`, `increments$`, `workouts$`, `body_log$`) use the default object mode.
+
+`current_session$` intentionally disables soft deletes — `set(null)` issues a hard DELETE so other devices receive the Realtime DELETE event.
+
+### Auth
+
+Supabase Auth with email/password (`src/lib/auth.ts`). An `auth$` observable holds `{ uid, loading }` and gates all data sync via `waitFor: auth$.uid`. The root layout (`app/_layout.tsx`) reads `auth$`, `profile$`, and `is_ready$` to route between `auth.tsx`, `onboarding.tsx`, and the main tabs.
 
 ### Routing
 
-- `app/_layout.tsx` — root layout; redirects to onboarding if no settings exist
+- `app/_layout.tsx` — root layout; gates auth → onboarding → tabs based on `auth$`/`profile$`
+- `app/auth.tsx` — sign-in / sign-up screen
 - `app/onboarding.tsx` — initial weight setup flow
 - `app/(tabs)/` — main tab navigation (Today, Progress, History, Body, Settings)
 - `app/workout.tsx` — full-screen modal for active workout session
@@ -46,7 +63,7 @@ All app state flows through a single React Context (`src/context.tsx` → `AppPr
 
 ### Design System
 
-"Iron & Ember" dark theme defined in `src/theme.ts`. Key tokens: Bebas Neue for display numbers, Plus Jakarta Sans for body text, amber accent (`#E8A838`) on near-black backgrounds. All styling uses React Native `StyleSheet` — no external CSS framework.
+**FORGE** — brutalist, pitch-black design system defined in `src/theme.ts`. Key tokens: Anton for display numerals, Space Grotesk for body text, JetBrains Mono for labels/data, signal-orange accent (`#FF4D14`) on pure black. Zero border radius throughout. Shared FORGE styles (`forgeStyles`) provide slabs, hairlines, selector rows. All styling uses React Native `StyleSheet` — no external CSS framework.
 
 ### Body Visualization
 
