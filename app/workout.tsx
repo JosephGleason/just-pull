@@ -520,7 +520,7 @@ const styles = StyleSheet.create({
     top: 56,
     left: spacing.md,
     right: spacing.md,
-    zIndex: 10,
+    zIndex: 200,
     backgroundColor: colors.surface,
     borderRadius: 0,
     paddingVertical: spacing.sm,
